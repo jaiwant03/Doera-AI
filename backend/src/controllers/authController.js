@@ -178,24 +178,45 @@ export const logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully.' });
 };
 
-export const getMe = async (req, res) => {
-  res.json({
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-      avatar: req.user.avatar,
-      preferences: req.user.preferences,
-    },
-  });
+export const getMe = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const gmailIntegration = await Integration.findOne({
+      userId: user._id,
+      provider: 'gmail',
+      status: 'connected',
+    });
+
+    const isGoogleAuth = user.authProvider === 'google' && !!user.googleSubjectId;
+    const effectiveMode = isGoogleAuth ? (user.executionMode || 'REAL') : 'DEMO';
+    const gmailStatus = gmailIntegration ? 'connected' : (user.gmailIntegrationStatus || 'not_connected');
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        authProvider: isGoogleAuth ? 'google' : 'local',
+        googleSubjectId: user.googleSubjectId || null,
+        googleEmail: user.googleEmail || null,
+        executionMode: effectiveMode,
+        gmailIntegrationStatus: gmailStatus,
+        connectedGmailEmail: gmailIntegration?.accountEmail || gmailIntegration?.providerEmail || null,
+        preferences: user.preferences,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
-// 6. INITIATE GOOGLE OAUTH REDIRECT OR GET URL
+// 6. INITIATE GOOGLE OAUTH REDIRECT OR GET URL (FOR LOGIN)
 export const getGoogleAuthUrl = async (req, res, next) => {
   try {
     const { state = 'login', redirect } = req.query;
-    const url = googleAuthService.getAuthUrl(state);
+    const url = googleAuthService.getLoginAuthUrl(state);
 
     if (redirect === 'true' || req.headers.accept?.includes('text/html')) {
       return res.redirect(url);
