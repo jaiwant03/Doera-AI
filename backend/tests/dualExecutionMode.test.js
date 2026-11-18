@@ -17,6 +17,10 @@ import googleAuthService from '../src/services/googleAuthService.js';
 describe('DOERA AI — Dual Execution Modes (Google OAuth vs Manual Login) & 12 Security Tests', () => {
   setupTestDB();
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   // Helper to create a verified Google user
   const createGoogleUser = async (name, email, googleId) => {
     const user = await User.create({
