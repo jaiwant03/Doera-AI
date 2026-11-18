@@ -89,26 +89,48 @@ export const ProofOfExecutionCard = ({ evidence }) => {
         </span>
       </div>
 
-      {/* Prominent Hackathon Safe Simulation Badge */}
-      <div
-        style={{
-          margin: '8px 14px 10px 14px',
-          padding: '6px 10px',
-          background: 'rgba(8, 127, 140, 0.15)',
-          border: '1px solid rgba(8, 127, 140, 0.35)',
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: '#2DD4BF',
-          letterSpacing: '0.3px',
-        }}
-      >
-        <ShieldCheck size={13} color="#2DD4BF" style={{ flexShrink: 0 }} />
-        <span>SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED</span>
-      </div>
+      {/* Execution Mode Banner (Real vs Simulated) */}
+      {evidence.isSimulated === false || evidence.executionMode === 'REAL' || (evidence.service && evidence.service.includes('Gmail OAuth2')) ? (
+        <div
+          style={{
+            margin: '8px 14px 10px 14px',
+            padding: '6px 10px',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: '#10B981',
+            letterSpacing: '0.3px',
+          }}
+        >
+          <CheckCircle2 size={13} color="#10B981" style={{ flexShrink: 0 }} />
+          <span>REAL AUTOMATION VERIFIED — OUTBOUND DISPATCH DELIVERED VIA GMAIL</span>
+        </div>
+      ) : (
+        <div
+          style={{
+            margin: '8px 14px 10px 14px',
+            padding: '6px 10px',
+            background: 'rgba(8, 127, 140, 0.15)',
+            border: '1px solid rgba(8, 127, 140, 0.35)',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: '#2DD4BF',
+            letterSpacing: '0.3px',
+          }}
+        >
+          <ShieldCheck size={13} color="#2DD4BF" style={{ flexShrink: 0 }} />
+          <span>SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED</span>
+        </div>
+      )}
 
       <div className="doera-proof-body">
         {target?.recipient && (
