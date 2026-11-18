@@ -89,30 +89,56 @@ const ApprovalDetailsModal = ({ approval, isOpen, onClose }) => {
 
         {/* Body — 12 Structured Approval Fields */}
         <div className="doera-modal-body">
-          {/* Safe Simulation Mode Banner */}
-          <div
-            style={{
-              padding: '9px 14px',
-              background: 'rgba(8, 127, 140, 0.15)',
-              border: '1px solid rgba(8, 127, 140, 0.4)',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: '#2DD4BF',
-              marginBottom: 16,
-            }}
-          >
-            <ShieldCheck size={16} color="#2DD4BF" style={{ flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 700 }}>DOERA AI — HACKATHON DEMO MODE ACTIVE</div>
-              <div style={{ fontSize: 10.5, fontWeight: 400, opacity: 0.9 }}>
-                All external actions are simulated. No real emails, WhatsApp messages, bookings or payments are performed.
+          {/* Execution Mode Banner (Real vs Demo) */}
+          {approval.executionMode === 'REAL' ? (
+            <div
+              style={{
+                padding: '9px 14px',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: '#10B981',
+                marginBottom: 16,
+              }}
+            >
+              <CheckCircle2 size={16} color="#10B981" style={{ flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 700 }}>DOERA AI — REAL AUTOMATION ACTIVE</div>
+                <div style={{ fontSize: 10.5, fontWeight: 400, opacity: 0.9 }}>
+                  Authenticated Sender: <strong>{approval.senderEmail || 'Authorized Gmail User'}</strong>. Real dispatch executes through Google Gmail API upon confirmation.
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              style={{
+                padding: '9px 14px',
+                background: 'rgba(8, 127, 140, 0.15)',
+                border: '1px solid rgba(8, 127, 140, 0.4)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: '#2DD4BF',
+                marginBottom: 16,
+              }}
+            >
+              <ShieldCheck size={16} color="#2DD4BF" style={{ flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 700 }}>DOERA AI — HACKATHON DEMO MODE ACTIVE</div>
+                <div style={{ fontSize: 10.5, fontWeight: 400, opacity: 0.9 }}>
+                  All external actions are simulated. No real emails, WhatsApp messages, bookings or payments are performed.
+                </div>
+              </div>
+            </div>
+          )}
           {/* 1. Action Title & Category */}
           <div className="doera-detail-section">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
