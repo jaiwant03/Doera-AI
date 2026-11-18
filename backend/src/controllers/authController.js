@@ -238,7 +238,11 @@ export const googleLoginWithCredential = async (req, res, next) => {
     const profile = await googleAuthService.verifyGoogleIdToken(credential);
 
     let user = await User.findOne({
-      $or: [{ googleId: profile.googleId }, { email: profile.email.toLowerCase() }],
+      $or: [
+        { googleSubjectId: profile.googleId },
+        { googleId: profile.googleId },
+        { email: profile.email.toLowerCase() },
+      ],
     });
 
     if (!user) {
@@ -246,22 +250,47 @@ export const googleLoginWithCredential = async (req, res, next) => {
         name: profile.name,
         email: profile.email.toLowerCase(),
         googleId: profile.googleId,
+        googleSubjectId: profile.googleId,
+        googleEmail: profile.email.toLowerCase(),
+        authProvider: 'google',
+        executionMode: 'REAL',
+        gmailIntegrationStatus: 'not_connected',
         avatar: profile.avatar,
         subscription: {
           plan: 'free',
           status: 'active',
         },
       });
-      logger.info(`[Google Auth] Created new user via Google Sign-In: ${user.email}`);
+      logger.info(`[Google Auth] Created new user via Google Sign-In: ${user.email} (executionMode: REAL)`);
     } else {
-      if (!user.googleId) user.googleId = profile.googleId;
+      user.googleId = profile.googleId;
+      user.googleSubjectId = profile.googleId;
+      user.googleEmail = profile.email.toLowerCase();
+      user.authProvider = 'google';
+      user.executionMode = 'REAL';
       if (!user.avatar && profile.avatar) user.avatar = profile.avatar;
+
+      // Sync active Gmail integration status
+      const existingGmail = await Integration.findOne({
+        userId: user._id,
+        provider: 'gmail',
+        status: 'connected',
+      });
+      user.gmailIntegrationStatus = existingGmail ? 'connected' : 'not_connected';
       await user.save();
     }
 
-    const token = jwt.sign({ userId: user._id, role: user.role }, config.jwtSecret, {
-      expiresIn: '7d',
+    const activeGmail = await Integration.findOne({
+      userId: user._id,
+      provider: 'gmail',
+      status: 'connected',
     });
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, executionMode: 'REAL', authProvider: 'google' },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
 
     res.json({
       token,
@@ -271,6 +300,12 @@ export const googleLoginWithCredential = async (req, res, next) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        authProvider: 'google',
+        googleSubjectId: user.googleSubjectId,
+        googleEmail: user.googleEmail,
+        executionMode: 'REAL',
+        gmailIntegrationStatus: activeGmail ? 'connected' : 'not_connected',
+        connectedGmailEmail: activeGmail?.accountEmail || activeGmail?.providerEmail || null,
         preferences: user.preferences,
       },
     });
@@ -290,10 +325,75 @@ export const handleGoogleCallback = async (req, res) => {
   }
 
   try {
+    // 1. Check if state indicates a signed "Connect Gmail for Automation" flow
+    let isGmailConnect = false;
+    let targetUserId = null;
+
+    if (state) {
+      try {
+        const tokenStr = state.startsWith('gmail_') ? state.slice(6) : state;
+        const decoded = jwt.verify(tokenStr, config.jwtSecret);
+        if (decoded && decoded.purpose === 'gmail_connect' && decoded.userId) {
+          isGmailConnect = true;
+          targetUserId = decoded.userId;
+        }
+      } catch (stateErr) {
+        logger.debug('[Google Auth] State is not a signed gmail_connect token:', stateErr.message);
+      }
+    }
+
     const { tokens, profile } = await googleAuthService.exchangeCodeForTokens(code);
 
+    // Case A: Explicit Gmail authorization initiated by an authenticated user
+    if (isGmailConnect && targetUserId) {
+      const targetUser = await User.findById(targetUserId);
+      if (!targetUser) {
+        logger.warn('[Google Auth] Target user not found for Gmail connect callback:', targetUserId);
+        return res.redirect(`${config.clientUrl}/login?error=UserNotFound`);
+      }
+
+      const updateData = {
+        providerAccountId: profile.googleId,
+        providerEmail: profile.email.toLowerCase(),
+        accountEmail: profile.email.toLowerCase(),
+        grantedScopes: tokens.scope
+          ? (typeof tokens.scope === 'string' ? tokens.scope.split(' ') : tokens.scope)
+          : ['https://www.googleapis.com/auth/gmail.send'],
+        connectionStatus: 'connected',
+        status: 'connected',
+        lastVerifiedAt: new Date(),
+      };
+
+      if (tokens.refresh_token) {
+        updateData.encryptedRefreshToken = encrypt(tokens.refresh_token);
+      }
+      if (tokens.access_token) {
+        updateData.encryptedAccessToken = encrypt(tokens.access_token);
+      }
+      if (tokens.expiry_date) {
+        updateData.tokenExpiryDate = new Date(tokens.expiry_date);
+      }
+
+      await Integration.findOneAndUpdate(
+        { userId: targetUser._id, provider: 'gmail' },
+        updateData,
+        { upsert: true, new: true }
+      );
+
+      targetUser.gmailIntegrationStatus = 'connected';
+      await targetUser.save();
+
+      logger.info(`[Google Auth] Explicit Gmail authorization linked: ${targetUser.email} -> ${profile.email}`);
+      return res.redirect(`${config.clientUrl}/settings?tab=integrations&connected=gmail&email=${encodeURIComponent(profile.email)}`);
+    }
+
+    // Case B: Standard Google Sign-In / Login Callback
     let user = await User.findOne({
-      $or: [{ googleId: profile.googleId }, { email: profile.email.toLowerCase() }],
+      $or: [
+        { googleSubjectId: profile.googleId },
+        { googleId: profile.googleId },
+        { email: profile.email.toLowerCase() },
+      ],
     });
 
     if (!user) {
@@ -301,51 +401,40 @@ export const handleGoogleCallback = async (req, res) => {
         name: profile.name,
         email: profile.email.toLowerCase(),
         googleId: profile.googleId,
+        googleSubjectId: profile.googleId,
+        googleEmail: profile.email.toLowerCase(),
+        authProvider: 'google',
+        executionMode: 'REAL',
+        gmailIntegrationStatus: 'not_connected',
         avatar: profile.avatar,
         subscription: {
           plan: 'free',
           status: 'active',
         },
       });
-      logger.info(`[Google Auth] Registered new user via OAuth Callback: ${user.email}`);
+      logger.info(`[Google Auth] Registered new user via Google OAuth: ${user.email} (executionMode: REAL)`);
     } else {
-      if (!user.googleId) user.googleId = profile.googleId;
+      user.googleId = profile.googleId;
+      user.googleSubjectId = profile.googleId;
+      user.googleEmail = profile.email.toLowerCase();
+      user.authProvider = 'google';
+      user.executionMode = 'REAL';
       if (!user.avatar && profile.avatar) user.avatar = profile.avatar;
+
+      const existingGmail = await Integration.findOne({
+        userId: user._id,
+        provider: 'gmail',
+        status: 'connected',
+      });
+      user.gmailIntegrationStatus = existingGmail ? 'connected' : 'not_connected';
       await user.save();
     }
 
-    // If refresh token returned, automatically connect Google Calendar & Gmail integration
-    if (tokens.refresh_token) {
-      const encryptedRefreshToken = encrypt(tokens.refresh_token);
-
-      await Integration.findOneAndUpdate(
-        { userId: user._id, provider: 'google_calendar' },
-        {
-          accountEmail: profile.email,
-          encryptedRefreshToken,
-          status: 'connected',
-          lastVerifiedAt: new Date(),
-        },
-        { upsert: true }
-      );
-
-      await Integration.findOneAndUpdate(
-        { userId: user._id, provider: 'gmail' },
-        {
-          accountEmail: profile.email,
-          encryptedRefreshToken,
-          status: 'connected',
-          lastVerifiedAt: new Date(),
-        },
-        { upsert: true }
-      );
-
-      logger.info(`[Google Auth] Stored Google Calendar & Gmail tokens for user: ${user.email}`);
-    }
-
-    const token = jwt.sign({ userId: user._id, role: user.role }, config.jwtSecret, {
-      expiresIn: '7d',
-    });
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, executionMode: 'REAL', authProvider: 'google' },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
 
     // Redirect user to frontend workspace with active token
     return res.redirect(`${config.clientUrl}/chat?token=${encodeURIComponent(token)}`);
