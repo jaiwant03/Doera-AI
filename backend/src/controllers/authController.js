@@ -28,13 +28,18 @@ export const register = async (req, res, next) => {
       name: cleanName,
       email: cleanEmail,
       password,
+      authProvider: 'local',
+      googleSubjectId: null,
+      googleEmail: null,
+      executionMode: 'DEMO',
+      gmailIntegrationStatus: 'not_connected',
       subscription: {
         plan: 'free',
         status: 'active',
       },
     });
 
-    const token = jwt.sign({ userId: user._id, role: user.role }, config.jwtSecret, {
+    const token = jwt.sign({ userId: user._id, role: user.role, executionMode: 'DEMO', authProvider: 'local' }, config.jwtSecret, {
       expiresIn: '7d',
     });
 
@@ -45,6 +50,12 @@ export const register = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        authProvider: 'local',
+        googleSubjectId: null,
+        googleEmail: null,
+        executionMode: 'DEMO',
+        gmailIntegrationStatus: 'not_connected',
+        connectedGmailEmail: null,
         preferences: user.preferences,
       },
     });
