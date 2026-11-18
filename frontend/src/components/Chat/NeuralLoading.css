@@ -1,0 +1,198 @@
+/* ==============================================================================
+   NeuralLoading — 3D Organic Particle-Mesh Intelligence Visualizer Styles
+   Theme: Luxury Black (#080609), Neon Pink (#FF55BD), Purple (#9C52E8)
+   Direct Reference: Image 2 (Third Phone)
+   ============================================================================== */
+
+/* Full-Screen / Central Overlay Mode */
+.neural-full-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 6, 9, 0.94);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 35;
+  pointer-events: all;
+  padding-bottom: clamp(60px, 9vh, 90px);
+  animation: neuralOverlayFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes neuralOverlayFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.neural-full-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 460px;
+  width: 90%;
+  position: relative;
+  user-select: none;
+}
+
+.neural-canvas-stage {
+  width: min(340px, 80vw);
+  height: min(340px, 80vw);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neural-canvas.full {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Contextual Status Block */
+.neural-status-block {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.neural-status-title {
+  font-family: var(--font-sans, -apple-system, sans-serif);
+  font-size: clamp(17px, 2.2vw, 21px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.35;
+  text-shadow: 0 0 20px rgba(255, 85, 189, 0.3);
+}
+
+.neural-status-sub {
+  font-family: var(--font-sans, -apple-system, sans-serif);
+  font-size: clamp(13px, 1.4vw, 14.5px);
+  color: #B9AEBE;
+  margin: 0;
+  max-width: 380px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Progress Track for Tasks */
+.neural-progress-track {
+  width: 220px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.neural-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9C52E8 0%, #C53A9F 50%, #FF55BD 100%);
+  box-shadow: 0 0 12px rgba(255, 85, 189, 0.7);
+  transition: width 0.3s ease;
+}
+
+/* Cancel Button */
+.neural-cancel-btn {
+  margin-top: 24px;
+  padding: 8px 22px;
+  border-radius: 999px;
+  background: #17101B;
+  border: 1px solid #302535;
+  color: #B9AEBE;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.neural-cancel-btn:hover {
+  border-color: #FF55BD;
+  color: #FFFFFF;
+  box-shadow: 0 0 14px rgba(255, 85, 189, 0.3);
+}
+
+/* Compact Mode (e.g. within an active card) */
+.neural-compact-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: #151018;
+  border: 1px solid #302535;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.neural-canvas.compact {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.neural-compact-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.neural-compact-status {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.neural-compact-sub {
+  font-size: 12px;
+  color: #B9AEBE;
+}
+
+/* Inline Mode (tiny badge inside chat message while streaming) */
+.neural-inline-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.neural-canvas.inline {
+  width: 28px;
+  height: 28px;
+}
+
+.neural-inline-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FF55BD;
+  box-shadow: 0 0 8px #FF55BD;
+  animation: neuralDotPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes neuralDotPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}

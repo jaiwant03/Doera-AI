@@ -1,0 +1,34 @@
+[
+  {
+    "_id": "6af8302dc785aa22d3dd9ca3",
+    "name": "Jaiwant",
+    "email": "abc@gmail.com",
+    "password": "$2a$10$7aONmt.PjdtxEgt8fAI7B.7tuBAA3Iafg0a2IJ4N.7E2finVrOpx2",
+    "role": "user",
+    "subscription": {
+      "plan": "free",
+      "status": "active",
+      "stripeCustomerId": null,
+      "stripeSubscriptionId": null,
+      "currentPeriodEnd": null,
+      "cancelAtPeriodEnd": false
+    },
+    "usage": {
+      "totalLifetimeRequests": 12,
+      "freeRequestsLimit": 15,
+      "monthlyRequests": 12,
+      "monthlyTokens": 0,
+      "lastRequestAt": "2026-11-14T11:14:07.498Z"
+    },
+    "preferences": {
+      "defaultLanguage": "en",
+      "requireApprovalForEmail": true,
+      "requireApprovalForMessaging": true,
+      "requireApprovalForBooking": true,
+      "memoryEnabled": true
+    },
+    "createdAt": "2026-11-14T09:55:57.525Z",
+    "updatedAt": "2026-11-14T11:14:07.499Z",
+    "__v": 0
+  }
+]

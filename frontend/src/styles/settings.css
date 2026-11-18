@@ -1,0 +1,502 @@
+/* ==============================================================================
+   DOERA AI — Settings & Integrations Styles (Pure CSS)
+   Theme: Luxury Black (#08050B) + Pink (#F12D98) + Purple (#9C52E8)
+   Precision Alignment & Clean Grid Structure
+   ============================================================================== */
+
+.doera-settings-page {
+  min-height: 100vh;
+  background-color: var(--bg-canvas, #08050B);
+  padding: 36px 20px 80px;
+  font-family: var(--font-sans);
+  color: #EDE4EE;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.doera-settings-container {
+  max-width: 880px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Top Navbar */
+.doera-settings-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.doera-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FF55BD;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.doera-back-link:hover {
+  color: #FFFFFF;
+  text-shadow: 0 0 12px rgba(255, 85, 189, 0.6);
+  transform: translateX(-2px);
+}
+
+/* Header Card */
+.doera-settings-card-header {
+  background: #12091A;
+  padding: 22px 28px;
+  border-radius: 16px;
+  border: 1px solid #281432;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.doera-settings-title {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.doera-settings-subtitle {
+  font-size: 13px;
+  color: #8C7B94;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.doera-btn-save {
+  padding: 9px 20px;
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
+  color: #FFFFFF;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(241, 45, 152, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.doera-btn-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 24px rgba(241, 45, 152, 0.7);
+  filter: brightness(1.1);
+}
+
+/* Segmented Tabs Bar */
+.doera-settings-tabs-wrapper {
+  display: flex;
+  background: #0E0715;
+  border: 1px solid #281432;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  width: fit-content;
+}
+
+.doera-settings-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #A391AC;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.doera-settings-tab:hover {
+  color: #FFFFFF;
+  background: #180C23;
+}
+
+.doera-settings-tab.active {
+  background: rgba(241, 45, 152, 0.16);
+  border-color: rgba(241, 45, 152, 0.4);
+  color: #FF55BD;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(241, 45, 152, 0.2);
+}
+
+/* Settings Main Panel Card */
+.doera-settings-card {
+  background: #12091A;
+  border: 1px solid #281432;
+  border-radius: 16px;
+  padding: 12px 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+}
+
+/* Integration List & Grid Alignment */
+.doera-integration-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 8px;
+  border-bottom: 1px solid #1E0F28;
+  gap: 20px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.doera-integration-row:last-child {
+  border-bottom: none;
+}
+
+.doera-integration-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Left: Icon + Content */
+.doera-integration-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.doera-integration-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.doera-integration-icon-box.discovery {
+  background: rgba(241, 45, 152, 0.12);
+  border: 1px solid rgba(241, 45, 152, 0.3);
+  color: #FF55BD;
+}
+
+.doera-integration-icon-box.email {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #FB7185;
+}
+
+.doera-integration-icon-box.whatsapp {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34D399;
+}
+
+.doera-integration-icon-box.calendar {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #FBBF24;
+}
+
+.doera-integration-icon-box.n8n {
+  background: rgba(156, 82, 232, 0.12);
+  border: 1px solid rgba(156, 82, 232, 0.3);
+  color: #C084FC;
+}
+
+.doera-integration-icon-box.llm {
+  background: rgba(241, 45, 152, 0.12);
+  border: 1px solid rgba(241, 45, 152, 0.3);
+  color: #FF55BD;
+}
+
+.doera-integration-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.doera-integration-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.doera-integration-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.doera-badge-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.doera-badge-status.active,
+.doera-badge-status.success {
+  background: rgba(16, 185, 129, 0.14);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.doera-badge-status.pending {
+  background: rgba(107, 114, 128, 0.15);
+  color: #A391AC;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.doera-integration-desc {
+  font-size: 12px;
+  color: #8C7B94;
+  margin: 4px 0 0 0;
+  line-height: 1.45;
+}
+
+.doera-integration-desc code {
+  background: #1B0E25;
+  color: #FF7BD5;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid rgba(241, 45, 152, 0.25);
+}
+
+/* Right: Fixed Uniform Action Buttons / Pills */
+.doera-integration-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.doera-btn-action-outline {
+  width: 140px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid #361744;
+  border-radius: 8px;
+  background: #170B20;
+  color: #EDE4EE;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.doera-btn-action-outline:hover:not(:disabled) {
+  background: #251035;
+  border-color: #F12D98;
+  color: #FFFFFF;
+  box-shadow: 0 0 14px rgba(241, 45, 152, 0.3);
+  transform: translateY(-1px);
+}
+
+.doera-btn-action-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.doera-pill-model-spec {
+  width: 140px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #100717;
+  border: 1px solid #2B1634;
+  border-radius: 8px;
+  color: #A391AC;
+  font-family: monospace;
+  font-size: 11.5px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Preferences Tab Styling */
+.doera-pref-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 8px;
+  border-bottom: 1px solid #1E0F28;
+}
+
+.doera-pref-section:last-child {
+  border-bottom: none;
+}
+
+.doera-pref-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.doera-pref-desc {
+  font-size: 12px;
+  color: #8C7B94;
+  margin: 0;
+}
+
+.doera-select-control {
+  width: 260px;
+  background: #160B20;
+  border: 1px solid #32173F;
+  border-radius: 8px;
+  color: #EDE4EE;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.doera-select-control:focus {
+  border-color: #F12D98;
+  box-shadow: 0 0 10px rgba(241, 45, 152, 0.25);
+}
+
+.doera-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.doera-toggle-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.doera-toggle-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #F12D98;
+  cursor: pointer;
+}
+
+/* Account Tab Styling */
+.doera-account-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 8px 20px;
+  border-bottom: 1px solid #1E0F28;
+}
+
+.doera-account-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #F12D98, #9C52E8);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  box-shadow: 0 0 16px rgba(241, 45, 152, 0.35);
+}
+
+.doera-account-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 20px 8px;
+}
+
+.doera-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doera-form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #A391AC;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doera-input-control {
+  background: #160B20;
+  border: 1px solid #32173F;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #EDE4EE;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.doera-input-control:focus:not(:disabled) {
+  border-color: #F12D98;
+  box-shadow: 0 0 10px rgba(241, 45, 152, 0.25);
+}
+
+.doera-input-control:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #0E0715;
+}
+
+.doera-account-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 8px 8px;
+  border-top: 1px solid #1E0F28;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.doera-btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #F87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.doera-btn-logout:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #EF4444;
+  color: #FFFFFF;
+}

@@ -1,0 +1,172 @@
+/* ==============================================================================
+   DOERA AI — Luxury Black & Neon Pink Model Selector (Pure CSS)
+   ============================================================================== */
+
+.doera-model-selector-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 100;
+}
+
+.doera-model-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #120A14;
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 9999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.doera-model-pill-btn:hover {
+  background: #1A0F1E;
+  border-color: var(--neon-pink, #FF55BD);
+  transform: translateY(-1px);
+}
+
+.doera-model-pill-btn.active {
+  background: #1A0F1E;
+  border-color: var(--neon-pink, #FF55BD);
+  box-shadow: 0 0 12px rgba(255, 85, 189, 0.25);
+}
+
+.doera-model-icon {
+  color: var(--neon-pink, #FF55BD);
+}
+
+.doera-model-name {
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.doera-model-provider {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--neon-pink, #FF55BD);
+  background: rgba(255, 85, 189, 0.14);
+  border: 1px solid rgba(255, 85, 189, 0.3);
+  padding: 1.5px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.doera-model-chevron {
+  color: var(--text-muted, #807486);
+  transition: transform 0.2s ease;
+}
+
+.doera-model-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu — Floats Above Composer */
+.doera-model-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  min-width: 310px;
+  max-width: 360px;
+  background: #151018;
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px -4px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 85, 189, 0.12);
+  padding: 10px;
+  z-index: 99999;
+  animation: doeraMenuPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes doeraMenuPop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.doera-model-dropdown-header {
+  padding: 6px 10px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted, #807486);
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border-dark, #302535);
+  margin-bottom: 6px;
+}
+
+.doera-model-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doera-model-option-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary, #B9AEBE);
+}
+
+.doera-model-option-card:hover {
+  background: rgba(255, 85, 189, 0.08);
+  border-color: rgba(255, 85, 189, 0.2);
+  color: #FFFFFF;
+}
+
+.doera-model-option-card.selected {
+  background: rgba(197, 58, 159, 0.16);
+  border-color: var(--neon-pink, #FF55BD);
+  color: #FFFFFF;
+}
+
+.doera-model-opt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doera-model-opt-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doera-model-opt-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.doera-model-opt-desc {
+  font-size: 11px;
+  color: var(--text-muted, #807486);
+}
+
+.doera-model-opt-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #B9AEBE);
+}
+
+.doera-model-check-icon {
+  color: var(--neon-pink, #FF55BD);
+}

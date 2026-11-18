@@ -1,0 +1,124 @@
+/* DOERA AI — Follow-Up Tracker Card (Luxury Black + Neon Pink) */
+
+.doera-followup-card {
+  margin: 14px 0;
+  padding: 16px;
+  background: #09040D;
+  border: 1px solid #2B1238;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(156, 82, 232, 0.2);
+  font-family: inherit;
+  color: #EDE4EE;
+  transition: all 0.2s ease;
+}
+
+.doera-followup-card:hover {
+  border-color: rgba(156, 82, 232, 0.45);
+}
+
+.doera-followup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(156, 82, 232, 0.15);
+}
+
+.doera-followup-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doera-followup-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(156, 82, 232, 0.2);
+  color: #C084FC;
+}
+
+.doera-followup-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.doera-followup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  font-size: 12.5px;
+  margin-bottom: 12px;
+}
+
+.doera-followup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.doera-followup-label {
+  font-size: 11px;
+  color: #A38FA8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+.doera-followup-value {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.doera-followup-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.doera-btn-check-now {
+  background: linear-gradient(135deg, #9C52E8 0%, #7C3AED 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.doera-btn-check-now:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.doera-btn-stop {
+  background: transparent;
+  color: #A38FA8;
+  border: 1px solid #361744;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.doera-btn-stop:hover:not(:disabled) {
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}

@@ -1,0 +1,126 @@
+{
+  "name": "DOERA AI - 04 - Provider Response Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "provider-response",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-response-webhook",
+      "name": "Webhook - Provider Response",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "providerName",
+              "value": "={{ $json.body.fromName || 'Service Provider' }}"
+            },
+            {
+              "name": "replyText",
+              "value": "={{ $json.body.text || $json.body.message }}"
+            },
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-extract-reply",
+      "name": "Extract Provider Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/webhooks/workflow",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.taskId }}"
+            },
+            {
+              "name": "status",
+              "value": "EXECUTING"
+            },
+            {
+              "name": "outcome",
+              "value": "={{ { responseReceived: $json.replyText, provider: $json.providerName } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-post-to-express",
+      "name": "Update Task in Express",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"received\": true,\n  \"status\": \"PROCESSED\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-ack-reply",
+      "name": "Ack 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Provider Response": {
+      "main": [
+        [
+          {
+            "node": "Extract Provider Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Provider Reply": {
+      "main": [
+        [
+          {
+            "node": "Update Task in Express",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task in Express": {
+      "main": [
+        [
+          {
+            "node": "Ack 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

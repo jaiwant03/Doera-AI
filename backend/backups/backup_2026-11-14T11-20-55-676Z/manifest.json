@@ -1,0 +1,23 @@
+{
+  "database": "doera-ai",
+  "timestamp": "2026-11-14T11:20:55.744Z",
+  "collections": {
+    "workflows": 0,
+    "notifications": 0,
+    "workflowexecutions": 0,
+    "payments": 0,
+    "tasks": 0,
+    "memories": 0,
+    "projects": 0,
+    "usagerecords": 12,
+    "integrations": 0,
+    "messages": 2,
+    "filemetadatas": 0,
+    "taskevents": 20,
+    "subscriptions": 0,
+    "researchsessions": 0,
+    "conversations": 1,
+    "agentexecutions": 0,
+    "users": 1
+  }
+}

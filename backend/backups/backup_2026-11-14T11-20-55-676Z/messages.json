@@ -1,0 +1,32 @@
+[
+  {
+    "_id": "6af8427fd995ca7d8bf841a6",
+    "conversationId": "6af8427fd995ca7d8bf841a4",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "sender": "user",
+    "content": "Audit test message",
+    "attachments": [],
+    "taskId": null,
+    "feedback": null,
+    "status": "complete",
+    "modelUsed": null,
+    "createdAt": "2026-11-14T11:14:07.564Z",
+    "updatedAt": "2026-11-14T11:14:07.564Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af84280d995ca7d8bf841a9",
+    "conversationId": "6af8427fd995ca7d8bf841a4",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "sender": "assistant",
+    "content": "**Message received!**  \n\nI’m ready to help with any audit‑related tasks you have. Just let me know what you need—e.g.:\n\n- **Reviewing** a set of financial statements or controls  \n- **Preparing** audit workpapers or checklists  \n- **Generating** a summary of findings or recommendations  \n- **Automating** data extraction or analysis  \n\nFeel free to share details or upload the relevant documents, and I’ll get started.",
+    "taskId": null,
+    "feedback": null,
+    "status": "complete",
+    "modelUsed": null,
+    "attachments": [],
+    "createdAt": "2026-11-14T11:14:08.592Z",
+    "updatedAt": "2026-11-14T11:14:08.592Z",
+    "__v": 0
+  }
+]

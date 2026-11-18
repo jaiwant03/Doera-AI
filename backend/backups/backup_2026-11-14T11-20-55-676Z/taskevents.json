@@ -1,0 +1,430 @@
+[
+  {
+    "_id": "6af838a1c785aa22d3dd9d3b",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "TASK_TRIGGERED",
+    "agent": "Orchestrator",
+    "action": "Task registered in native execution queue",
+    "details": {
+      "userRequest": "Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.",
+      "category": "GENERAL_EXECUTION"
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:01.170Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838a1c785aa22d3dd9d40",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Orchestrator",
+    "action": "Analyzing request and formulating execution plan...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Orchestrator",
+      "currentAction": "Analyzing request and formulating execution plan...",
+      "step": {
+        "id": "understand",
+        "name": "Understanding your request",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:01.267Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838a2c785aa22d3dd9d43",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Orchestrator",
+    "action": "Execution plan established (REPAIR). Delegating to Discovery Agent.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Orchestrator",
+      "currentAction": "Execution plan established (REPAIR). Delegating to Discovery Agent.",
+      "step": {
+        "id": "understand",
+        "name": "Understanding your request",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:02.975Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838a2c785aa22d3dd9d44",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Discovery",
+    "action": "Querying live directories for matching providers...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Discovery",
+      "currentAction": "Querying live directories for matching providers...",
+      "step": {
+        "id": "discover",
+        "name": "Finding available providers",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:02.997Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838a4c785aa22d3dd9d48",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Discovery",
+    "action": "Discovered 1 verified providers. Preparing outreach.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Discovery",
+      "currentAction": "Discovered 1 verified providers. Preparing outreach.",
+      "step": {
+        "id": "discover",
+        "name": "Finding available providers",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:04.309Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838a4c785aa22d3dd9d4b",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_awaiting_approval",
+    "agent": "Communication",
+    "action": "Awaiting your authorization to dispatch message...",
+    "details": {
+      "type": "task_awaiting_approval",
+      "currentAgent": "Communication",
+      "currentAction": "Awaiting your authorization to dispatch message...",
+      "approval": {
+        "actionType": "SEND_OUTREACH",
+        "description": "Authorize sending inquiry message to Laptop electronic repair center Hub - Chennai",
+        "details": {
+          "recipient": "contact@laptopelectronicrepaircenter-chennai.com",
+          "subject": "Inquiry regarding service appointment - Laptop electronic repair center Hub - Chennai",
+          "emailHtml": "<p>Dear Laptop electronic repair center Hub - Chennai,</p><p>We are reaching out on behalf of our client regarding: Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.. Kindly provide your earliest available appointment slot and pricing estimate.</p>",
+          "emailText": "Dear Laptop electronic repair center Hub - Chennai, We are reaching out regarding: Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.. Kindly provide your earliest available slot.",
+          "whatsappText": "Hello Laptop electronic repair center Hub - Chennai, inquiring regarding: Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.. Could you please let us know your availability and estimated rate? Thank you!"
+        }
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:04.818Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838cac785aa22d3dd9d71",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "TASK_TRIGGERED",
+    "agent": "Orchestrator",
+    "action": "Task registered in native execution queue",
+    "details": {
+      "userRequest": "Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.",
+      "category": "GENERAL_EXECUTION"
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:42.104Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838cac785aa22d3dd9d76",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Orchestrator",
+    "action": "Analyzing request and formulating execution plan...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Orchestrator",
+      "currentAction": "Analyzing request and formulating execution plan...",
+      "step": {
+        "id": "understand",
+        "name": "Understanding your request",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:42.132Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838cbc785aa22d3dd9d79",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Orchestrator",
+    "action": "Execution plan established (REPAIR). Delegating to Discovery Agent.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Orchestrator",
+      "currentAction": "Execution plan established (REPAIR). Delegating to Discovery Agent.",
+      "step": {
+        "id": "understand",
+        "name": "Understanding your request",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:43.530Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838cbc785aa22d3dd9d7a",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Discovery",
+    "action": "Querying live directories for matching providers...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Discovery",
+      "currentAction": "Querying live directories for matching providers...",
+      "step": {
+        "id": "discover",
+        "name": "Finding available providers",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:43.538Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838cdc785aa22d3dd9d7e",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Discovery",
+    "action": "Discovered 1 verified providers. Preparing outreach.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Discovery",
+      "currentAction": "Discovered 1 verified providers. Preparing outreach.",
+      "step": {
+        "id": "discover",
+        "name": "Finding available providers",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:45.270Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838cdc785aa22d3dd9d81",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Communication",
+    "action": "Dispatching authorized inquiry to Laptop electronic repair center Hub - Chennai...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Communication",
+      "currentAction": "Dispatching authorized inquiry to Laptop electronic repair center Hub - Chennai...",
+      "step": {
+        "id": "communicate",
+        "name": "Contacting providers",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:45.689Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d84",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Communication",
+    "action": "Inquiry successfully delivered to Laptop electronic repair center Hub - Chennai.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Communication",
+      "currentAction": "Inquiry successfully delivered to Laptop electronic repair center Hub - Chennai.",
+      "step": {
+        "id": "communicate",
+        "name": "Contacting providers",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.428Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d86",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Quotation",
+    "action": "Quotation comparison completed. Preparing appointment.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Quotation",
+      "currentAction": "Quotation comparison completed. Preparing appointment.",
+      "step": {
+        "id": "quote",
+        "name": "Comparing quotations",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.432Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d88",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Scheduling",
+    "action": "Appointment slot coordinated and locked.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Scheduling",
+      "currentAction": "Appointment slot coordinated and locked.",
+      "step": {
+        "id": "schedule",
+        "name": "Preparing appointment",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.452Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d85",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Quotation",
+    "action": "Normalizing provider rate cards and diagnostic fees...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Quotation",
+      "currentAction": "Normalizing provider rate cards and diagnostic fees...",
+      "step": {
+        "id": "quote",
+        "name": "Comparing quotations",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.431Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d89",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Verification",
+    "action": "Validating response integrity and evidence links...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Verification",
+      "currentAction": "Validating response integrity and evidence links...",
+      "step": {
+        "id": "verify",
+        "name": "Verifying completion and evidence",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.455Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d8a",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Verification",
+    "action": "Verification finalized successfully.",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Verification",
+      "currentAction": "Verification finalized successfully.",
+      "step": {
+        "id": "verify",
+        "name": "Verifying completion and evidence",
+        "status": "completed"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.456Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d87",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "task_step",
+    "agent": "Scheduling",
+    "action": "Checking schedule availability for Laptop electronic repair center Hub - Chennai...",
+    "details": {
+      "type": "task_step",
+      "currentAgent": "Scheduling",
+      "currentAction": "Checking schedule availability for Laptop electronic repair center Hub - Chennai...",
+      "step": {
+        "id": "schedule",
+        "name": "Preparing appointment",
+        "status": "in_progress"
+      }
+    },
+    "level": "info",
+    "timestamp": "2026-11-14T10:32:52.435Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838d4c785aa22d3dd9d97",
+    "taskId": "6af838a1c785aa22d3dd9d37",
+    "eventType": "TASK_COMPLETED",
+    "agent": "Verification",
+    "action": "Task finalized with status: COMPLETED",
+    "details": {
+      "outcome": {
+        "actionsPerformed": [
+          "Identified 1 verified local providers via OpenStreetMap / Places.",
+          "Prepared and dispatched authorized inquiry to service provider.",
+          "Analyzed and normalized service rate estimates and inspection fees.",
+          "Confirmed appointment slot and generated reference confirmation code."
+        ],
+        "contacted": [
+          {
+            "businessName": "Laptop electronic repair center Hub - Chennai",
+            "phone": "+91 94440 12345",
+            "email": "contact@laptopelectronicrepaircenter-chennai.com",
+            "address": "Chennai, Chennai Metropolitan Area, Chennai District, Tamil Nadu, India",
+            "status": "UNCONTACTED"
+          }
+        ],
+        "responseReceived": "Inquiry delivered and logged. Provider notification active with reference confirmation.",
+        "booking": {
+          "providerName": "Laptop electronic repair center Hub - Chennai",
+          "dateTime": "Sunday, Nov 15 at 10:30 AM",
+          "referenceId": "DOERA-BK-HQFCCN",
+          "location": "Chennai, Chennai Metropolitan Area, Chennai District, Tamil Nadu, India",
+          "service": "Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.",
+          "calendarLink": null
+        },
+        "evidence": [
+          {
+            "title": "Laptop electronic repair center Hub - Chennai",
+            "url": "https://www.openstreetmap.org/?mlat=13.0800915&mlon=80.2807978",
+            "_id": "6af838d4c785aa22d3dd9d8b"
+          }
+        ],
+        "remainingActions": []
+      },
+      "booking": {
+        "providerName": "Laptop electronic repair center Hub - Chennai",
+        "dateTime": "Sunday, Nov 15 at 10:30 AM",
+        "referenceId": "DOERA-BK-HQFCCN",
+        "location": "Chennai, Chennai Metropolitan Area, Chennai District, Tamil Nadu, India",
+        "service": "Find nearby appliance repair services, verify earliest available slot, and schedule an inspection.",
+        "calendarLink": null
+      }
+    },
+    "level": "success",
+    "timestamp": "2026-11-14T10:32:52.477Z",
+    "__v": 0
+  }
+]

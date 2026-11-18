@@ -1,0 +1,148 @@
+/* DOERA AI — Proof of Execution Card (Luxury Black + Neon Pink) */
+
+.doera-proof-card {
+  margin: 14px 0;
+  padding: 16px;
+  background: #09040D;
+  border: 1px solid #2B1238;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(241, 45, 152, 0.15);
+  font-family: inherit;
+  color: #EDE4EE;
+  transition: all 0.2s ease;
+}
+
+.doera-proof-card:hover {
+  border-color: rgba(241, 45, 152, 0.4);
+}
+
+.doera-proof-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(241, 45, 152, 0.12);
+}
+
+.doera-proof-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doera-proof-badge-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(241, 45, 152, 0.15);
+  color: #F12D98;
+}
+
+.doera-proof-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.2px;
+}
+
+.doera-proof-status-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-confirmed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.status-delivered, .status-accepted {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38BDF8;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+}
+
+.status-submitted, .status-approved {
+  background: rgba(168, 85, 247, 0.15);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.status-failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.doera-proof-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  font-size: 12.5px;
+}
+
+.doera-proof-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.doera-proof-label {
+  font-size: 11px;
+  color: #A38FA8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+.doera-proof-value {
+  color: #FFFFFF;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.doera-proof-ref {
+  font-family: monospace;
+  color: #F12D98;
+  background: rgba(241, 45, 152, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.doera-proof-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #8C7892;
+}
+
+.doera-proof-audit-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #10B981;
+  font-weight: 600;
+}

@@ -1,0 +1,86 @@
+{
+  "name": "DOERA AI - 07 - Task Completion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-completion-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-completion-webhook",
+      "name": "Webhook - Task Completion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.body.status || 'COMPLETED' }}"
+            },
+            {
+              "name": "summary",
+              "value": "={{ $json.body.summary || 'Task successfully verified and completed.' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-completion",
+      "name": "Format Completion",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"finalized\": true,\n  \"taskId\": \"{{ $json.taskId }}\",\n  \"status\": \"{{ $json.status }}\",\n  \"summary\": \"{{ $json.summary }}\",\n  \"completedAt\": \"{{ $now.toISO() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-completion",
+      "name": "Respond Completion Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Task Completion": {
+      "main": [
+        [
+          {
+            "node": "Format Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Completion": {
+      "main": [
+        [
+          {
+            "node": "Respond Completion Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

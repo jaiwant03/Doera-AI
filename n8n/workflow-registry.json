@@ -1,0 +1,67 @@
+{
+  "project": "DOERA AI",
+  "version": "2.0.0",
+  "architecture": "Unified Master Orchestrator",
+  "description": "All-in-one automation workflow consolidating all 8 operations into a single n8n workflow canvas.",
+  "masterWorkflow": {
+    "name": "DOERA AI - Master Orchestrator",
+    "file": "doera-master-orchestrator.json",
+    "status": "active",
+    "operations": [
+      {
+        "id": "op-01-task-trigger",
+        "name": "Task Execution Trigger",
+        "webhookPath": "task-trigger",
+        "method": "POST"
+      },
+      {
+        "id": "op-02-email-communication",
+        "name": "Email Communication",
+        "webhookPath": "email-send",
+        "method": "POST"
+      },
+      {
+        "id": "op-03-whatsapp-communication",
+        "name": "WhatsApp Communication",
+        "webhookPath": "whatsapp-send",
+        "method": "POST"
+      },
+      {
+        "id": "op-04-provider-response",
+        "name": "Provider Response Handler",
+        "webhookPath": "provider-response",
+        "method": "POST"
+      },
+      {
+        "id": "op-05-scheduling",
+        "name": "Smart Scheduling",
+        "webhookPath": "scheduling-trigger",
+        "method": "POST"
+      },
+      {
+        "id": "op-06-followup-reminders",
+        "name": "Follow-up Reminders",
+        "webhookPath": "followup-reminders",
+        "method": "POST"
+      },
+      {
+        "id": "op-07-failure-recovery",
+        "name": "Failure Recovery & Failover",
+        "webhookPath": "failure-recovery",
+        "method": "POST"
+      },
+      {
+        "id": "op-08-task-completion",
+        "name": "Task Completion",
+        "webhookPath": "task-completion-trigger",
+        "method": "POST"
+      },
+      {
+        "id": "op-09-unified-master",
+        "name": "Unified Master Entry",
+        "webhookPath": "doera-master",
+        "method": "POST"
+      }
+    ]
+  }
+}

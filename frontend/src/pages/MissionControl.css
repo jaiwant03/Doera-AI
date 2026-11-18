@@ -1,0 +1,301 @@
+/* DOERA AI — Mission Control Dashboard (Luxury Black + Neon Pink) */
+
+.doera-mission-page {
+  padding: 24px 36px 60px;
+  max-width: 1300px;
+  margin: 0 auto;
+  color: #EDE4EE;
+  font-family: inherit;
+  min-height: 100vh;
+}
+
+/* Top Navbar with Back to Chat */
+.doera-mission-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #1E0F28;
+}
+
+.doera-mission-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FF55BD;
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: rgba(241, 45, 152, 0.08);
+  border: 1px solid rgba(241, 45, 152, 0.25);
+  transition: all 0.2s ease;
+}
+
+.doera-mission-back-btn:hover {
+  color: #FFFFFF;
+  background: rgba(241, 45, 152, 0.22);
+  border-color: #F12D98;
+  box-shadow: 0 0 14px rgba(241, 45, 152, 0.35);
+  transform: translateX(-2px);
+}
+
+.doera-mission-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #EDE4EE;
+  letter-spacing: 0.02em;
+}
+
+.doera-mission-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.doera-mission-headline {
+  font-size: 26px;
+  font-weight: 800;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doera-mission-subline {
+  font-size: 13.5px;
+  color: #A38FA8;
+  margin-top: 4px;
+}
+
+/* Stats Row */
+.doera-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.doera-stat-card {
+  background: #0D0714;
+  border: 1px solid #23112E;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.doera-stat-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.doera-stat-label {
+  font-size: 11.5px;
+  color: #A38FA8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* Tabs & Filter Bar */
+.doera-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.doera-tabs {
+  display: flex;
+  gap: 8px;
+  background: #0B0610;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #23112E;
+}
+
+.doera-tab-btn {
+  background: none;
+  border: none;
+  color: #A38FA8;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doera-tab-btn.active {
+  background: rgba(241, 45, 152, 0.15);
+  color: #F12D98;
+  border: 1px solid rgba(241, 45, 152, 0.3);
+}
+
+.doera-search-input {
+  background: #0D0714;
+  border: 1px solid #2B1238;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #FFFFFF;
+  font-size: 13px;
+  width: 260px;
+  outline: none;
+}
+
+.doera-search-input:focus {
+  border-color: #F12D98;
+}
+
+/* Mission List */
+.doera-missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.doera-mission-item {
+  background: #0B0610;
+  border: 1px solid #23112E;
+  border-radius: 14px;
+  padding: 20px 24px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.doera-mission-item:hover {
+  border-color: rgba(241, 45, 152, 0.35);
+}
+
+.doera-mission-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.doera-mission-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+}
+
+.doera-mission-meta {
+  font-size: 12px;
+  color: #A38FA8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Subtasks Progress */
+.doera-progress-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: #1A0D23;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.doera-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #F12D98 0%, #9C52E8 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.doera-subtasks-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.doera-subtask-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #14091F;
+  border: 1px solid #2B1238;
+  color: #CDBECD;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.doera-subtask-chip.completed {
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.doera-subtask-chip.in_progress {
+  color: #F12D98;
+  border-color: rgba(241, 45, 152, 0.3);
+}
+
+/* Mission Dossier Modal */
+.doera-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 2, 6, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.doera-dossier-modal {
+  background: #09040D;
+  border: 1px solid #361744;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(241, 45, 152, 0.15);
+  padding: 28px;
+}
+
+/* Timeline */
+.doera-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  position: relative;
+  padding-left: 18px;
+  border-left: 2px solid #23112E;
+}
+
+.doera-timeline-item {
+  position: relative;
+  font-size: 12.5px;
+}
+
+.doera-timeline-dot {
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #F12D98;
+  border: 2px solid #09040D;
+}

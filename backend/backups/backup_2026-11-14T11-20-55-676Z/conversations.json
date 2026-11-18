@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "6af8427fd995ca7d8bf841a4",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "title": "Audit test message",
+    "summary": "",
+    "isPinned": false,
+    "status": "active",
+    "selectedModel": "openai/gpt-oss-120b",
+    "lastMessageAt": "2026-11-14T11:14:07.552Z",
+    "createdAt": "2026-11-14T11:14:07.555Z",
+    "updatedAt": "2026-11-14T11:14:07.555Z",
+    "__v": 0
+  }
+]

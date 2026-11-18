@@ -1,0 +1,899 @@
+import { StateGraph, Annotation, START, END } from '@langchain/langgraph';
+import orchestratorAgent from '../agents/orchestratorAgent.js';
+import researchAgent from '../agents/researchAgent.js';
+import locationAgent from '../agents/locationAgent.js';
+import discoveryAgent from '../agents/discoveryAgent.js';
+import communicationAgent from '../agents/communicationAgent.js';
+import executionAgent from '../agents/executionAgent.js';
+import quotationAgent from '../agents/quotationAgent.js';
+import comparisonAgent from '../agents/comparisonAgent.js';
+import documentAgent from '../agents/documentAgent.js';
+import dataAnalysisAgent from '../agents/dataAnalysisAgent.js';
+import schedulingAgent from '../agents/schedulingAgent.js';
+import verificationAgent from '../agents/verificationAgent.js';
+import followUpAgent from '../agents/followUpAgent.js';
+import recoveryAgent from '../agents/recoveryAgent.js';
+import universalIntentService from '../services/universalIntentService.js';
+
+import Approval from '../models/Approval.js';
+import TaskEvent from '../models/TaskEvent.js';
+import approvalService from '../services/approvalService.js';
+import { config } from '../config/env.js';
+import { logger } from '../utils/logger.js';
+
+// Define the Comprehensive Shared State Annotation for LangGraph
+const TaskStateAnnotation = Annotation.Root({
+  taskId: Annotation({ reducer: (x, y) => y ?? x, default: () => '' }),
+  taskDocId: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  userId: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  userRequest: Annotation({ reducer: (x, y) => y ?? x, default: () => '' }),
+  category: Annotation({ reducer: (x, y) => y ?? x, default: () => 'GENERAL_EXECUTION' }),
+  status: Annotation({ reducer: (x, y) => y ?? x, default: () => 'RECEIVED' }),
+  currentAgent: Annotation({ reducer: (x, y) => y ?? x, default: () => 'Orchestrator' }),
+  currentAction: Annotation({ reducer: (x, y) => y ?? x, default: () => '' }),
+  requiredAgents: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
+  subtasks: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
+  steps: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
+  externalContacts: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
+  quotations: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
+  bookingDetails: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  locationData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  researchSummary: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  executionEvidence: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  followUpData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  pendingApproval: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  requiresHumanApproval: Annotation({ reducer: (x, y) => y ?? x, default: () => false }),
+  isApproved: Annotation({ reducer: (x, y) => y ?? x, default: () => false }),
+  outcome: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  attachments: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
+  discoveredData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  comparisonMatrix: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  intentAnalysis: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  dataPayload: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  error: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  userIntegration: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  onEvent: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+});
+
+/**
+ * Helper to log persistent TaskEvents for Mission Control live timeline
+ */
+const logMissionEvent = async (state, eventType, agentName, action, details = {}) => {
+  state.onEvent?.({
+    type: eventType,
+    currentAgent: agentName,
+    currentAction: action,
+    step: details.step,
+  });
+
+  if (state.taskId) {
+    await TaskEvent.create({
+      taskId: state.taskId,
+      eventType,
+      agentName,
+      agent: agentName,
+      action,
+      message: action,
+      details,
+      timestamp: new Date(),
+    }).catch(() => {});
+  }
+};
+
+/**
+ * 1. SUPERVISOR / PLANNER NODE
+ */
+const orchestratorNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Supervisor/Planner Node analyzing: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Planner',
+    'Analyzing requirements and establishing dynamic agent collaboration plan...',
+    { step: { id: 'understand', name: 'Planning task requirements', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const plan = await orchestratorAgent.plan(state);
+
+  const updatedSteps = (plan.steps || []).map((s) => (s.id === 'understand' ? { ...s, status: 'completed' } : s));
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Planner',
+    `Dynamic plan established (${plan.category}). Activated agents: ${plan.requiredAgents.join(', ')}.`,
+    { step: { id: 'understand', name: 'Planning task requirements', status: 'completed', timestamp: new Date() } }
+  );
+
+  let nextAgent = 'Verification';
+  if (plan.requiredAgents.includes('Document')) nextAgent = 'Document';
+  else if (plan.requiredAgents.includes('DataAnalysis')) nextAgent = 'DataAnalysis';
+  else if (plan.requiredAgents.includes('Location')) nextAgent = 'Location';
+  else if (plan.requiredAgents.includes('Research')) nextAgent = 'Research';
+  else if (plan.requiredAgents.includes('Comparison')) nextAgent = 'Comparison';
+  else if (plan.requiredAgents.includes('Communication')) nextAgent = 'Communication';
+
+  return {
+    category: plan.category,
+    requiredAgents: plan.requiredAgents,
+    subtasks: plan.subtasks,
+    steps: updatedSteps,
+    intentAnalysis: plan.intent,
+    currentAgent: nextAgent,
+    currentAction: `Delegating execution to ${nextAgent} Agent.`,
+    status: 'RUNNING',
+  };
+};
+
+/**
+ * 2. LOCATION INTELLIGENCE NODE
+ */
+const locationNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Location Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Location',
+    'Discovering verified real-world places and geocoding coordinates...',
+    { step: { id: 'location', name: 'Location intelligence and mapping', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  try {
+    const locResult = await locationAgent.execute(state);
+
+    const steps = state.steps.map((s) =>
+      s.agent === 'Location' || s.id === 'location'
+        ? {
+            ...s,
+            status: 'completed',
+            details: `Identified ${locResult.places?.length || 0} verified geographic locations. Map layer generated.`,
+            timestamp: new Date(),
+          }
+        : s
+    );
+
+    await logMissionEvent(
+      state,
+      'STEP_PROGRESS',
+      'Location',
+      locResult.routeData
+        ? `Route calculated: ${locResult.routeData.distanceKm} km turn-by-turn road polyline ready.`
+        : `Discovered ${locResult.places?.length || 0} verified places on interactive map.`,
+      { step: { id: 'location', name: 'Location intelligence and mapping', status: 'completed', timestamp: new Date() } }
+    );
+
+    return {
+      locationData: locResult.locationData,
+      steps,
+      currentAgent: 'Research',
+      currentAction: 'Merging geographic discovery with authentic research data...',
+    };
+  } catch (err) {
+    logger.warn('[Location Node] Fallback notice:', err.message);
+    return { currentAgent: 'Research' };
+  }
+};
+
+/**
+ * 3. RESEARCH NODE
+ */
+const researchNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Research Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Research',
+    'Investigating authentic sources and validating verified provider attributes...',
+    { step: { id: 'research', name: 'Deep research and fact-checking', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  try {
+    const [researchRes, discoveryRes] = await Promise.all([
+      researchAgent.conductResearch(state),
+      discoveryAgent.execute(state).catch(() => ({ output: { contacts: [] } })),
+    ]);
+
+    const contacts = discoveryRes.output?.contacts || [];
+
+    const steps = state.steps.map((s) =>
+      s.agent === 'Research' || s.id === 'research' || s.id === 'discover'
+        ? {
+            ...s,
+            status: 'completed',
+            details:
+              contacts.length > 0
+                ? `Discovered ${contacts.length} verified providers with documented citations.`
+                : 'Factual research compiled with verified citations.',
+            timestamp: new Date(),
+          }
+        : s
+    );
+
+    await logMissionEvent(
+      state,
+      'STEP_PROGRESS',
+      'Research',
+      `Research completed with ${researchRes.sources?.length || 0} citations. ${contacts.length} verified providers cataloged.`,
+      { step: { id: 'research', name: 'Deep research and fact-checking', status: 'completed', timestamp: new Date() } }
+    );
+
+    return {
+      researchSummary: researchRes.summary,
+      externalContacts: contacts,
+      steps,
+      currentAgent: 'Orchestrator',
+      currentAction: 'Synthesizing verified research and location intelligence...',
+    };
+  } catch (err) {
+    logger.error('[Research Node] Error:', err.message);
+    return {
+      error: { message: err.message, recoverable: true },
+      currentAgent: 'Recovery',
+    };
+  }
+};
+
+/**
+ * 4. MERGING NODE (Combines Research + Location findings)
+ */
+const mergingNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Merging findings for: ${state.taskId}`);
+  await logMissionEvent(state, 'STEP_PROGRESS', 'Planner', 'Cross-referencing research and location evidence...', {
+    step: { id: 'merge', name: 'Cross-verifying findings', status: 'completed', timestamp: new Date() },
+  });
+
+  return {
+    currentAgent: state.requiredAgents.includes('Communication') ? 'Communication' : 'Verification',
+    currentAction: state.requiredAgents.includes('Communication')
+      ? 'Outreach required. Preparing draft and staging human authorization gate.'
+      : 'Synthesizing final verified response.',
+  };
+};
+
+/**
+ * 5. HUMAN APPROVAL GATE NODE
+ */
+const approvalGateNode = async (state) => {
+  const primaryContact = state.externalContacts?.[0];
+  if (!primaryContact) {
+    return { currentAgent: 'Verification' };
+  }
+
+  // Draft the message
+  const outreachDraft = await communicationAgent.prepareOutreach(state, primaryContact);
+
+  // If already authorized by user, proceed to communication
+  if (state.isApproved) {
+    return {
+      requiresHumanApproval: false,
+      currentAgent: 'Communication',
+      currentAction: 'Authorization verified. Executing outreach...',
+      pendingApproval: null,
+    };
+  }
+
+  // Create or retrieve persistent Approval Request
+  let approvalRecord = null;
+  if (state.userId && state.taskId) {
+    try {
+      approvalRecord = await Approval.findOne({
+        taskId: state.taskId,
+        userId: state.userId,
+        status: 'PENDING_APPROVAL',
+      });
+
+      if (!approvalRecord) {
+        approvalRecord = await approvalService.createApproval({
+          userId: state.userId,
+          taskId: state.taskId,
+          actionTitle: `Inquiry Outreach to ${primaryContact.businessName}`,
+          actionType: 'SEND_OUTREACH',
+          actionPayload: outreachDraft,
+          requestingAgent: 'Communication Agent',
+          purpose: `Inquire about service availability, earliest appointment slots, and pricing quotations for: "${state.userRequest}".`,
+          target: {
+            name: primaryContact.businessName,
+            destination: primaryContact.email || primaryContact.phone || primaryContact.address || 'Direct Provider Channel',
+            channel: outreachDraft.channel || (primaryContact.email ? 'Email' : 'WhatsApp / Phone'),
+            address: primaryContact.address || null,
+            phone: primaryContact.phone || null,
+            email: primaryContact.email || null,
+          },
+          dataDisclosure: [
+            'Client Name (DOERA AI User)',
+            'Service Inquiry Directive',
+            'Target Service Location / City',
+            'Preferred Appointment Availability Window',
+          ],
+          estimatedCost: primaryContact.price || 0,
+          currency: 'INR',
+          riskLevel: 'MEDIUM',
+          riskExplanation: config.demoMode
+            ? 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED. Sandbox verified dispatch.'
+            : 'Dispatches an authorized external message to a verified third-party provider.',
+          evidence: (primaryContact.sourceUrl || primaryContact.source) ? [
+            {
+              title: primaryContact.businessName,
+              url: primaryContact.sourceUrl || null,
+              source: primaryContact.source || 'OpenStreetMap Nominatim / Overpass Verified',
+              verifiedAt: primaryContact.verifiedAt || new Date(),
+            },
+          ] : [],
+          executionService: config.demoMode
+            ? (primaryContact.email ? 'Gmail Sandbox (Simulated)' : 'WhatsApp Sandbox (Simulated)')
+            : (primaryContact.email ? 'Gmail / SMTP Dispatch' : (primaryContact.phone ? 'WhatsApp Cloud Gateway' : 'n8n Master Orchestrator')),
+          expectedResult: 'Provider receives inquiry and responds with consultation fees and appointment availability.',
+        });
+      }
+    } catch (apprErr) {
+      logger.warn('[agentGraph] Approval persistence notice:', apprErr.message);
+    }
+  }
+
+  const pendingData = {
+    approvalId: approvalRecord?._id || null,
+    actionType: 'SEND_OUTREACH',
+    description: `Authorize sending inquiry message to ${primaryContact.businessName}`,
+    details: outreachDraft,
+    actionVersion: approvalRecord?.actionVersion || 1,
+    riskLevel: approvalRecord?.riskLevel || 'MEDIUM',
+    target: approvalRecord?.target || { name: primaryContact.businessName },
+    requestedAt: approvalRecord?.requestedAt || new Date(),
+  };
+
+  await logMissionEvent(
+    state,
+    'APPROVAL_REQUEST',
+    'Communication',
+    `Paused awaiting your authorization to dispatch inquiry to ${primaryContact.businessName}.`,
+    { approval: pendingData }
+  );
+
+  return {
+    requiresHumanApproval: true,
+    status: 'WAITING_FOR_APPROVAL',
+    currentAgent: 'Communication',
+    currentAction: 'Paused awaiting human authorization.',
+    pendingApproval: pendingData,
+  };
+};
+
+/**
+ * 6. COMMUNICATION NODE
+ */
+const communicationNode = async (state) => {
+  const primaryContact = state.externalContacts?.[0];
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Communication',
+    `Preparing authorized inquiry to ${primaryContact?.businessName || 'Provider'}...`,
+    { step: { id: 'communicate', name: 'Contacting providers', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  try {
+    const draft = state.pendingApproval?.details || (await communicationAgent.prepareOutreach(state, primaryContact));
+    return {
+      currentAgent: 'Execution',
+      currentAction: 'Executing authorized operation...',
+      pendingApproval: { details: draft },
+    };
+  } catch (err) {
+    return {
+      error: { message: err.message, recoverable: true },
+      currentAgent: 'Recovery',
+    };
+  }
+};
+
+/**
+ * 7. EXECUTION NODE (Dispatches via n8n or native adapter + captures ExecutionEvidence)
+ */
+const executionNode = async (state) => {
+  const primaryContact = state.externalContacts?.[0];
+  await logMissionEvent(
+    state,
+    'INTEGRATION_CALL',
+    'Execution',
+    `Dispatching authorized action to ${primaryContact?.businessName}...`,
+    { step: { id: 'execute', name: 'Executing approved operation', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  try {
+    const draft = state.pendingApproval?.details || {};
+    const approvalReq = {
+      actionTitle: `Inquiry Outreach to ${primaryContact?.businessName || 'Provider'}`,
+      actionType: 'SEND_OUTREACH',
+      actionPayload: draft,
+      target: {
+        name: primaryContact?.businessName,
+        email: primaryContact?.email,
+        phone: primaryContact?.phone,
+        address: primaryContact?.address,
+      },
+      executionService: primaryContact?.email ? 'Gmail / SMTP Transport' : 'n8n Master Orchestrator',
+      evidence: primaryContact?.sourceUrl ? [{ title: primaryContact.businessName, url: primaryContact.sourceUrl }] : [],
+    };
+
+    const execRes = await executionAgent.executeAction(state, approvalReq);
+
+    const steps = state.steps.map((s) =>
+      s.agent === 'Execution' || s.agent === 'Communication' || s.id === 'execute' || s.id === 'communicate'
+        ? {
+            ...s,
+            status: 'completed',
+            details: `Dispatched to ${primaryContact?.businessName}. Verification status: ${execRes.verificationStatus || 'DELIVERED'}.`,
+            timestamp: new Date(),
+          }
+        : s
+    );
+
+    await logMissionEvent(
+      state,
+      'STEP_PROGRESS',
+      'Execution',
+      `Action executed with verification status: ${execRes.verificationStatus}. Evidence record: ${execRes.evidenceId || 'logged'}.`,
+      { step: { id: 'execute', name: 'Executing approved operation', status: 'completed', timestamp: new Date() } }
+    );
+
+    return {
+      steps,
+      executionEvidence: execRes,
+      currentAgent: 'Quotation',
+      currentAction: 'Comparing provider rates and estimates...',
+    };
+  } catch (err) {
+    logger.error('[Execution Node] Error:', err.message);
+    return {
+      error: { message: err.message, recoverable: true },
+      currentAgent: 'Recovery',
+    };
+  }
+};
+
+/**
+ * 8. QUOTATION NODE
+ */
+const quotationNode = async (state) => {
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Quotation',
+    'Auditing fee structures and pricing cards with domain-aware validation...',
+    { step: { id: 'quote', name: 'Comparing quotations', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const quoteResult = await quotationAgent.compareQuotes(state, state.externalContacts);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'Quotation' || s.id === 'quote'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Compared ${quoteResult.quotes.length} rate cards. Pricing domain: ${quoteResult.domain}.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Quotation',
+    `Verified ${quoteResult.quotes.length} provider rate cards.`,
+    { step: { id: 'quote', name: 'Comparing quotations', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    quotations: quoteResult.quotes,
+    steps,
+    currentAgent: 'Scheduling',
+    currentAction: 'Coordinating appointment slot...',
+  };
+};
+
+/**
+ * 8B. COMPARISON NODE (Product, Service, Platform & Rate Matrices)
+ */
+const comparisonNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Comparison Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Comparison',
+    'Auditing multi-entity comparison matrix, specifications, and pros/cons...',
+    { step: { id: 'compare', name: 'Comparing options and criteria', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const compResult = await comparisonAgent.compare(state, state.externalContacts || []);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'Comparison' || s.agent === 'Quotation' || s.id === 'compare' || s.id === 'quote'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Compared ${compResult.items?.length || 0} candidates across ${compResult.criteria?.length || 0} criteria.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Comparison',
+    `Structured comparison matrix established across ${compResult.items?.length || 0} candidates.`,
+    { step: { id: 'compare', name: 'Comparing options and criteria', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    comparisonMatrix: compResult,
+    quotations: compResult.quotationDetails || state.quotations,
+    steps,
+    currentAgent: state.requiredAgents.includes('Scheduling') ? 'Scheduling' : 'Verification',
+    currentAction: 'Comparison matrix synthesized.',
+  };
+};
+
+/**
+ * 8C. DOCUMENT INTELLIGENCE NODE
+ */
+const documentNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Document Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Document',
+    'Analyzing uploaded documents and extracting structured knowledge...',
+    { step: { id: 'doc', name: 'Document analysis and extraction', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const docResult = await documentAgent.analyzeDocument(state, state.attachments || []);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'Document' || s.id === 'doc'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Processed ${docResult.documentCount} documents. Extracted key findings and section references.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Document',
+    `Audited ${docResult.documentCount} documents with section references.`,
+    { step: { id: 'doc', name: 'Document analysis and extraction', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    steps,
+    discoveredData: { ...(state.discoveredData || {}), documents: docResult.documents },
+    currentAgent: state.requiredAgents.includes('DataAnalysis') ? 'DataAnalysis' : 'Verification',
+    currentAction: 'Document analysis complete.',
+  };
+};
+
+/**
+ * 8D. DATA ANALYSIS NODE
+ */
+const dataAnalysisNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Data Analysis Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'DataAnalysis',
+    'Auditing numerical metrics, statistical distributions, and trends...',
+    { step: { id: 'data', name: 'Data analysis and insights', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const dataResult = await dataAnalysisAgent.analyzeData(state, state.dataPayload || state.discoveredData);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'DataAnalysis' || s.id === 'data'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Evaluated ${dataResult.analysis?.keyMetrics?.length || 0} key metrics and trends.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'DataAnalysis',
+    'Statistical evaluation and metric insights established.',
+    { step: { id: 'data', name: 'Data analysis and insights', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    steps,
+    discoveredData: { ...(state.discoveredData || {}), dataAnalysis: dataResult.analysis },
+    currentAgent: 'Verification',
+    currentAction: 'Data analysis complete.',
+  };
+};
+
+/**
+ * 9. SCHEDULING NODE
+ */
+const schedulingNode = async (state) => {
+  const primaryContact = state.externalContacts?.[0];
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Scheduling',
+    `Coordinating target appointment window for ${primaryContact?.businessName || 'Provider'}...`,
+    { step: { id: 'schedule', name: 'Scheduling appointment', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const schedResult = await schedulingAgent.scheduleAppointment(state, primaryContact, state.userIntegration);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'Scheduling' || s.id === 'schedule'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Appointment window coordinated: ${schedResult.output?.bookingDetails?.dateTime || 'Pending'}. Status: ${schedResult.output?.bookingDetails?.bookingStatus}.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Scheduling',
+    `Coordinated slot: ${schedResult.output?.bookingDetails?.dateTime || 'Earliest available'}.`,
+    { step: { id: 'schedule', name: 'Scheduling appointment', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    bookingDetails: schedResult.output?.bookingDetails,
+    steps,
+    currentAgent: 'Verification',
+    currentAction: 'Auditing execution evidence and final synthesis...',
+  };
+};
+
+/**
+ * 10. VERIFICATION NODE (Produces truthful final outcome and audits evidence)
+ */
+const verificationNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Verification Node auditing: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Verification',
+    'Auditing execution evidence, citations, and provider confirmations...',
+    { step: { id: 'verify', name: 'Verifying outcomes and evidence', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const verifiedOutcome = await verificationAgent.verifyOutcome(state);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'Verification' || s.id === 'verify'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Outcome verified: ${verifiedOutcome.summary}`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STATUS_CHANGE',
+    'Verification',
+    `Audit completed: Outcome verified with ${verifiedOutcome.evidence?.length || 0} citations.`,
+    { step: { id: 'verify', name: 'Verifying outcomes and evidence', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    steps,
+    outcome: verifiedOutcome,
+    currentAgent: state.requiredAgents.includes('FollowUp') ? 'FollowUp' : 'Orchestrator',
+    currentAction: state.requiredAgents.includes('FollowUp')
+      ? 'Registering background response tracker...'
+      : 'Mission completed with verified evidence.',
+    status: verifiedOutcome.allTasksSucceeded ? 'COMPLETED' : 'PARTIALLY_COMPLETED',
+  };
+};
+
+/**
+ * 11. FOLLOW-UP NODE (Registers background response tracker)
+ */
+const followUpNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Follow-up Node executing for: ${state.taskId}`);
+  const primaryContact = state.externalContacts?.[0];
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'FollowUp',
+    `Initializing autonomous response tracker for ${primaryContact?.businessName || 'provider'}...`,
+    { step: { id: 'followup', name: 'Response tracker setup', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const followUpRes = await followUpAgent.scheduleFollowUp(state, {
+    recipient: primaryContact?.email || primaryContact?.phone || 'quotes@provider.local',
+    recipientName: primaryContact?.businessName || 'Service Provider',
+    channel: primaryContact?.email ? 'Email' : 'WhatsApp',
+  });
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'FollowUp' || s.id === 'followup'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Autonomous follow-up active. Next check: ${new Date(followUpRes.nextCheckAt).toLocaleDateString()}.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'FollowUp',
+    `Response tracker active: Next check scheduled for ${new Date(followUpRes.nextCheckAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+    { step: { id: 'followup', name: 'Response tracker setup', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    steps,
+    followUpData: followUpRes,
+    currentAgent: 'Orchestrator',
+    currentAction: 'Autonomous mission execution completed.',
+    status: 'WAITING_FOR_RESPONSE',
+  };
+};
+
+/**
+ * 12. RECOVERY NODE
+ */
+const recoveryNode = async (state) => {
+  logger.warn(`[LangGraph Workflow] Recovery Node triggered for: ${state.taskId}`);
+  const recoveryResult = await recoveryAgent.handleFailure(state, state.error);
+
+  if (!recoveryResult.recovered) {
+    return {
+      status: 'FAILED',
+      error: recoveryResult.error,
+      currentAction: recoveryResult.error.message,
+    };
+  }
+
+  return {
+    error: null,
+    currentAgent: 'Research',
+    currentAction: recoveryResult.instructions,
+  };
+};
+
+// =========================================================================
+// ASSEMBLE DYNAMIC STATE GRAPH
+// =========================================================================
+const workflow = new StateGraph(TaskStateAnnotation)
+  .addNode('orchestrator', orchestratorNode)
+  .addNode('location', locationNode)
+  .addNode('research', researchNode)
+  .addNode('merging', mergingNode)
+  .addNode('document', documentNode)
+  .addNode('data_analysis', dataAnalysisNode)
+  .addNode('comparison', comparisonNode)
+  .addNode('approval_gate', approvalGateNode)
+  .addNode('communication', communicationNode)
+  .addNode('execution', executionNode)
+  .addNode('quotation', quotationNode)
+  .addNode('scheduling', schedulingNode)
+  .addNode('verification', verificationNode)
+  .addNode('follow_up', followUpNode)
+  .addNode('recovery', recoveryNode)
+
+  // Start -> Planner
+  .addEdge(START, 'orchestrator')
+
+  // Dynamic Routing from Planner
+  .addConditionalEdges('orchestrator', (state) => {
+    if (state.error) return 'recovery';
+    const req = state.requiredAgents || [];
+    if (req.includes('Document')) return 'document';
+    if (req.includes('DataAnalysis') && !req.includes('Research')) return 'data_analysis';
+    if (req.includes('Location')) return 'location';
+    if (req.includes('Research')) return 'research';
+    if (req.includes('Comparison') || req.includes('Quotation')) return 'comparison';
+    if (req.includes('Communication')) return 'approval_gate';
+    return 'verification';
+  })
+
+  // Document -> DataAnalysis or Research or Verification
+  .addConditionalEdges('document', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('DataAnalysis')) return 'data_analysis';
+    if (req.includes('Research')) return 'research';
+    return 'verification';
+  })
+
+  // DataAnalysis -> Verification
+  .addEdge('data_analysis', 'verification')
+
+  // Location -> Research or Merging
+  .addConditionalEdges('location', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('Research') && !state.researchSummary) return 'research';
+    return 'merging';
+  })
+
+  // Research -> Merging
+  .addEdge('research', 'merging')
+
+  // Merging -> Approval Gate or Comparison or Quotation or Verification
+  .addConditionalEdges('merging', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('Communication')) return 'approval_gate';
+    if (req.includes('Comparison') || req.includes('Quotation')) return 'comparison';
+    return 'verification';
+  })
+
+  // Comparison -> Scheduling or Approval Gate or Verification
+  .addConditionalEdges('comparison', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('Communication')) return 'approval_gate';
+    if (req.includes('Scheduling')) return 'scheduling';
+    return 'verification';
+  })
+
+  // Approval Gate -> Pause at END or proceed to Communication
+  .addConditionalEdges('approval_gate', (state) => {
+    if (state.requiresHumanApproval && !state.isApproved) {
+      return END; // Pause for human authorization
+    }
+    return 'communication';
+  })
+
+  // Communication -> Execution
+  .addEdge('communication', 'execution')
+
+  // Execution -> Comparison or Scheduling or Verification
+  .addConditionalEdges('execution', (state) => {
+    if (state.error) return 'recovery';
+    const req = state.requiredAgents || [];
+    if (req.includes('Scheduling')) return 'scheduling';
+    if (req.includes('Comparison') || req.includes('Quotation')) return 'comparison';
+    return 'verification';
+  })
+
+  // Quotation -> Scheduling or Verification
+  .addConditionalEdges('quotation', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('Scheduling')) return 'scheduling';
+    return 'verification';
+  })
+
+  // Scheduling -> Verification
+  .addEdge('scheduling', 'verification')
+
+  // Verification -> Follow-Up or END
+  .addConditionalEdges('verification', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('FollowUp') && (state.status === 'COMPLETED' || state.status === 'PARTIALLY_COMPLETED')) {
+      return 'follow_up';
+    }
+    return END;
+  })
+
+  // Follow-Up -> END
+  .addEdge('follow_up', END)
+
+  // Recovery -> Resume or END
+  .addConditionalEdges('recovery', (state) => (state.status === 'FAILED' ? END : 'orchestrator'));
+
+export const agentGraph = workflow.compile();
+export default agentGraph;

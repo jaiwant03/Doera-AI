@@ -1,0 +1,116 @@
+/* ==============================================================================
+   DOERA AI — Luxury Black & Neon Pink Daily Usage Tracker (Pure CSS)
+   ============================================================================== */
+
+.doera-usage-tracker-box {
+  background: var(--bg-surface, #151018);
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 14px;
+  padding: 14px 18px 12px;
+  margin: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: border-color var(--transition-fast, 0.2s ease);
+}
+
+.doera-usage-tracker-box:hover {
+  border-color: rgba(245, 47, 168, 0.3);
+}
+
+.doera-usage-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.doera-usage-plan-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--neon-pink, #FF55BD);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.doera-usage-counts {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary, #B9AEBE);
+  font-weight: 600;
+}
+
+.doera-usage-progress-bar {
+  width: 100%;
+  height: 4.5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.doera-usage-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #9C52E8 0%, #C53A9F 50%, #FF55BD 100%);
+  box-shadow: 0 0 10px rgba(255, 85, 189, 0.6);
+  transition: width 0.3s ease;
+}
+
+.doera-usage-progress-fill.exhausted {
+  background: linear-gradient(90deg, #F59E0B 0%, #EF4444 100%);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+.doera-usage-row-middle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.doera-usage-remaining {
+  font-size: 11px;
+  color: #E2D9E6;
+  font-weight: 500;
+}
+
+.doera-usage-reset-time {
+  font-size: 10.5px;
+  color: var(--text-muted, #9E93A3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono, monospace);
+}
+
+.doera-clock-icon {
+  color: var(--neon-pink, #FF55BD);
+  opacity: 0.85;
+}
+
+.doera-usage-row-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+.doera-usage-upgrade-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--neon-pink, #FF55BD);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.doera-usage-upgrade-link:hover {
+  color: #FFFFFF;
+  text-shadow: 0 0 10px rgba(255, 85, 189, 0.8);
+}

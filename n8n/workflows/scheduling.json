@@ -1,0 +1,82 @@
+{
+  "name": "DOERA AI - 05 - Scheduling",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scheduling-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-sched-webhook",
+      "name": "Webhook - Scheduling Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "slot",
+              "value": "={{ $json.body.slot || 'Tomorrow at 10:30 AM' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-schedule",
+      "name": "Set Schedule Params",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"scheduled\": true,\n  \"slot\": \"{{ $json.slot }}\",\n  \"referenceCode\": \"DOERA-N8N-{{ $now.toMillis() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-sched",
+      "name": "Respond Confirmed Slot",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Scheduling Request": {
+      "main": [
+        [
+          {
+            "node": "Set Schedule Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Schedule Params": {
+      "main": [
+        [
+          {
+            "node": "Respond Confirmed Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

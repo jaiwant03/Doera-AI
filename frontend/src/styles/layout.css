@@ -1,0 +1,163 @@
+/* ==============================================================================
+   DOERA AI — Application Shell Layout (Pure CSS)
+   Theme: Luxury Black (#080609) + Pink & Purple Accents (Reference Image 2)
+   ============================================================================== */
+
+.doera-app-layout {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-canvas, #080609);
+  color: var(--text-primary, #FFFFFF);
+  position: relative;
+}
+
+.doera-workspace {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bg-canvas, #080609);
+  z-index: 1;
+}
+
+.doera-workspace-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+/* Welcome Viewport Wrapper — Handles Scrolling and Even Vertical Centering */
+.doera-welcome-viewport-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Chat Scroll Wrapper for Live Conversations */
+.doera-chat-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* Mobile Header (Image 2 style) */
+.doera-mobile-header {
+  display: none;
+  height: 56px;
+  background: rgba(11, 8, 13, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-dark, #302535);
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 30;
+  flex-shrink: 0;
+}
+
+.doera-mobile-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doera-mobile-brand-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
+/* Sidebar Backdrop — Disabled on desktop */
+.doera-sidebar-backdrop {
+  display: none !important;
+  pointer-events: none;
+}
+
+/* Floating Top-Left Controls when Sidebar is Closed (ChatGPT style) */
+.doera-workspace-floating-bar {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.doera-sidebar-floating-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(21, 16, 24, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-dark, #302535);
+  color: var(--text-secondary, #B9AEBE);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all var(--transition-fast);
+}
+
+.doera-sidebar-floating-btn:hover {
+  color: #FFFFFF;
+  border-color: rgba(255, 85, 189, 0.4);
+  background: rgba(255, 85, 189, 0.14);
+  box-shadow: 0 4px 20px rgba(255, 85, 189, 0.2);
+  transform: translateY(-1px);
+}
+
+.doera-sidebar-floating-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .doera-mobile-header {
+    display: flex;
+  }
+
+  .doera-workspace-floating-bar {
+    display: none;
+  }
+
+  .doera-sidebar-backdrop {
+    display: block !important;
+    pointer-events: auto;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 45;
+    animation: fadeIn 200ms ease-out;
+  }
+}

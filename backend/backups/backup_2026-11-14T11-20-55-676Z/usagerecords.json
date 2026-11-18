@@ -1,0 +1,206 @@
+[
+  {
+    "_id": "6af83717c785aa22d3dd9d05",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-0be30f4b-e80",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T10:25:27.524Z",
+    "updatedAt": "2026-11-14T10:25:29.567Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af8374ec785aa22d3dd9d13",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-ec022f24-512",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T10:26:22.021Z",
+    "updatedAt": "2026-11-14T10:26:23.241Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af838a1c785aa22d3dd9d31",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-70135395-a93",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T10:32:01.128Z",
+    "updatedAt": "2026-11-14T10:32:01.171Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83907c785aa22d3dd9d9d",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-85365cc3-2ef",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T10:33:43.799Z",
+    "updatedAt": "2026-11-14T10:33:44.762Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af8390fc785aa22d3dd9da9",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-b23d0e9f-948",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T10:33:51.049Z",
+    "updatedAt": "2026-11-14T10:33:52.027Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83cc12e360157fab9e731",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-07355b55-c2a",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "reserved",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T10:49:37.103Z",
+    "updatedAt": "2026-11-14T10:49:37.103Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83f7a6c0827a025ad26fd",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-bbe7f7bf-7fc",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T11:01:14.111Z",
+    "updatedAt": "2026-11-14T11:01:28.882Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83f9d6c0827a025ad270e",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-1e3d1f7e-fdc",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T11:01:49.103Z",
+    "updatedAt": "2026-11-14T11:01:51.100Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83fab6c0827a025ad271d",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-7a2f5434-b92",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T11:02:03.971Z",
+    "updatedAt": "2026-11-14T11:02:06.253Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83fbc6c0827a025ad272a",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-b002c83b-9f2",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T11:02:20.187Z",
+    "updatedAt": "2026-11-14T11:02:32.804Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af83fda6c0827a025ad273b",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-60e04a5c-64f",
+    "idempotencyKey": null,
+    "requestType": "stream",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T11:02:50.009Z",
+    "updatedAt": "2026-11-14T11:02:51.015Z",
+    "__v": 0
+  },
+  {
+    "_id": "6af8427fd995ca7d8bf841a2",
+    "userId": "6af8302dc785aa22d3dd9ca3",
+    "requestId": "req-3b4a8889-949",
+    "idempotencyKey": null,
+    "requestType": "message",
+    "model": "llama-3.3-70b-versatile",
+    "status": "completed",
+    "tokens": {
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0
+    },
+    "createdAt": "2026-11-14T11:14:07.508Z",
+    "updatedAt": "2026-11-14T11:14:08.597Z",
+    "__v": 0
+  }
+]

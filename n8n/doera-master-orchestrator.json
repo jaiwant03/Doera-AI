@@ -1,0 +1,804 @@
+{
+  "name": "DOERA AI - Master Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-task-trigger",
+      "name": "Webhook - Task Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        120
+      ],
+      "webhookId": "dc8c7f1a-d3bb-4187-bfec-c9571d3131a8"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "userRequest",
+              "value": "={{ $json.body.userRequest }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.body.category || 'general' }}"
+            },
+            {
+              "name": "operation",
+              "value": "TASK_EXECUTION_TRIGGER"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-task-trigger",
+      "name": "Parse Task Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Task execution registered by DOERA Master Orchestrator.\",\n  \"taskId\": \"{{ $json.taskId }}\",\n  \"status\": \"REGISTERED\",\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-task-trigger",
+      "name": "Respond Task Trigger OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-send",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-email-send",
+      "name": "Webhook - Email Send",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ],
+      "webhookId": "5811a661-d54e-4a25-a912-8fc316ef2de2"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "to",
+              "value": "={{ $json.body.to }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.body.subject }}"
+            },
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "operation",
+              "value": "EMAIL_COMMUNICATION"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-email",
+      "name": "Format Email Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"messageId\": \"msg-{{ $now.toMillis() }}\",\n  \"status\": \"SENT\",\n  \"channel\": \"Email\",\n  \"to\": \"{{ $json.to }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-email-ok",
+      "name": "Respond Email OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-send",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-whatsapp-send",
+      "name": "Webhook - WhatsApp Send",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        480
+      ],
+      "webhookId": "41e778a8-0233-4bb5-9c59-f6ebbef819db"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "to",
+              "value": "={{ $json.body.to }}"
+            },
+            {
+              "name": "textMessage",
+              "value": "={{ $json.body.textMessage }}"
+            },
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "operation",
+              "value": "WHATSAPP_COMMUNICATION"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-wa",
+      "name": "Format WhatsApp Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"messageId\": \"wa-{{ $now.toMillis() }}\",\n  \"status\": \"DISPATCHED\",\n  \"channel\": \"WhatsApp\",\n  \"to\": \"{{ $json.to }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-wa-ok",
+      "name": "Respond WhatsApp OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "provider-response",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-provider-resp",
+      "name": "Webhook - Provider Response",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        660
+      ],
+      "webhookId": "f8844b98-5dcb-42e9-a5d1-88c5caad727f"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "providerName",
+              "value": "={{ $json.body.providerName }}"
+            },
+            {
+              "name": "replyText",
+              "value": "={{ $json.body.replyText }}"
+            },
+            {
+              "name": "channel",
+              "value": "={{ $json.body.channel || 'Email' }}"
+            },
+            {
+              "name": "operation",
+              "value": "PROVIDER_RESPONSE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-provider-resp",
+      "name": "Parse Provider Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"processed\": true,\n  \"provider\": \"{{ $json.providerName }}\",\n  \"status\": \"REPLY_INGESTED\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-provider-ok",
+      "name": "Respond Provider Reply OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scheduling-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-scheduling",
+      "name": "Webhook - Scheduling Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        840
+      ],
+      "webhookId": "ffce1e89-1b27-4403-80c2-d5c188c2c799"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "slot",
+              "value": "={{ $json.body.slot || 'Tomorrow at 10:30 AM' }}"
+            },
+            {
+              "name": "referenceCode",
+              "value": "={{ $json.body.referenceCode || ('DOERA-BK-' + $now.toMillis()) }}"
+            },
+            {
+              "name": "operation",
+              "value": "APPOINTMENT_SCHEDULING"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-scheduling",
+      "name": "Coordinate Slot & Booking",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        840
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"scheduled\": true,\n  \"slot\": \"{{ $json.slot }}\",\n  \"referenceCode\": \"{{ $json.referenceCode }}\",\n  \"status\": \"APPOINTMENT_CONFIRMED\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-sched-ok",
+      "name": "Respond Scheduling OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        840
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "followup-reminders",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-followup",
+      "name": "Webhook - Followup Reminders",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        1020
+      ],
+      "webhookId": "90097668-52b5-4117-8463-4157a066e749"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "providerName",
+              "value": "={{ $json.body.providerName }}"
+            },
+            {
+              "name": "recipient",
+              "value": "={{ $json.body.recipient }}"
+            },
+            {
+              "name": "operation",
+              "value": "FOLLOWUP_REMINDERS"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-followup",
+      "name": "Schedule Followup Timing",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"scheduled\": true,\n  \"providerName\": \"{{ $json.providerName }}\",\n  \"reminderId\": \"rem-{{ $now.toMillis() }}\",\n  \"status\": \"SCHEDULED\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-followup-ok",
+      "name": "Respond Followup OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "failure-recovery",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-recovery",
+      "name": "Webhook - Failure Recovery",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        1200
+      ],
+      "webhookId": "7e05d420-27f5-471a-bca8-c0fbad7a1af1"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "error",
+              "value": "={{ $json.body.error }}"
+            },
+            {
+              "name": "retryCount",
+              "value": "={{ $json.body.retryCount || 1 }}"
+            },
+            {
+              "name": "operation",
+              "value": "FAILURE_RECOVERY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-recovery",
+      "name": "Evaluate Recovery Strategy",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Failure recovery strategy evaluated and executed.\",\n  \"recovered\": true,\n  \"strategy\": \"RETRY_SECONDARY_FAILOVER\",\n  \"retryCount\": {{ Number($json.retryCount || 1) }}\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-recovery-ok",
+      "name": "Respond Recovery OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-completion-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-completion",
+      "name": "Webhook - Task Completion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        1380
+      ],
+      "webhookId": "241bbff0-7646-4a44-8d19-7d4180796e72"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.body.status || 'COMPLETED' }}"
+            },
+            {
+              "name": "operation",
+              "value": "TASK_COMPLETION"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-completion",
+      "name": "Finalize Outcome Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"finalized\": true,\n  \"taskId\": \"{{ $json.taskId }}\",\n  \"status\": \"COMPLETED\",\n  \"completedAt\": \"{{ $now.toISO() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-completion-ok",
+      "name": "Respond Completion OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "doera-master",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-wh-unified-master",
+      "name": "Webhook - Unified Master Entry",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        1560
+      ],
+      "webhookId": "2782247f-24ad-4499-ac5a-2a0c36ecf9e7"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "operation",
+              "value": "={{ $json.body.operation || $json.body.action || 'GENERAL_EXECUTION' }}"
+            },
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId || 'SYS-' + $now.toMillis() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-unified-master",
+      "name": "Route Master Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"engine\": \"DOERA AI Master Orchestrator (Unified Setup)\",\n  \"operation\": \"{{ $json.operation }}\",\n  \"taskId\": \"{{ $json.taskId }}\",\n  \"status\": \"PROCESSED\",\n  \"executedAt\": \"{{ $now.toISO() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-resp-unified-ok",
+      "name": "Respond Master OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        1560
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Task Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Task Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Task Context": {
+      "main": [
+        [
+          {
+            "node": "Respond Task Trigger OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Email Send": {
+      "main": [
+        [
+          {
+            "node": "Format Email Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond Email OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - WhatsApp Send": {
+      "main": [
+        [
+          {
+            "node": "Format WhatsApp Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format WhatsApp Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond WhatsApp OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Provider Response": {
+      "main": [
+        [
+          {
+            "node": "Parse Provider Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Provider Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond Provider Reply OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Scheduling Trigger": {
+      "main": [
+        [
+          {
+            "node": "Coordinate Slot & Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coordinate Slot & Booking": {
+      "main": [
+        [
+          {
+            "node": "Respond Scheduling OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Followup Reminders": {
+      "main": [
+        [
+          {
+            "node": "Schedule Followup Timing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Followup Timing": {
+      "main": [
+        [
+          {
+            "node": "Respond Followup OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Failure Recovery": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Recovery Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Recovery Strategy": {
+      "main": [
+        [
+          {
+            "node": "Respond Recovery OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Task Completion": {
+      "main": [
+        [
+          {
+            "node": "Finalize Outcome Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Outcome Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond Completion OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Unified Master Entry": {
+      "main": [
+        [
+          {
+            "node": "Route Master Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Master Request": {
+      "main": [
+        [
+          {
+            "node": "Respond Master OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

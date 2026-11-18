@@ -1,0 +1,369 @@
+/* ==============================================================================
+   DOERA AI — Autonomous Agent Execution Workspace Styles (Pure CSS)
+   Theme: Luxury Black (#080609) + Neon Pink (#FF55BD) + Purple (#9C52E8)
+   ============================================================================== */
+
+.doera-execution-workspace {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--bg-surface, #151018);
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 85, 189, 0.08);
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+/* Top Status Header */
+.doera-exec-header {
+  padding: 14px 20px;
+  background: #110B14;
+  border-bottom: 1px solid var(--border-dark, #302535);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.doera-exec-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doera-exec-title {
+  font-family: var(--font-heading, sans-serif);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #FFFFFF;
+}
+
+.doera-agent-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 85, 189, 0.12);
+  color: var(--neon-pink, #FF55BD);
+  border: 1px solid rgba(255, 85, 189, 0.3);
+}
+
+/* Two-Column Responsive Workspace Grid */
+.doera-exec-grid {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 24px;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 992px) {
+  .doera-exec-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 18px;
+  }
+}
+
+/* Left Column */
+.doera-exec-col-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.doera-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.doera-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #807486);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.doera-exec-current-callout {
+  background: rgba(255, 85, 189, 0.08);
+  border: 1px solid rgba(255, 85, 189, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doera-callout-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #1C1220;
+  border: 1px solid rgba(255, 85, 189, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neon-pink, #FF55BD);
+  flex-shrink: 0;
+}
+
+.doera-callout-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Timeline Stream */
+.doera-exec-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 4px 6px;
+}
+
+.doera-exec-timeline::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: linear-gradient(180deg, #FF55BD 0%, #9C52E8 60%, rgba(255, 255, 255, 0.1) 100%);
+  z-index: 0;
+}
+
+.doera-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.doera-timeline-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #151018;
+  border: 1px solid var(--border-dark, #302535);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.doera-timeline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doera-timeline-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 1.35;
+}
+
+.doera-timeline-name.completed {
+  color: #FFFFFF;
+}
+
+.doera-timeline-name.in-progress {
+  color: var(--neon-pink, #FF55BD);
+  font-weight: 700;
+}
+
+.doera-timeline-name.pending {
+  color: var(--text-muted, #807486);
+  font-weight: 500;
+}
+
+.doera-timeline-time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--text-muted, #807486);
+  text-align: right;
+  padding-left: 12px;
+}
+
+/* Right Column */
+.doera-exec-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.doera-info-card {
+  background: #110B14;
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.doera-info-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.doera-info-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #807486);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doera-request-quote {
+  font-size: 12.5px;
+  color: #FFFFFF;
+  font-weight: 500;
+  line-height: 1.5;
+  background: #17101B;
+  border-left: 3px solid var(--neon-pink, #FF55BD);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+/* Provider Mini-Card */
+.doera-provider-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #17101B;
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.doera-provider-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.doera-provider-meta {
+  font-size: 11px;
+  color: var(--text-secondary, #B9AEBE);
+  margin-top: 2px;
+}
+
+.doera-verified-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Prominent Human Authorization Panel */
+.doera-exec-auth-panel {
+  grid-column: 1 / -1;
+  background: #1D1418;
+  border: 1.5px solid var(--neon-pink, #FF55BD);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 8px;
+  box-shadow: 0 4px 24px rgba(255, 85, 189, 0.18);
+}
+
+.doera-auth-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.doera-auth-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--neon-pink, #FF55BD);
+}
+
+.doera-auth-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #B9AEBE);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.doera-auth-details-box {
+  background: #130C15;
+  border: 1px solid var(--border-dark, #302535);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doera-auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.doera-btn-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #FF55BD 0%, #C53A9F 100%);
+  color: #FFFFFF;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 14px rgba(255, 85, 189, 0.4);
+  transition: all 0.2s ease;
+}
+
+.doera-btn-approve:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 85, 189, 0.65);
+}
+
+.doera-btn-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #17101B;
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doera-btn-reject:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: #EF4444;
+}

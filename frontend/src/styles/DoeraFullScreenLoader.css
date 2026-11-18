@@ -1,0 +1,21 @@
+/* ==============================================================================
+   DOERA AI — Full Screen Neural Loader Fallback Styles
+   Theme: Deep Black (#080609) Luxury Palette
+   ============================================================================== */
+
+.doera-fullscreen-loader-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 6, 9, 0.95);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  z-index: 100;
+  pointer-events: all;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}

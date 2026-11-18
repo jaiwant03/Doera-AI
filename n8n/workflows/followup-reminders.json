@@ -1,0 +1,90 @@
+{
+  "name": "DOERA AI - 06 - Follow-up Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "followup-reminders",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-followup-webhook",
+      "name": "Webhook - Followup Reminders",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.body.taskId }}"
+            },
+            {
+              "name": "providerName",
+              "value": "={{ $json.body.providerName }}"
+            },
+            {
+              "name": "recipient",
+              "value": "={{ $json.body.recipient }}"
+            },
+            {
+              "name": "reminderType",
+              "value": "={{ $json.body.reminderType || 'QUOTE_FOLLOWUP' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-parse-followup",
+      "name": "Parse Reminder Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"reminderScheduled\": true,\n  \"taskId\": \"{{ $json.taskId }}\",\n  \"providerName\": \"{{ $json.providerName }}\",\n  \"scheduledFor\": \"{{ $now.plus({ hours: 4 }).toISO() }}\",\n  \"referenceId\": \"REMINDER-{{ $now.toMillis() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-followup",
+      "name": "Respond Reminder Scheduled",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Followup Reminders": {
+      "main": [
+        [
+          {
+            "node": "Parse Reminder Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reminder Data": {
+      "main": [
+        [
+          {
+            "node": "Respond Reminder Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
