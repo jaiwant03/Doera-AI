@@ -22,24 +22,54 @@ class GoogleAuthService {
   }
 
   /**
-   * Generate Google OAuth consent URL for user login or integration
+   * Minimal scopes for ordinary user login / sign-in (NO Gmail sending permission)
    */
-  getAuthUrl(state = 'login') {
+  getLoginAuthUrl(state = 'login') {
     const oauth2Client = this.getOAuth2Client();
     const scopes = [
       'openid',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/calendar.events',
+    ];
+
+    return oauth2Client.generateAuthUrl({
+      access_type: 'online',
+      prompt: 'select_account',
+      scope: scopes,
+      state,
+    });
+  }
+
+  /**
+   * Explicit, separate OAuth consent URL specifically for "Connect Gmail for Automation"
+   * Requests https://www.googleapis.com/auth/gmail.send with offline access for a refresh token.
+   */
+  getGmailConnectAuthUrl(signedState) {
+    const oauth2Client = this.getOAuth2Client();
+    const scopes = [
+      'openid',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/gmail.send',
     ];
 
     return oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
+      include_granted_scopes: true,
       scope: scopes,
-      state,
+      state: signedState,
     });
+  }
+
+  /**
+   * Backward-compatible getAuthUrl — routes to login scopes unless state indicates integration
+   */
+  getAuthUrl(state = 'login') {
+    if (typeof state === 'string' && (state.startsWith('gmail_') || state.includes('gmail_connect'))) {
+      return this.getGmailConnectAuthUrl(state);
+    }
+    return this.getLoginAuthUrl(state);
   }
 
   /**
