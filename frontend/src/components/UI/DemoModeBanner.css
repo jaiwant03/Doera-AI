@@ -32,6 +32,16 @@
   border-radius: 4px;
 }
 
+.doera-demo-badge.real-active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.doera-demo-badge.real-eligible {
+  background: rgba(241, 45, 152, 0.15);
+  border-color: rgba(241, 45, 152, 0.5);
+}
+
 .doera-demo-dot {
   width: 6px;
   height: 6px;
@@ -39,6 +49,16 @@
   background-color: #2DD4BF;
   box-shadow: 0 0 8px #2DD4BF;
   animation: doeraPulse 2s infinite ease-in-out;
+}
+
+.doera-demo-dot.real-active {
+  background-color: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.doera-demo-dot.real-eligible {
+  background-color: #F12D98;
+  box-shadow: 0 0 8px #F12D98;
 }
 
 @keyframes doeraPulse {
@@ -56,6 +76,14 @@
   letter-spacing: 0.6px;
   color: #2DD4BF;
   text-transform: uppercase;
+}
+
+.doera-demo-badge-text.real-active {
+  color: #10B981;
+}
+
+.doera-demo-badge-text.real-eligible {
+  color: #FF55BD;
 }
 
 .doera-demo-separator {
