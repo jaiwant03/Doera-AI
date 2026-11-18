@@ -135,6 +135,51 @@ class GoogleAuthService {
       throw new Error('Invalid Google credential token.');
     }
   }
+
+  /**
+   * Securely revoke OAuth token with Google
+   */
+  async revokeToken(token) {
+    if (!token) return { success: false, message: 'No token provided' };
+    try {
+      const oauth2Client = this.getOAuth2Client();
+      await oauth2Client.revokeToken(token);
+      logger.info('[Google AuthService] Successfully revoked Google token.');
+      return { success: true };
+    } catch (err) {
+      // Fallback direct revocation call
+      try {
+        await axios.post(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, null, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          timeout: 5000,
+        });
+        logger.info('[Google AuthService] Token revoked via direct endpoint fallback.');
+        return { success: true };
+      } catch (axErr) {
+        logger.warn('[Google AuthService] Revocation warning (token may already be expired or revoked):', axErr.message);
+        return { success: false, error: axErr.message };
+      }
+    }
+  }
+
+  /**
+   * Refreshes access token on demand for the user's authorized Gmail integration
+   */
+  async getFreshAccessToken(refreshToken) {
+    if (!refreshToken) {
+      throw new Error('Refresh token is required to obtain fresh access credentials.');
+    }
+    const oauth2Client = this.getOAuth2Client();
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    const { token, res } = await oauth2Client.getAccessToken();
+    if (!token) {
+      throw new Error('Failed to refresh access token from Google.');
+    }
+    return {
+      accessToken: token,
+      expiryDate: res?.data?.expiry_date ? new Date(res.data.expiry_date) : new Date(Date.now() + 3500 * 1000),
+    };
+  }
 }
 
 export const googleAuthService = new GoogleAuthService();
