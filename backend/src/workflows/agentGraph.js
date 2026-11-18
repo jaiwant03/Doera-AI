@@ -402,6 +402,7 @@ const executionNode = async (state) => {
   try {
     const draft = state.pendingApproval?.details || {};
     const approvalReq = {
+      userId: state.userId,
       actionTitle: `Inquiry Outreach to ${primaryContact?.businessName || 'Provider'}`,
       actionType: 'SEND_OUTREACH',
       actionPayload: draft,
