@@ -21,6 +21,34 @@ const UserSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    authProvider: {
+      type: String,
+      enum: ['google', 'local'],
+      default: 'local',
+      index: true,
+    },
+    googleSubjectId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    googleEmail: {
+      type: String,
+      default: null,
+      lowercase: true,
+      trim: true,
+    },
+    executionMode: {
+      type: String,
+      enum: ['REAL', 'DEMO'],
+      default: 'DEMO',
+      index: true,
+    },
+    gmailIntegrationStatus: {
+      type: String,
+      enum: ['connected', 'disconnected', 'not_connected'],
+      default: 'not_connected',
+    },
     avatar: {
       type: String,
       default: null,

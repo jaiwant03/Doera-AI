@@ -13,18 +13,52 @@ const IntegrationSchema = new mongoose.Schema(
       enum: ['gmail', 'google_calendar', 'whatsapp', 'google_places', 'n8n'],
       required: true,
     },
-    status: {
+    providerAccountId: {
       type: String,
-      enum: ['connected', 'disconnected', 'error', 'pending'],
+      default: null,
+      index: true,
+    },
+    providerEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    accountEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    // Sensitive credentials stored encrypted using AES-256-GCM
+    encryptedAccessToken: {
+      type: String,
+      default: null,
+    },
+    encryptedRefreshToken: {
+      type: String,
+      default: null,
+    },
+    grantedScopes: {
+      type: [String],
+      default: [],
+    },
+    connectionStatus: {
+      type: String,
+      enum: ['connected', 'disconnected', 'revoked', 'expired'],
       default: 'connected',
     },
-    accountEmail: String,
-    // Sensitive credentials stored encrypted using AES-256-GCM
-    encryptedAccessToken: String,
-    encryptedRefreshToken: String,
+    status: {
+      type: String,
+      enum: ['connected', 'disconnected', 'error', 'pending', 'revoked'],
+      default: 'connected',
+    },
     tokenExpiryDate: Date,
-    configData: mongoose.Schema.Types.Mixed,
+    connectedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    lastUsedAt: Date,
     lastVerifiedAt: Date,
+    configData: mongoose.Schema.Types.Mixed,
   },
   {
     timestamps: true,

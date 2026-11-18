@@ -73,6 +73,15 @@ const ApprovalSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    senderEmail: {
+      type: String,
+      default: null,
+    },
+    executionMode: {
+      type: String,
+      enum: ['REAL', 'DEMO'],
+      default: 'DEMO',
+    },
     currency: {
       type: String,
       default: 'INR',
