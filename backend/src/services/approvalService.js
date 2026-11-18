@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { config } from '../config/env.js';
 import demoExecutionService from './demo/DemoExecutionService.js';
+import executionAuthorizationService from './executionAuthorizationService.js';
 import Approval from '../models/Approval.js';
 import Task from '../models/Task.js';
 import Integration from '../models/Integration.js';
@@ -85,6 +86,19 @@ class ApprovalService {
       }
     }
 
+    // Automatically determine sender identity and execution mode
+    let senderEmail = null;
+    let effectiveExecutionMode = 'DEMO';
+    try {
+      const eligibility = await executionAuthorizationService.evaluateUserEligibility(userId);
+      if (eligibility.mode === 'REAL') {
+        effectiveExecutionMode = 'REAL';
+        senderEmail = eligibility.gmailEmail;
+      }
+    } catch (modeErr) {
+      logger.debug('[ApprovalService] Mode evaluation notice on create:', modeErr.message);
+    }
+
     const approval = await Approval.create({
       userId,
       taskId: resolvedTaskId,
@@ -98,6 +112,8 @@ class ApprovalService {
       dataDisclosure: Array.isArray(dataDisclosure) ? dataDisclosure : [],
       estimatedCost: Number(estimatedCost) || 0,
       currency: currency || 'INR',
+      senderEmail,
+      executionMode: effectiveExecutionMode,
       riskLevel: riskLevel || 'MEDIUM',
       riskExplanation: riskExplanation || 'Requires external dispatch or data disclosure.',
       evidence: Array.isArray(evidence) ? evidence : [],

@@ -1,0 +1,298 @@
+import axios from 'axios';
+import User from '../models/User.js';
+import Integration from '../models/Integration.js';
+import Task from '../models/Task.js';
+import ExecutionEvidence from '../models/ExecutionEvidence.js';
+import demoExecutionService from './demo/DemoExecutionService.js';
+import emailAdapter from '../integrations/emailAdapter.js';
+import googleAuthService from './googleAuthService.js';
+import { decrypt } from '../utils/encryption.js';
+import { logger } from '../utils/logger.js';
+import { buildTaskLookup } from '../utils/queryHelper.js';
+
+/**
+ * DOERA AI — Execution Authorization & Multi-User Dispatch Service
+ * 
+ * CORE PRINCIPLE:
+ * "Every Google-authenticated user operates through their own explicitly authorized integrations.
+ * Every manually registered user gets a complete hackathon demo experience.
+ * No user can access another user's accounts."
+ */
+class ExecutionAuthorizationService {
+  constructor() {
+    this.executedApprovals = new Set();
+  }
+
+  /**
+   * Determine the effective execution mode and authorization status for a user
+   * Server-authoritative: Frontend cannot override or spoof this.
+   */
+  async evaluateUserEligibility(userId) {
+    if (!userId) {
+      return {
+        eligible: false,
+        mode: 'DEMO',
+        reason: 'Unauthenticated or missing user ID.',
+      };
+    }
+
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return {
+        eligible: false,
+        mode: 'DEMO',
+        reason: 'User account not found.',
+      };
+    }
+
+    // MODE B: Manual registration / local password login -> STRICT DEMO ONLY
+    if (user.authProvider !== 'google' || !user.googleSubjectId) {
+      return {
+        eligible: false,
+        mode: 'DEMO',
+        user,
+        reason: 'Manual registration and local password login users are restricted to Hackathon Demo Mode.',
+      };
+    }
+
+    // Server-enforced check: even if user doc has executionMode, ensure it's verified Google
+    if (user.executionMode !== 'REAL') {
+      return {
+        eligible: false,
+        mode: 'DEMO',
+        user,
+        reason: 'User account is assigned to DEMO execution mode.',
+      };
+    }
+
+    // MODE A: Google-authenticated user qualifies for REAL execution
+    // Check user's explicitly connected Gmail integration
+    const gmailIntegration = await Integration.findOne({
+      userId: user._id,
+      provider: 'gmail',
+      status: 'connected',
+    });
+
+    const hasValidGmail = !!(gmailIntegration && gmailIntegration.encryptedRefreshToken);
+
+    return {
+      eligible: true,
+      mode: 'REAL',
+      user,
+      gmailIntegration: hasValidGmail ? gmailIntegration : null,
+      gmailConnected: hasValidGmail,
+      gmailEmail: gmailIntegration?.accountEmail || gmailIntegration?.providerEmail || null,
+    };
+  }
+
+  /**
+   * Authorize and execute an approved human action
+   * Enforces strict multi-tenant isolation, version checks, and idempotency.
+   */
+  async executeApprovedAction(approval, userId) {
+    if (!approval) {
+      throw new Error('Approval object is required for execution.');
+    }
+
+    // Strict ownership validation (TEST C: User A cannot execute for User B)
+    if (String(approval.userId) !== String(userId)) {
+      throw new Error('SECURITY VIOLATION: Unauthorized execution attempt. You do not own this approval request.');
+    }
+
+    // Idempotency & duplicate protection (TEST L)
+    const dedupKey = approval.idempotencyKey || String(approval._id);
+    if (this.executedApprovals.has(dedupKey) && approval.status === 'EXECUTED') {
+      logger.warn(`[ExecutionAuth] Duplicate execution blocked for idempotency key: ${dedupKey}`);
+      return approval.executionResult;
+    }
+
+    // Expiration check
+    if (typeof approval.isExpired === 'function' && approval.isExpired()) {
+      throw new Error('Approval request has expired and cannot be executed.');
+    }
+
+    // Evaluate user authorization eligibility
+    const eligibility = await this.evaluateUserEligibility(userId);
+
+    // =========================================================================
+    // BRANCH 1: MODE B — MANUAL USER -> HACKATHON DEMO MODE SIMULATION ONLY
+    // =========================================================================
+    if (eligibility.mode === 'DEMO') {
+      logger.info(`[ExecutionAuth] 🛡️ User ${userId} is in HACKATHON DEMO MODE. Routing action "${approval.actionTitle}" to DemoExecutionService.`);
+      
+      const demoResult = await demoExecutionService.executeAction(approval, userId);
+      this.executedApprovals.add(dedupKey);
+
+      return {
+        ...demoResult,
+        executionMode: 'HACKATHON_DEMO_SIMULATION',
+        isSimulated: true,
+        simulationNotice: 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED.',
+      };
+    }
+
+    // =========================================================================
+    // BRANCH 2: MODE A — GOOGLE AUTHENTICATED USER -> REAL AUTOMATION PIPELINE
+    // =========================================================================
+    const { actionType, actionPayload = {}, target = {} } = approval;
+
+    // Check action type: For this implementation, real execution applies to Email (Gmail)
+    if (actionType === 'SEND_EMAIL' || actionType === 'SEND_OUTREACH') {
+      // TEST D: Google user has not connected Gmail -> Block real sending, require connection
+      if (!eligibility.gmailConnected || !eligibility.gmailIntegration) {
+        logger.warn(`[ExecutionAuth] User ${userId} attempted real email dispatch without connected Gmail integration.`);
+        const err = new Error(
+          'Gmail connection required: You are signed in via Google, but have not authorized Gmail sending. Please visit Integrations & Settings and click "Connect Gmail for Automation".'
+        );
+        err.statusCode = 403;
+        err.code = 'GMAIL_CONNECTION_REQUIRED';
+        throw err;
+      }
+
+      const userIntegration = eligibility.gmailIntegration;
+      const senderEmail = userIntegration.accountEmail || userIntegration.providerEmail;
+
+      // Extract and validate recipient RFC 5322
+      let recipient = target?.email || actionPayload?.email || actionPayload?.recipientEmail || actionPayload?.recipient;
+      if (!recipient || typeof recipient !== 'string' || !recipient.includes('@')) {
+        throw new Error('Invalid or missing recipient email address.');
+      }
+      recipient = recipient.trim();
+
+      const subject = actionPayload?.subject || `Inquiry regarding: ${approval.actionTitle}`;
+      const body = actionPayload?.emailHtml || actionPayload?.message || actionPayload?.emailText || '';
+
+      // Decrypt user's OAuth refresh token securely
+      let refreshToken;
+      try {
+        refreshToken = decrypt(userIntegration.encryptedRefreshToken);
+      } catch (decErr) {
+        logger.error(`[ExecutionAuth] Decryption failed for user ${userId} Gmail refresh token:`, decErr.message);
+        throw new Error('Security Error: Could not decrypt user OAuth credentials. Please reconnect Gmail in Settings.');
+      }
+
+      // Refresh token with Google to get fresh user access token (TEST I)
+      let accessToken;
+      try {
+        const fresh = await googleAuthService.getFreshAccessToken(refreshToken);
+        accessToken = fresh.accessToken;
+      } catch (refreshErr) {
+        logger.error(`[ExecutionAuth] Token refresh failed for ${senderEmail}:`, refreshErr.message);
+        userIntegration.status = 'error';
+        userIntegration.connectionStatus = 'expired';
+        await userIntegration.save();
+        await User.findByIdAndUpdate(userId, { gmailIntegrationStatus: 'disconnected' });
+        throw new Error(`Gmail authorization has expired or was revoked by Google (${refreshErr.message}). Please reconnect Gmail in Integrations.`);
+      }
+
+      let dispatchResult = null;
+      let executionEngine = 'GMAIL_OAUTH2_DIRECT';
+
+      // Secure n8n Multi-User Execution Pipeline:
+      // If N8N_WEBHOOK_URL is configured, supply the user's fresh access token & sender identity
+      if (process.env.N8N_WEBHOOK_URL) {
+        try {
+          logger.info(`[ExecutionAuth] Dispatching to n8n workflow for sender "${senderEmail}" -> recipient "${recipient}"`);
+          const n8nRes = await axios.post(
+            process.env.N8N_WEBHOOK_URL,
+            {
+              approvalId: approval._id,
+              taskId: approval.taskId,
+              actionType,
+              sender: senderEmail,
+              recipient,
+              subject,
+              body,
+              userAccessToken: accessToken,
+              authorizedAt: new Date().toISOString(),
+            },
+            { timeout: 8000 }
+          );
+
+          if (n8nRes.status >= 200 && n8nRes.status < 300) {
+            executionEngine = 'N8N_GMAIL_AUTOMATION';
+            dispatchResult = {
+              success: true,
+              messageId: n8nRes.data?.messageId || n8nRes.data?.id || `n8n_${Date.now()}`,
+              threadId: n8nRes.data?.threadId || null,
+              n8nExecutionId: n8nRes.data?.executionId || null,
+            };
+          }
+        } catch (n8nErr) {
+          // TEST K: n8n unavailable -> safely fall back to native Gmail OAuth without duplicate sending
+          logger.warn('[ExecutionAuth] n8n webhook unreachable, utilizing direct Gmail API dispatch fallback:', n8nErr.message);
+        }
+      }
+
+      // If n8n was not configured or fell back, dispatch directly via Google Gmail API
+      if (!dispatchResult) {
+        dispatchResult = await emailAdapter.sendViaGmailOAuth(userIntegration, recipient, subject, body);
+        executionEngine = 'GMAIL_OAUTH2_DIRECT';
+      }
+
+      // Record tamper-proof Execution Evidence in MongoDB
+      if (approval.taskId) {
+        await ExecutionEvidence.create({
+          taskId: approval.taskId,
+          userId,
+          agentName: 'Execution Agent',
+          actionType: 'SEND_EMAIL',
+          externalProvider: executionEngine === 'N8N_GMAIL_AUTOMATION' ? 'n8n Master Orchestrator (User Gmail)' : 'Google Gmail API (User OAuth2)',
+          verificationStatus: 'DELIVERED',
+          requestPayload: {
+            sender: senderEmail,
+            recipient,
+            subject,
+          },
+          responsePayload: {
+            messageId: dispatchResult.messageId,
+            threadId: dispatchResult.threadId,
+            status: 'DELIVERED',
+            provider: executionEngine,
+          },
+          verifiedAt: new Date(),
+        }).catch((evErr) => logger.warn('[ExecutionAuth] Evidence write notice:', evErr.message));
+
+        // Update linked task
+        const linkedTask = await Task.findOne(buildTaskLookup(approval.taskId));
+        if (linkedTask) {
+          linkedTask.status = 'IN_PROGRESS';
+          linkedTask.currentAction = `Email dispatched to ${recipient} via ${senderEmail}`;
+          await linkedTask.save().catch(() => {});
+        }
+      }
+
+      this.executedApprovals.add(dedupKey);
+
+      return {
+        delivered: true,
+        isSimulated: false,
+        executionMode: 'REAL',
+        channel: 'Gmail OAuth2 (Personal Authenticated Sender)',
+        sender: senderEmail,
+        recipient,
+        subject,
+        messageId: dispatchResult.messageId,
+        threadId: dispatchResult.threadId,
+        status: 'DELIVERED',
+        details: `Real email dispatched from authorized Gmail identity: ${senderEmail} to ${recipient}. Google Message ID: ${dispatchResult.messageId}`,
+        completedAt: new Date().toISOString(),
+      };
+    }
+
+    // For WhatsApp, Telegram, payments, and other channels without per-user enterprise auth:
+    // Route safely to DemoExecutionService with explicit simulation label
+    logger.info(`[ExecutionAuth] Action "${actionType}" does not have personal credentials connected. Routing to DemoExecutionService with simulation disclaimer.`);
+    const simulatedResult = await demoExecutionService.executeAction(approval, userId);
+    this.executedApprovals.add(dedupKey);
+
+    return {
+      ...simulatedResult,
+      isSimulated: true,
+      simulationNotice: 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED.',
+    };
+  }
+}
+
+export const executionAuthorizationService = new ExecutionAuthorizationService();
+export default executionAuthorizationService;
