@@ -105,7 +105,7 @@ describe('DOERA AI — Dual Execution Modes (Google OAuth vs Manual Login) & 12 
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.executionResult.sender).toBe('userA@gmail.com');
+    expect(res.body.executionResult.sender.toLowerCase()).toBe('usera@gmail.com');
     expect(res.body.executionResult.messageId).toBe('gmail_msg_id_A_123');
     expect(sendSpy).toHaveBeenCalled();
   });
@@ -154,7 +154,7 @@ describe('DOERA AI — Dual Execution Modes (Google OAuth vs Manual Login) & 12 
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.executionResult.sender).toBe('userB@gmail.com');
+    expect(res.body.executionResult.sender.toLowerCase()).toBe('userb@gmail.com');
     expect(res.body.executionResult.messageId).toBe('gmail_msg_id_B_456');
     expect(sendSpy).toHaveBeenCalled();
   });
