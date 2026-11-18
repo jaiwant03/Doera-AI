@@ -129,8 +129,47 @@ const Settings = () => {
     setTimeout(() => setSaveStatus(null), 2500);
   };
 
+  const handleConnectGmail = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get('/integrations/gmail/auth-url');
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error('Failed to get Gmail auth url:', err);
+      setSaveStatus('Error initiating Gmail authorization. Please try again.');
+      setTimeout(() => setSaveStatus(null), 3000);
+      setIsLoading(false);
+    }
+  };
+
+  const handleDisconnectGmail = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your Gmail integration? Outbound automated email sending will be blocked.')) return;
+    try {
+      setIsLoading(true);
+      await api.post('/integrations/gmail/disconnect');
+      setIntegrations(prev => ({
+        ...prev,
+        gmail: { connected: false, email: '' },
+      }));
+      setSaveStatus('Gmail disconnected and authorization revoked.');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (err) {
+      console.error('Failed to disconnect Gmail:', err);
+      setSaveStatus('Error disconnecting Gmail.');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const testIntegration = (serviceName) => {
-    if (serviceName === 'Calendar' || serviceName === 'Email') {
+    if (serviceName === 'Email') {
+      handleConnectGmail();
+      return;
+    }
+    if (serviceName === 'Calendar') {
       const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
       window.location.href = `${backendUrl}/auth/google?state=integration&redirect=true`;
       return;
