@@ -91,9 +91,25 @@ export const login = async (req, res, next) => {
       });
     }
 
-    const token = jwt.sign({ userId: user._id, role: user.role }, config.jwtSecret, {
-      expiresIn: '7d',
+    // Check if user has an active Gmail integration
+    const gmailIntegration = await Integration.findOne({
+      userId: user._id,
+      provider: 'gmail',
+      status: 'connected',
     });
+
+    // Enforce server-side access mode:
+    // Only verified Google OAuth identities qualify for REAL mode;
+    // local password accounts always use DEMO mode.
+    const isGoogleAuth = user.authProvider === 'google' && !!user.googleSubjectId;
+    const effectiveMode = isGoogleAuth ? (user.executionMode || 'REAL') : 'DEMO';
+    const gmailStatus = gmailIntegration ? 'connected' : (user.gmailIntegrationStatus || 'not_connected');
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role, executionMode: effectiveMode, authProvider: isGoogleAuth ? 'google' : 'local' },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
 
     res.json({
       token,
@@ -102,6 +118,12 @@ export const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        authProvider: isGoogleAuth ? 'google' : 'local',
+        googleSubjectId: user.googleSubjectId || null,
+        googleEmail: user.googleEmail || null,
+        executionMode: effectiveMode,
+        gmailIntegrationStatus: gmailStatus,
+        connectedGmailEmail: gmailIntegration?.accountEmail || gmailIntegration?.providerEmail || null,
         preferences: user.preferences,
       },
     });
