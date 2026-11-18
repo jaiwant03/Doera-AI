@@ -258,29 +258,54 @@ const Settings = () => {
         {/* TAB 1: INTEGRATIONS */}
         {activeTab === 'integrations' && (
           <div className="doera-settings-card animate-fadeIn">
-            {/* Hackathon Safe Demo Mode Banner */}
-            <div
-              style={{
-                marginBottom: '20px',
-                padding: '12px 16px',
-                background: 'rgba(8, 127, 140, 0.12)',
-                border: '1px solid rgba(45, 212, 191, 0.35)',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-              }}
-            >
-              <ShieldCheck size={20} color="#2DD4BF" style={{ flexShrink: 0 }} />
-              <div>
-                <div style={{ color: '#2DD4BF', fontSize: '12.5px', fontWeight: 700 }}>
-                  HACKATHON DEMO MODE ACTIVE — SAFE SIMULATED PIPELINE
-                </div>
-                <div style={{ color: '#BBA9C0', fontSize: '11.5px', marginTop: '2px' }}>
-                  All external dispatches are routed through DemoExecutionService. Personal credentials and private channels are disconnected to guarantee safe public demonstration.
+            {/* Mode A / Mode B Status Banner */}
+            {user?.executionMode === 'REAL' && user?.authProvider === 'google' ? (
+              <div
+                style={{
+                  marginBottom: '20px',
+                  padding: '12px 16px',
+                  background: 'rgba(241, 45, 152, 0.12)',
+                  border: '1px solid rgba(241, 45, 152, 0.4)',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <ShieldCheck size={20} color="#F12D98" style={{ flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: '#FF55BD', fontSize: '12.5px', fontWeight: 700 }}>
+                    MODE A: GOOGLE AUTHENTICATED — REAL AUTOMATION ELIGIBLE
+                  </div>
+                  <div style={{ color: '#E2D9E5', fontSize: '11.5px', marginTop: '2px' }}>
+                    Authenticated as <strong>{user?.googleEmail || user?.email}</strong>. Outbound emails dispatch through your own authorized Gmail identity upon explicit human approval. No shared accounts.
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div
+                style={{
+                  marginBottom: '20px',
+                  padding: '12px 16px',
+                  background: 'rgba(8, 127, 140, 0.12)',
+                  border: '1px solid rgba(45, 212, 191, 0.35)',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <ShieldCheck size={20} color="#2DD4BF" style={{ flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: '#2DD4BF', fontSize: '12.5px', fontWeight: 700 }}>
+                    MODE B: HACKATHON DEMO MODE ACTIVE — SAFE SIMULATED PIPELINE
+                  </div>
+                  <div style={{ color: '#BBA9C0', fontSize: '11.5px', marginTop: '2px' }}>
+                    Manual registration and password accounts operate strictly in Demo Mode. All external actions (Gmail, WhatsApp, bookings, payments) are simulated with verifiable receipts. Sign in with Google to qualify for real automation.
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Business Discovery */}
             <div className="doera-integration-row">
               <div className="doera-integration-left">
@@ -317,26 +342,62 @@ const Settings = () => {
                 </div>
                 <div className="doera-integration-info">
                   <div className="doera-integration-title-line">
-                    <h3 className="doera-integration-name">Gmail / Email Outreach</h3>
-                    {integrations.gmail?.connected ? (
-                      <span className="doera-badge-status success">Connected ({integrations.gmail.email || 'OAuth'})</span>
+                    <h3 className="doera-integration-name">Gmail Automation (Per-User Integration)</h3>
+                    {user?.authProvider === 'google' ? (
+                      integrations.gmail?.connected ? (
+                        <span className="doera-badge-status success">
+                          Connected ({integrations.gmail.email || user?.googleEmail})
+                        </span>
+                      ) : (
+                        <span className="doera-badge-status pending" style={{ background: 'rgba(241, 45, 152, 0.15)', color: '#FF55BD', borderColor: 'rgba(241, 45, 152, 0.3)' }}>
+                          Gmail Authorization Required
+                        </span>
+                      )
                     ) : (
-                      <span className="doera-badge-status pending">Configuration Required</span>
+                      <span className="doera-badge-status pending">
+                        Demo Mode (Simulated Only)
+                      </span>
                     )}
                   </div>
                   <p className="doera-integration-desc">
-                    Authorized email dispatching via Gmail OAuth2 or SMTP transporter.
+                    {user?.authProvider === 'google'
+                      ? integrations.gmail?.connected
+                        ? `Live sender: ${integrations.gmail.email || user?.googleEmail}. Real emails dispatch through your verified account after explicit human approval.`
+                        : 'Connect your Gmail account to enable real outbound email sending. Each Google user uses their own verified Gmail account.'
+                      : 'Outbound emails are simulated with verified receipts. Sign in via Google OAuth to enable real-time Gmail automation.'}
                   </p>
                 </div>
               </div>
               <div className="doera-integration-right">
-                <button
-                  type="button"
-                  onClick={() => testIntegration('Email')}
-                  className="doera-btn-action-outline"
-                >
-                  {integrations.gmail?.connected ? 'Reconnect' : 'Connect via Google'}
-                </button>
+                {user?.authProvider === 'google' ? (
+                  integrations.gmail?.connected ? (
+                    <button
+                      type="button"
+                      onClick={handleDisconnectGmail}
+                      className="doera-btn-action-outline"
+                      style={{ color: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                    >
+                      Disconnect Gmail
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleConnectGmail}
+                      className="doera-btn-action-outline"
+                      style={{ background: 'linear-gradient(135deg, #F12D98 0%, #9C52E8 100%)', color: '#FFFFFF', border: 'none', fontWeight: 700 }}
+                    >
+                      Connect Gmail for Automation
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login')}
+                    className="doera-btn-action-outline"
+                  >
+                    Sign In with Google
+                  </button>
+                )}
               </div>
             </div>
 
