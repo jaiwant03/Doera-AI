@@ -1,5 +1,6 @@
 import ExecutionEvidence from '../models/ExecutionEvidence.js';
 import { config } from '../config/env.js';
+import executionAuthorizationService from '../services/executionAuthorizationService.js';
 import demoExecutionService from '../services/demo/DemoExecutionService.js';
 import emailAdapter from '../integrations/emailAdapter.js';
 import whatsappAdapter from '../integrations/whatsappAdapter.js';
@@ -19,36 +20,33 @@ class ExecutionAgent {
     const startedAt = new Date();
     logger.info(`[Execution Agent] Executing action: "${approvalRequest.actionTitle}" (${approvalRequest.actionType})`);
 
-    // Permanent Fail-Closed Demo Mode: Always route through DemoExecutionService
-    if (config.demoMode) {
-      logger.info(`[Execution Agent] 🛡️ DEMO_MODE active: Delegating execution to DemoExecutionService`);
-      const demoResult = await demoExecutionService.executeAction(
-        {
-          _id: approvalRequest._id || approvalRequest.actionId,
-          taskId: taskContext.taskId,
-          userId: taskContext.userId,
-          actionTitle: approvalRequest.actionTitle,
-          actionType: approvalRequest.actionType,
-          actionPayload: approvalRequest.actionPayload,
-          target: approvalRequest.target,
-          requestingAgent: 'Execution',
-          evidence: approvalRequest.evidence,
-        },
-        taskContext.userId
-      );
+    // Server-Authoritative Execution Authorization & Routing
+    const authResult = await executionAuthorizationService.executeApprovedAction(
+      {
+        _id: approvalRequest._id || approvalRequest.actionId,
+        taskId: taskContext.taskId,
+        userId: taskContext.userId,
+        actionTitle: approvalRequest.actionTitle,
+        actionType: approvalRequest.actionType,
+        actionPayload: approvalRequest.actionPayload,
+        target: approvalRequest.target,
+        requestingAgent: 'Execution',
+        evidence: approvalRequest.evidence,
+      },
+      taskContext.userId
+    );
 
-      return {
-        evidenceId: demoResult.evidenceId,
-        verificationStatus: demoResult.status || 'DELIVERED',
-        externalReference: demoResult.demoExecutionId,
-        provider: demoResult.provider,
-        delivered: true,
-        isSimulated: true,
-        simulationNotice: 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED',
-        dispatchedAt: demoResult.dispatchedAt,
-        details: demoResult.providerResponse,
-      };
-    }
+    return {
+      evidenceId: authResult.evidenceId || `ev_${Date.now()}`,
+      verificationStatus: authResult.status || (authResult.delivered ? 'DELIVERED' : 'PENDING'),
+      externalReference: authResult.messageId || authResult.demoExecutionId || authResult.externalConfirmation || 'CONFIRMED',
+      provider: authResult.channel || authResult.provider || 'DOERA Autonomous Pipeline',
+      delivered: !!authResult.delivered,
+      isSimulated: !!authResult.isSimulated,
+      simulationNotice: authResult.isSimulated ? 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED.' : null,
+      dispatchedAt: authResult.completedAt || new Date().toISOString(),
+      details: authResult.details || authResult.serviceResponse || authResult,
+    };
 
     const actionType = approvalRequest.actionType;
     const actionPayload = approvalRequest.actionPayload || {};
