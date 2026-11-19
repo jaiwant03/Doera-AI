@@ -647,16 +647,20 @@ const schedulingNode = async (state) => {
 
   const schedResult = await schedulingAgent.scheduleAppointment(state, primaryContact, state.userIntegration);
 
-  const steps = state.steps.map((s) =>
-    s.agent === 'Scheduling' || s.id === 'schedule'
+  const steps = state.steps.map((s) => {
+    const isSched =
+      s.agent === 'Scheduling' ||
+      s.id === 'schedule' ||
+      /schedul|appoint|book|slot/i.test(s.name || '');
+    return isSched
       ? {
           ...s,
           status: 'completed',
           details: `Appointment window coordinated: ${schedResult.output?.bookingDetails?.dateTime || 'Pending'}. Status: ${schedResult.output?.bookingDetails?.bookingStatus}.`,
           timestamp: new Date(),
         }
-      : s
-  );
+      : s;
+  });
 
   await logMissionEvent(
     state,
