@@ -74,6 +74,20 @@ Output pure JSON:
       }
     }
 
+    // Ensure scheduling agent step exists if appointment/booking is requested
+    if (
+      (requiredAgents.includes('Scheduling') || /appointment|book|schedule|arrange/i.test(userRequest)) &&
+      !subtasks.some((st) => st.agent === 'Scheduling')
+    ) {
+      subtasks.push({
+        id: 'schedule',
+        title: 'Coordinating appointment slot',
+        agent: 'Scheduling',
+        status: 'pending',
+        dependencies: [subtasks[subtasks.length - 1]?.id || 'sub_1'],
+      });
+    }
+
     const steps = subtasks.map((st) => ({
       id: st.id,
       name: st.title,

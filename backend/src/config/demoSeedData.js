@@ -146,5 +146,5 @@ export const getDemoFallbackPlaces = (query = '', location = '') => {
   if (combined.includes('venue') || combined.includes('hall') || combined.includes('event') || combined.includes('symposium')) {
     return HACKATHON_DEMO_LOCATIONS.event_venues;
   }
-  return HACKATHON_DEMO_LOCATIONS.cardiology_chennai;
+  return [];
 };
