@@ -1,4 +1,6 @@
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
