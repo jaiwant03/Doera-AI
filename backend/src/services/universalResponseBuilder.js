@@ -53,7 +53,7 @@ export const buildUniversalResponse = (taskOrPayload) => {
     md += buildTravelSection(travelData, task.locationData);
   } else if (category === 'DOCUMENT_ANALYSIS' || docData) {
     // Document analysis layout
-    md += buildDocumentSection(docData);
+    md += buildDocumentSection(docData, crossDocAnalysis, userRequest);
   } else if (category === 'DATA_ANALYSIS' || dataAnalysis) {
     // Data analysis layout
     md += buildDataAnalysisSection(dataAnalysis);
