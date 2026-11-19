@@ -213,24 +213,145 @@ function buildTravelSection(route, locationData) {
   return md;
 }
 
-function buildDocumentSection(docs) {
-  let md = `### Document Analysis & Key Findings\n\n`;
-  (docs || []).forEach((doc) => {
-    md += `#### File: ${doc.filename}\n`;
-    md += `> ${doc.summary}\n\n`;
-    if (doc.keyFindings && doc.keyFindings.length > 0) {
-      md += `**Key Findings**:\n`;
-      doc.keyFindings.forEach((f) => (md += `- ${f}\n`));
+function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
+  let md = '';
+
+  // 1. Multi-Document Comparative Intelligence (When 2+ documents are analyzed)
+  if (crossDocAnalysis && Array.isArray(crossDocAnalysis.comparisonMatrix) && crossDocAnalysis.comparisonMatrix.length > 0) {
+    md += `### Multi-Document Comparative Intelligence\n\n`;
+    if (crossDocAnalysis.comparisonSummary) {
+      md += `> ${crossDocAnalysis.comparisonSummary}\n\n`;
+    }
+
+    md += `| Comparison Dimension | Document 1 | Document 2 | Comparative Finding |\n`;
+    md += `| :--- | :--- | :--- | :--- |\n`;
+    crossDocAnalysis.comparisonMatrix.forEach((m) => {
+      md += `| **${m.criteria}** | ${m.doc1Value || '-'} | ${m.doc2Value || '-'} | ${m.verdict || '-'} |\n`;
+    });
+    md += `\n`;
+
+    if (crossDocAnalysis.commonRequirements && crossDocAnalysis.commonRequirements.length > 0) {
+      md += `**Common Terms & Requirements Across Documents**:\n`;
+      crossDocAnalysis.commonRequirements.forEach((r) => (md += `- ${r}\n`));
       md += `\n`;
     }
-    if (doc.importantSections && doc.importantSections.length > 0) {
-      md += `**Important Sections**:\n`;
-      doc.importantSections.forEach((s) => {
-        md += `- **${s.section}** (${s.pageOrReference || 'Document Scope'}): ${s.content}\n`;
+
+    if (crossDocAnalysis.conflictingRequirements && crossDocAnalysis.conflictingRequirements.length > 0) {
+      md += `**Key Discrepancies & Conflicts**:\n`;
+      crossDocAnalysis.conflictingRequirements.forEach((c) => {
+        if (typeof c === 'string') {
+          md += `- ${c}\n`;
+        } else {
+          md += `- **${c.issue}**: Doc 1 (*${c.doc1Stance}*) vs Doc 2 (*${c.doc2Stance}*)\n`;
+        }
       });
       md += `\n`;
     }
+
+    if (crossDocAnalysis.missingInEach) {
+      const doc1Lacks = crossDocAnalysis.missingInEach.doc1Lacks || [];
+      const doc2Lacks = crossDocAnalysis.missingInEach.doc2Lacks || [];
+      if (doc1Lacks.length > 0 || doc2Lacks.length > 0) {
+        md += `**Coverage Gaps Between Sources**:\n`;
+        if (doc1Lacks.length > 0) md += `- **Missing in Doc 1**: ${doc1Lacks.join('; ')}\n`;
+        if (doc2Lacks.length > 0) md += `- **Missing in Doc 2**: ${doc2Lacks.join('; ')}\n`;
+        md += `\n`;
+      }
+    }
+
+    if (crossDocAnalysis.recommendation) {
+      md += `#### Grounded Decision Recommendation\n> ${crossDocAnalysis.recommendation}\n\n`;
+    }
+
+    md += `---\n\n`;
+  }
+
+  // 2. Individual Document Deep Reports
+  (docs || []).forEach((doc, idx) => {
+    const scopeLabel = doc.fileType === 'PPTX' || doc.fileType === 'PPT'
+      ? `${doc.pageCount || 1} slide(s)`
+      : (doc.fileType === 'XLSX' || doc.fileType === 'XLS' ? `${doc.pageCount || 1} sheet(s)` : `${doc.pageCount || 1} page(s)`);
+
+    md += `### Document Report: ${doc.filename}\n\n`;
+    md += `- **Format**: \`${doc.fileType || 'DOCUMENT'}\` • **Scope**: **${scopeLabel}** (${doc.wordCount || 0} words)\n`;
+    md += `- **Processing Status**: **${doc.extractionStatus === 'COMPLETED' ? '✓ Successfully Extracted & Grounded' : (doc.isScanned ? '📷 Scanned Document (OCR Verified)' : '⚠️ Partial Extraction')}**\n\n`;
+
+    // Executive Summary
+    if (doc.summary) {
+      md += `#### Executive Summary\n> ${doc.summary}\n\n`;
+    }
+
+    // Factual Findings with exact Page/Slide citations
+    const facts = doc.factualFindings && doc.factualFindings.length > 0
+      ? doc.factualFindings
+      : (doc.keyFindings || []);
+
+    if (facts.length > 0) {
+      md += `#### Grounded Factual Statements\n`;
+      facts.forEach((f) => {
+        if (typeof f === 'string') {
+          md += `- ${f}\n`;
+        } else {
+          const cit = f.citation ? ` *(${f.citation})*` : '';
+          md += `- ${f.fact || f.claim || f}${cit}\n`;
+        }
+      });
+      md += `\n`;
+    }
+
+    // AI Interpretations & Technical Breakdown
+    if (doc.aiInterpretations && doc.aiInterpretations.length > 0) {
+      md += `#### AI Technical Interpretation & Synthesis\n`;
+      doc.aiInterpretations.forEach((item) => (md += `- ${item}\n`));
+      md += `\n`;
+    }
+
+    // Important Sections
+    if (doc.importantSections && doc.importantSections.length > 0) {
+      md += `#### Key Sections & Structural Hierarchy\n`;
+      doc.importantSections.slice(0, 6).forEach((s) => {
+        md += `- **${s.title || s.section}** ${s.pageOrReference ? `*(${s.pageOrReference})*` : ''}: ${s.content || s.summary || ''}\n`;
+      });
+      md += `\n`;
+    }
+
+    // Key Requirements & Technologies
+    if ((doc.keyRequirements && doc.keyRequirements.length > 0) || (doc.technologies && doc.technologies.length > 0)) {
+      if (doc.keyRequirements?.length > 0) {
+        md += `#### Key Requirements & Specifications\n`;
+        doc.keyRequirements.forEach((r) => (md += `- ${r}\n`));
+        md += `\n`;
+      }
+      if (doc.technologies?.length > 0) {
+        md += `**Identified Technologies & Stacks**: ${doc.technologies.map((t) => `\`${t}\``).join(', ')}\n\n`;
+      }
+    }
+
+    // Identified Weaknesses & Risks
+    if (doc.identifiedWeaknesses && doc.identifiedWeaknesses.length > 0) {
+      md += `#### Identified Weaknesses, Risks & Missing Components\n`;
+      doc.identifiedWeaknesses.forEach((w) => (md += `- ⚠️ ${w}\n`));
+      md += `\n`;
+    }
+
+    // Recommendations
+    if (doc.recommendations && doc.recommendations.length > 0) {
+      md += `#### Improvement Recommendations\n`;
+      doc.recommendations.forEach((r) => (md += `- 💡 ${r}\n`));
+      md += `\n`;
+    }
+
+    // Missing Information Notice (Anti-hallucination guarantee)
+    if (doc.missingInformation && doc.missingInformation.length > 0 && doc.missingInformation[0] !== 'None') {
+      md += `> ℹ️ **Information Absent in Document**: The document does not contain explicit records regarding: *${doc.missingInformation.join(', ')}*. No external assumptions were fabricated.\n\n`;
+    }
+
+    // Processing Limitations
+    if (doc.limitations && doc.limitations.length > 0) {
+      md += `*Extraction Limitations: ${doc.limitations.join('; ')}*\n\n`;
+    }
   });
+
   return md;
 }
 
