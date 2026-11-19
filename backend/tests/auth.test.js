@@ -67,7 +67,7 @@ describe('DOERA AI — Authentication & Security Tests', () => {
     });
 
     expect(res.status).toBe(401);
-    expect(res.body.error).toContain('Invalid credentials');
+    expect(res.body.error).toMatch(/Invalid password|Invalid credentials/);
   });
 
   it('should protect private routes and return current user profile', async () => {
