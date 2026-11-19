@@ -341,7 +341,7 @@ export const streamMessage = async (req, res) => {
           currentAction: 'Executing multi-agent coordination with verified discovery...',
           steps: [],
           externalContacts: [],
-          attachments,
+          attachments: effectiveAttachments,
           isApproved: false, // Enforce human approval gate before external outreach
           onEvent: async (evt) => {
             await AgentExecution.create({
@@ -732,7 +732,7 @@ export const sendMessage = async (req, res, next) => {
           currentAction: 'Executing multi-agent coordination with verified discovery...',
           steps: [],
           externalContacts: [],
-          attachments,
+          attachments: effectiveAttachments,
           isApproved: false, // Enforce human approval gate before external outreach
           onEvent: async (evt) => {
             await AgentExecution.create({
