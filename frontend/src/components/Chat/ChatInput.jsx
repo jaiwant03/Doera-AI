@@ -274,7 +274,13 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
             )}
             {attachments.map((file, idx) => (
               <div key={idx} className="doera-attachment-chip">
-                {file.type?.startsWith('image/') ? (
+                {file.type?.startsWith('image/') && file.dataUrl ? (
+                  <img
+                    src={file.dataUrl}
+                    alt={file.name}
+                    style={{ width: 16, height: 16, borderRadius: 3, objectFit: 'cover' }}
+                  />
+                ) : file.type?.startsWith('image/') ? (
                   <ImageIcon size={12} className="doera-chip-icon" />
                 ) : (
                   <FileText size={12} className="doera-chip-icon" />
