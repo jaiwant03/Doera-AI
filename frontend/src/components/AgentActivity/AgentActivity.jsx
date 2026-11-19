@@ -39,8 +39,13 @@ const AgentActivity = ({ task }) => {
 
   const currentAgent = task.currentAgent || 'Orchestrator';
   const currentAction = task.currentAction || 'Coordinating task lifecycle...';
-  const isAwaitingApproval = task.status === 'AWAITING_APPROVAL';
-  const isRunning = ['RECEIVED', 'UNDERSTANDING', 'PLANNING', 'EXECUTING', 'VERIFYING', 'AWAITING_APPROVAL'].includes(task.status);
+  const isAwaitingApproval =
+    ['AWAITING_APPROVAL', 'WAITING_FOR_APPROVAL', 'ACTION_REQUIRED'].includes(task.status) ||
+    Boolean(task.pendingApproval && !task.pendingApproval.approvedAt && !task.pendingApproval.rejectedAt);
+
+  const isRunning =
+    ['RECEIVED', 'UNDERSTANDING', 'PLANNING', 'EXECUTING', 'VERIFYING', 'AWAITING_APPROVAL', 'WAITING_FOR_APPROVAL', 'ACTION_REQUIRED', 'WAITING_FOR_RESPONSE'].includes(task.status) ||
+    isAwaitingApproval;
   const contactedProviders = task.externalContacts || task.outcome?.contacted || [];
 
   const handleApprove = async () => {
