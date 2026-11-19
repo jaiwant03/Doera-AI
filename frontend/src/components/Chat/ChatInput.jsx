@@ -149,18 +149,78 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const fileObjects = files.map((file) => ({
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      raw: file,
-    }));
+    const readPromises = files.map((file) => {
+      return new Promise((resolve) => {
+        const isText =
+          file.type.startsWith('text/') ||
+          file.type === 'application/json' ||
+          file.type === 'text/csv' ||
+          file.type === 'text/plain' ||
+          /\.(csv|json|txt|md|js|jsx|ts|tsx|py|html|css|xml|yaml|yml|log|sql)$/i.test(file.name);
 
-    setAttachments((prev) => [...prev, ...fileObjects]);
+        const isImage =
+          file.type.startsWith('image/') ||
+          /\.(png|jpe?g|webp|gif|svg)$/i.test(file.name);
+
+        const reader = new FileReader();
+
+        if (isText) {
+          reader.onload = () => {
+            resolve({
+              name: file.name,
+              size: file.size,
+              type: file.type || 'text/plain',
+              content: reader.result,
+              text: reader.result,
+            });
+          };
+          reader.onerror = () => {
+            resolve({
+              name: file.name,
+              size: file.size,
+              type: file.type || 'text/plain',
+              content: '',
+            });
+          };
+          reader.readAsText(file);
+        } else {
+          reader.onload = () => {
+            const dataUrl = reader.result;
+            const base64 = typeof dataUrl === 'string' && dataUrl.includes(',')
+              ? dataUrl.split(',')[1]
+              : '';
+            resolve({
+              name: file.name,
+              size: file.size,
+              type: file.type || (isImage ? 'image/png' : 'application/octet-stream'),
+              dataUrl,
+              base64,
+            });
+          };
+          reader.onerror = () => {
+            resolve({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              base64: '',
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    });
+
+    try {
+      const readFiles = await Promise.all(readPromises);
+      setAttachments((prev) => [...prev, ...readFiles]);
+    } catch (err) {
+      console.error('[DOERA File Upload] File reading error:', err);
+    }
+
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
