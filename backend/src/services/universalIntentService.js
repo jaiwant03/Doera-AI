@@ -23,14 +23,21 @@ class UniversalIntentService {
    * Dynamically analyzes user request, extracts entities, detects categories,
    * identifies required agents, constraints, comparisons, and missing information.
    */
-  async understandRequest(userRequest, attachments = [], memoryContext = '') {
+  async understandRequest(userRequest, attachments = [], memoryContext = '', historyContext = '') {
     const text = (userRequest || '').trim();
     const lower = text.toLowerCase();
 
     // 1. Rule-based heuristic signal detection
     const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
+    const hasCsvAttachment = hasAttachments && attachments.some(a => 
+      a.type === 'text/csv' || /\.(csv|tsv|xlsx?)$/i.test(a.name || '')
+    );
+    const hasImageAttachment = hasAttachments && attachments.some(a => 
+      a.type?.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(a.name || '')
+    );
+
     const isDocAnalysis = hasAttachments || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
-    const isDataAnalysis = /(analyze|trend|distribution|correlation|dataset|csv|metrics|statistics|table|data)/i.test(lower) && (hasAttachments || /(dataset|dataframe|numbers|rows|columns)/i.test(lower));
+    const isDataAnalysis = hasCsvAttachment || (/(analyze|trend|distribution|correlation|dataset|csv|metrics|statistics|table|data|chart)/i.test(lower) && (hasAttachments || /(dataset|dataframe|numbers|rows|columns)/i.test(lower)));
     const isTravel = /(plan a trip|travel to|itinerary|route from|trip to|driving to|visit.*for \d+ days|flight|road trip)/i.test(lower);
     const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower);
     const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower);
@@ -38,6 +45,7 @@ class UniversalIntentService {
     const isLocation = /(near|in |at |around|coimbatore|chennai|bangalore|mumbai|delhi|ooty|city|local|hospital|clinic|electrician|plumber|mechanic|restaurant|store|shop)/i.test(lower);
     const isGeneralKnowledge = /^(what is|who is|explain|how (does|do|can)|why is|tell me about|history of|define|give me an overview)/i.test(lower) && !isOutreach && !isBooking && !isLocation;
     const isTechnical = /(code|script|function|debug|algorithm|architecture|transformer|api|database|sql|python|javascript|react|node|docker|kubernetes)/i.test(lower) && !isOutreach && !isBooking;
+    const isFollowUp = /(second|first|third|previous|that|those|the other|again|same|furthermore|elaborate|details on|tell me more about (it|them))/i.test(lower);
 
     // 2. Structured LLM prompt for rich semantic understanding
     const systemPrompt = `You are DOERA AI's Universal Intent Understanding Engine.
@@ -73,8 +81,9 @@ JSON format ONLY.`;
 
     const userPrompt = `User Request: "${text}"
 Has Attachments: ${hasAttachments}
-Attachments: ${JSON.stringify(attachments.map(a => a.name || a.type || 'file'))}
-Context: ${memoryContext || 'None'}`;
+Attachments: ${JSON.stringify(attachments.map(a => ({ name: a.name, type: a.type, size: a.size })))}
+Recent History: ${historyContext ? historyContext.slice(-600) : 'None'}
+User Personalized Context: ${memoryContext || 'None'}`;
 
     try {
       const parsed = await llmService.generate({
@@ -85,7 +94,7 @@ Context: ${memoryContext || 'None'}`;
       });
 
       if (parsed && parsed.primaryCategory) {
-        return this.normalizeIntent(parsed, text, hasAttachments);
+        return this.normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment);
       }
     } catch (err) {
       logger.warn(`[UniversalIntent] LLM classification notice, using deterministic classifier: ${err.message}`);
@@ -94,10 +103,20 @@ Context: ${memoryContext || 'None'}`;
     // 3. Robust Deterministic Fallback Classifier
     return this.deterministicClassify(text, {
       hasAttachments,
+      hasCsvAttachment,
+      hasImageAttachment,
       isDocAnalysis,
       isDataAnalysis,
       isTravel,
       isOutreach,
+      isBooking,
+      isComparison,
+      isLocation,
+      isGeneralKnowledge,
+      isTechnical,
+      isFollowUp,
+    });
+  }
       isBooking,
       isComparison,
       isLocation,
@@ -109,12 +128,18 @@ Context: ${memoryContext || 'None'}`;
   /**
    * Normalizes LLM intent output with safety bounds and deterministic verification
    */
-  normalizeIntent(parsed, text, hasAttachments) {
+  normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment = false) {
     const categories = Array.isArray(parsed.categories) && parsed.categories.length > 0
       ? parsed.categories
       : [parsed.primaryCategory || CATEGORIES.GENERAL_QUESTION];
 
-    const primaryCategory = parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION;
+    if (hasCsvAttachment && !categories.includes(CATEGORIES.DATA_ANALYSIS)) {
+      categories.unshift(CATEGORIES.DATA_ANALYSIS);
+    }
+
+    const primaryCategory = hasCsvAttachment 
+      ? CATEGORIES.DATA_ANALYSIS 
+      : (parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION);
 
     // Determine required agents dynamically
     const requiredAgents = new Set(parsed.requiredAgents || ['Planner']);
@@ -144,8 +169,9 @@ Context: ${memoryContext || 'None'}`;
     if (categories.includes(CATEGORIES.DOCUMENT_ANALYSIS) || hasAttachments) {
       requiredAgents.add('Document');
     }
-    if (categories.includes(CATEGORIES.DATA_ANALYSIS)) {
+    if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasCsvAttachment) {
       requiredAgents.add('DataAnalysis');
+      requiredAgents.add('Document');
     }
 
     return {
@@ -172,15 +198,14 @@ Context: ${memoryContext || 'None'}`;
     const categories = [];
     const requiredAgents = new Set(['Planner']);
 
-    if (flags.hasAttachments || flags.isDocAnalysis) {
-      categories.push(CATEGORIES.DOCUMENT_ANALYSIS);
-      requiredAgents.add('Document');
-      requiredAgents.add('Verification');
-    }
-
-    if (flags.isDataAnalysis) {
+    if (flags.hasCsvAttachment || flags.isDataAnalysis) {
       categories.push(CATEGORIES.DATA_ANALYSIS);
       requiredAgents.add('DataAnalysis');
+      requiredAgents.add('Document');
+      requiredAgents.add('Verification');
+    } else if (flags.hasAttachments || flags.isDocAnalysis) {
+      categories.push(CATEGORIES.DOCUMENT_ANALYSIS);
+      requiredAgents.add('Document');
       requiredAgents.add('Verification');
     }
 

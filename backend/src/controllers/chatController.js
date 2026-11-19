@@ -249,8 +249,49 @@ export const streamMessage = async (req, res) => {
       }
     }
 
+    // Fetch recent conversation history and prior attachments for contextual follow-ups
+    let historyContext = '';
+    let effectiveAttachments = [...attachments];
+    try {
+      const recentMessages = await Message.find({
+        conversationId: conversation._id,
+        _id: { $ne: userMessage._id },
+      })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean();
+
+      recentMessages.reverse();
+
+      if (recentMessages.length > 0) {
+        historyContext = recentMessages
+          .map((m) => `${m.sender === 'user' ? 'User' : 'DOERA'}: ${m.content.slice(0, 300)}`)
+          .join('\n');
+
+        if (effectiveAttachments.length === 0) {
+          const prevWithAttachments = recentMessages
+            .slice()
+            .reverse()
+            .find((m) => Array.isArray(m.attachments) && m.attachments.length > 0);
+          if (
+            prevWithAttachments &&
+            /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(
+              message
+            )
+          ) {
+            effectiveAttachments = prevWithAttachments.attachments;
+          }
+        }
+      }
+    } catch (_) {}
+
     // 2. Universal Request Understanding & Dynamic Agent Selection
-    const intent = await universalIntentService.understandRequest(message, attachments, memoryContext);
+    const intent = await universalIntentService.understandRequest(
+      message,
+      effectiveAttachments,
+      memoryContext,
+      historyContext
+    );
 
     // If concise clarification is strictly required
     if (intent.clarificationNeeded) {
