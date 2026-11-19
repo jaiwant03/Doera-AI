@@ -693,16 +693,12 @@ const verificationNode = async (state) => {
 
   const verifiedOutcome = await verificationAgent.verifyOutcome(state);
 
-  const steps = state.steps.map((s) =>
-    s.agent === 'Verification' || s.id === 'verify'
-      ? {
-          ...s,
-          status: 'completed',
-          details: `Outcome verified: ${verifiedOutcome.summary}`,
-          timestamp: new Date(),
-        }
-      : s
-  );
+  const steps = state.steps.map((s) => ({
+    ...s,
+    status: 'completed',
+    timestamp: s.timestamp || new Date(),
+    details: s.details || (s.agent === 'Verification' || s.id === 'verify' ? `Outcome verified: ${verifiedOutcome.summary}` : s.details),
+  }));
 
   await logMissionEvent(
     state,
