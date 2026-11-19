@@ -27,7 +27,7 @@ const MessageList = ({ messages = [], activeTask, isSending }) => {
   // Check if activeTask is actively running (NOT completed or failed)
   const isTaskRunning =
     activeTask &&
-    ['RECEIVED', 'UNDERSTANDING', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VERIFYING'].includes(activeTask.status);
+    ['RECEIVED', 'UNDERSTANDING', 'PLANNING', 'AWAITING_APPROVAL', 'WAITING_FOR_APPROVAL', 'ACTION_REQUIRED', 'EXECUTING', 'VERIFYING', 'WAITING_FOR_RESPONSE'].includes(activeTask.status);
 
   // Check if this running task is already tied to an existing message
   const isTaskAlreadyInMessages = uniqueMessages.some((m) => {
