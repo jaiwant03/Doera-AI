@@ -418,16 +418,22 @@ const executionNode = async (state) => {
 
     const execRes = await executionAgent.executeAction(state, approvalReq);
 
-    const steps = state.steps.map((s) =>
-      s.agent === 'Execution' || s.agent === 'Communication' || s.id === 'execute' || s.id === 'communicate'
+    const steps = state.steps.map((s) => {
+      const isCommOrExec =
+        s.agent === 'Execution' ||
+        s.agent === 'Communication' ||
+        s.id === 'execute' ||
+        s.id === 'communicate' ||
+        /contact|outreach|message|communicat|inquir|send|approval|authoriz/i.test(s.name || '');
+      return isCommOrExec
         ? {
             ...s,
             status: 'completed',
             details: `Dispatched to ${primaryContact?.businessName}. Verification status: ${execRes.verificationStatus || 'DELIVERED'}.`,
             timestamp: new Date(),
           }
-        : s
-    );
+        : s;
+    });
 
     await logMissionEvent(
       state,
@@ -809,8 +815,9 @@ const workflow = new StateGraph(TaskStateAnnotation)
     if (req.includes('DataAnalysis') && !req.includes('Research')) return 'data_analysis';
     if (req.includes('Location')) return 'location';
     if (req.includes('Research')) return 'research';
-    if (req.includes('Comparison') || req.includes('Quotation')) return 'comparison';
-    if (req.includes('Communication')) return 'approval_gate';
+    if (req.includes('Comparison') && !state.comparisonMatrix) return 'comparison';
+    if (req.includes('Communication') && !state.executionEvidence) return 'approval_gate';
+    if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
     return 'verification';
   })
 
@@ -835,19 +842,21 @@ const workflow = new StateGraph(TaskStateAnnotation)
   // Research -> Merging
   .addEdge('research', 'merging')
 
-  // Merging -> Approval Gate or Comparison or Quotation or Verification
+  // Merging -> Comparison or Approval Gate or Verification
   .addConditionalEdges('merging', (state) => {
     const req = state.requiredAgents || [];
-    if (req.includes('Communication')) return 'approval_gate';
-    if (req.includes('Comparison') || req.includes('Quotation')) return 'comparison';
+    if (req.includes('Comparison') && !state.comparisonMatrix) return 'comparison';
+    if (req.includes('Communication') && !state.executionEvidence) return 'approval_gate';
+    if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
     return 'verification';
   })
 
-  // Comparison -> Scheduling or Approval Gate or Verification
+  // Comparison -> Approval Gate or Scheduling or Quotation or Verification
   .addConditionalEdges('comparison', (state) => {
     const req = state.requiredAgents || [];
-    if (req.includes('Communication')) return 'approval_gate';
-    if (req.includes('Scheduling')) return 'scheduling';
+    if (req.includes('Communication') && !state.executionEvidence) return 'approval_gate';
+    if (req.includes('Quotation') && !state.quotations) return 'quotation';
+    if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
     return 'verification';
   })
 
@@ -862,19 +871,19 @@ const workflow = new StateGraph(TaskStateAnnotation)
   // Communication -> Execution
   .addEdge('communication', 'execution')
 
-  // Execution -> Comparison or Scheduling or Verification
+  // Execution -> Quotation or Scheduling or Verification (strictly forward-only DAG)
   .addConditionalEdges('execution', (state) => {
     if (state.error) return 'recovery';
     const req = state.requiredAgents || [];
-    if (req.includes('Scheduling')) return 'scheduling';
-    if (req.includes('Comparison') || req.includes('Quotation')) return 'comparison';
+    if (req.includes('Quotation') && !state.quotations) return 'quotation';
+    if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
     return 'verification';
   })
 
   // Quotation -> Scheduling or Verification
   .addConditionalEdges('quotation', (state) => {
     const req = state.requiredAgents || [];
-    if (req.includes('Scheduling')) return 'scheduling';
+    if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
     return 'verification';
   })
 
@@ -884,7 +893,7 @@ const workflow = new StateGraph(TaskStateAnnotation)
   // Verification -> Follow-Up or END
   .addConditionalEdges('verification', (state) => {
     const req = state.requiredAgents || [];
-    if (req.includes('FollowUp') && (state.status === 'COMPLETED' || state.status === 'PARTIALLY_COMPLETED')) {
+    if (req.includes('FollowUp') && (state.status === 'COMPLETED' || state.status === 'PARTIALLY_COMPLETED' || state.status === 'WAITING_FOR_RESPONSE')) {
       return 'follow_up';
     }
     return END;
