@@ -109,7 +109,9 @@ class QuotationAgent {
       lower.includes('painter') ||
       lower.includes('cleaning') ||
       lower.includes('pest') ||
-      category === 'HOME_SERVICE'
+      category === 'HOME_SERVICE' ||
+      category === 'LOCAL_SERVICE' ||
+      category === 'SERVICE_COMPARISON'
     ) {
       return 'HOME_SERVICE';
     }
