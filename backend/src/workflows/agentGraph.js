@@ -472,16 +472,22 @@ const quotationNode = async (state) => {
 
   const quoteResult = await quotationAgent.compareQuotes(state, state.externalContacts);
 
-  const steps = state.steps.map((s) =>
-    s.agent === 'Quotation' || s.id === 'quote'
+  const steps = state.steps.map((s) => {
+    const isQuoteOrComp =
+      s.agent === 'Quotation' ||
+      s.id === 'quote' ||
+      s.agent === 'Comparison' ||
+      s.id === 'compare' ||
+      /quot|rate|fee|pric|compar/i.test(s.name || '');
+    return isQuoteOrComp
       ? {
           ...s,
           status: 'completed',
           details: `Compared ${quoteResult.quotes.length} rate cards. Pricing domain: ${quoteResult.domain}.`,
           timestamp: new Date(),
         }
-      : s
-  );
+      : s;
+  });
 
   await logMissionEvent(
     state,
