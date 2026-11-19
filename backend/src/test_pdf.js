@@ -1,7 +1,7 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfParseModule = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
-console.log('pdfParseModule keys:', Object.keys(pdfParseModule));
-console.log('pdfParseModule type:', typeof pdfParseModule);
-console.log('default property:', typeof pdfParseModule.default);
+console.log('PDFParse type:', typeof PDFParse);
+console.log('PDFParse proto:', Object.getOwnPropertyNames(PDFParse.prototype || {}));
+console.log('PDFParse static:', Object.getOwnPropertyNames(PDFParse));
