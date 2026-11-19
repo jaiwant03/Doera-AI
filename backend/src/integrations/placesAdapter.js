@@ -50,13 +50,18 @@ class PlacesAdapter {
     }
 
     // 4. Safe Hackathon Demo Fallback Dataset (Explicitly labeled DEMO DATA)
-    logger.info(`[Places Adapter] Falling back to structured Hackathon Demo Dataset for "${query}" in "${location}".`);
     const fallbackPlaces = getDemoFallbackPlaces(query, location);
-    return fallbackPlaces.map((f) => ({
-      ...f,
-      dataSource: 'DEMO DATA',
-      source: 'DOERA Hackathon Seeded Dataset (Safe Fallback)',
-    }));
+    if (fallbackPlaces && fallbackPlaces.length > 0) {
+      logger.info(`[Places Adapter] Falling back to structured Hackathon Demo Dataset for "${query}" in "${location}".`);
+      return fallbackPlaces.map((f) => ({
+        ...f,
+        dataSource: 'DEMO DATA',
+        source: 'DOERA Hackathon Seeded Dataset (Safe Fallback)',
+      }));
+    }
+
+    logger.info(`[Places Adapter] No public directory providers found for "${query}" in "${location}".`);
+    return [];
   }
 
   /**
