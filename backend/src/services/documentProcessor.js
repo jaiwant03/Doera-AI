@@ -68,6 +68,8 @@ class DocumentProcessor {
     const ext = filename.split('.').pop()?.toLowerCase();
     let structuredData = {};
 
+    const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext) || mimeType?.startsWith('image/');
+
     if (ext === 'csv' || mimeType === 'text/csv') {
       structuredData = this.parseCSV(extractedText);
     } else if (ext === 'json' || mimeType === 'application/json') {
@@ -76,20 +78,34 @@ class DocumentProcessor {
       } catch (_) {
         structuredData = { raw: extractedText.slice(0, 1000) };
       }
+    } else if (isImage) {
+      structuredData = {
+        fileType: 'IMAGE',
+        format: (ext || 'png').toUpperCase(),
+        hasBase64: Boolean(base64Content),
+        sizeBytes: base64Content ? Math.round((base64Content.length * 3) / 4) : 0,
+      };
+      if (!extractedText) {
+        extractedText = `[Visual Image Asset: ${filename} (${(ext || 'png').toUpperCase()}) verified and ready for multimodal contextual grounding]`;
+      }
     }
 
     // Generate smart summary using LLM or heuristic
     let summary = '';
-    try {
-      const snippet = extractedText.slice(0, 4000);
-      summary = await llmService.generate({
-        systemPrompt:
-          'You are DOERA Document Intelligence. Provide a concise, highly readable 2-3 sentence executive summary of this document.',
-        userPrompt: `Filename: ${filename}\n\nContent:\n${snippet}`,
-        temperature: 0.2,
-      });
-    } catch (err) {
-      summary = `Processed ${filename} (${extractedText.length} characters). Extracted knowledge ready for contextual chat.`;
+    if (isImage) {
+      summary = `Visual image asset "${filename}" verified and loaded for contextual examination.`;
+    } else {
+      try {
+        const snippet = extractedText.slice(0, 4000);
+        summary = await llmService.generate({
+          systemPrompt:
+            'You are DOERA Document Intelligence. Provide a concise, highly readable 2-3 sentence executive summary of this document.',
+          userPrompt: `Filename: ${filename}\n\nContent:\n${snippet}`,
+          temperature: 0.2,
+        });
+      } catch (err) {
+        summary = `Processed ${filename} (${extractedText.length} characters). Extracted knowledge ready for contextual chat.`;
+      }
     }
 
     return {
