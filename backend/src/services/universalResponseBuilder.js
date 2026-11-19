@@ -25,6 +25,7 @@ export const buildUniversalResponse = (taskOrPayload) => {
   const comparisons = task.comparisonMatrix || task.comparisons || null;
   const travelData = task.locationData?.route || null;
   const docData = task.discoveredData?.documents || null;
+  const crossDocAnalysis = task.discoveredData?.crossDocAnalysis || null;
   const dataAnalysis = task.discoveredData?.dataAnalysis || null;
   const pendingApproval = task.pendingApproval;
   const followUp = task.followUpData || null;
