@@ -55,6 +55,25 @@ Output pure JSON:
       subtasks = this.buildDefaultSubtasks(userRequest, requiredAgents);
     }
 
+    // Ensure discovery agent step exists for search / discovery tasks
+    if (
+      (requiredAgents.includes('Location') || requiredAgents.includes('Research') || /discover|find|search|repair|electrician|plumber|clinic|doctor|venue/i.test(userRequest)) &&
+      !subtasks.some((st) => st.agent === 'Discovery')
+    ) {
+      const idx = subtasks.findIndex((st) => st.agent === 'Research' || /find|search|discover/i.test(st.title));
+      if (idx !== -1) {
+        subtasks[idx].agent = 'Discovery';
+      } else {
+        subtasks.splice(1, 0, {
+          id: 'discover',
+          title: 'Discovering verified service providers',
+          agent: 'Discovery',
+          status: 'pending',
+          dependencies: ['sub_1'],
+        });
+      }
+    }
+
     const steps = subtasks.map((st) => ({
       id: st.id,
       name: st.title,
