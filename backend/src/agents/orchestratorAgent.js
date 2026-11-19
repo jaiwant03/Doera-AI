@@ -67,6 +67,7 @@ Output pure JSON:
       category: intent.primaryCategory,
       categories: intent.categories,
       summary: intent.primaryObjective || 'Executing dynamic multi-agent collaboration.',
+      toolsRequired: ['DISCOVERY', 'COMMUNICATION', 'SCHEDULING', 'VERIFICATION', 'COMPARISON'],
       requiredAgents,
       subtasks,
       steps,
@@ -85,6 +86,9 @@ Output pure JSON:
     if (requiredAgents.includes('DataAnalysis')) {
       list.push({ id: 'data', title: 'Evaluating dataset patterns and statistical insights', agent: 'DataAnalysis', status: 'pending', dependencies: ['understand'] });
     }
+    if (requiredAgents.includes('Research') || requiredAgents.includes('Location')) {
+      list.push({ id: 'discover', title: 'Discovering verified providers', agent: 'Discovery', status: 'pending', dependencies: ['understand'] });
+    }
     if (requiredAgents.includes('Research')) {
       list.push({ id: 'research', title: 'Gathering verified facts & directory data', agent: 'Research', status: 'pending', dependencies: ['understand'] });
     }
@@ -100,7 +104,7 @@ Output pure JSON:
     if (requiredAgents.includes('Execution')) {
       list.push({ id: 'execute', title: 'Dispatching authorized external operations', agent: 'Execution', status: 'pending', dependencies: ['communicate'] });
     }
-    if (requiredAgents.includes('Scheduling')) {
+    if (requiredAgents.includes('Scheduling') || requiredAgents.includes('Communication') || /appointment|book|schedule/i.test(request)) {
       list.push({ id: 'schedule', title: 'Coordinating appointment slot', agent: 'Scheduling', status: 'pending', dependencies: ['execute'] });
     }
     if (requiredAgents.includes('Verification')) {
