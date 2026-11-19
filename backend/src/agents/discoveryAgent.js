@@ -70,6 +70,8 @@ class DiscoveryAgent {
       agentName: this.name,
       taskId: taskContext.taskId,
       status: 'completed',
+      providersFound: discovered.length,
+      contacts: discovered,
       input: { userRequest: taskContext.userRequest, query, location },
       output: {
         queryUsed: query,
