@@ -188,7 +188,7 @@ export const ChatProvider = ({ children }) => {
           taskMap[t._id || t.taskId] = t;
         });
         setTasks(taskMap);
-        const ongoing = res.data.tasks.find(t => ['RECEIVED', 'UNDERSTANDING', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VERIFYING'].includes(t.status));
+        const ongoing = res.data.tasks.find(t => ['RECEIVED', 'UNDERSTANDING', 'PLANNING', 'AWAITING_APPROVAL', 'WAITING_FOR_APPROVAL', 'ACTION_REQUIRED', 'EXECUTING', 'VERIFYING', 'WAITING_FOR_RESPONSE'].includes(t.status));
         setActiveTask(ongoing || res.data.tasks[res.data.tasks.length - 1]);
       } else {
         setActiveTask(null);

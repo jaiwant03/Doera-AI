@@ -243,25 +243,27 @@ const AgentActivity = ({ task }) => {
                   'DOERA has drafted an action requiring your confirmation before dispatching to external providers.'}
               </p>
 
-              {task.pendingApproval?.details && (
-                <div className="doera-auth-details-box">
-                  {task.pendingApproval.details.recipient && (
-                    <div><strong>Recipient:</strong> {task.pendingApproval.details.recipient}</div>
-                  )}
-                  {task.pendingApproval.details.subject && (
-                    <div><strong>Subject:</strong> {task.pendingApproval.details.subject}</div>
-                  )}
+              {(() => {
+                const details = task.pendingApproval?.details || {};
+                const recipient = details.recipient || details.recipientName || task.pendingApproval?.target?.name || contactedProviders[0]?.businessName;
+                const subject = details.subject || task.pendingApproval?.actionTitle || 'Service Inquiry & Quotation Request';
+                const draftContent =
+                  details.message ||
+                  details.emailText ||
+                  details.whatsappText ||
+                  (typeof task.pendingApproval?.details === 'string' ? task.pendingApproval.details : null) ||
+                  task.pendingApproval?.riskExplanation;
 
-                  {(() => {
-                    const draftContent =
-                      task.pendingApproval.details.message ||
-                      task.pendingApproval.details.emailText ||
-                      task.pendingApproval.details.whatsappText ||
-                      (typeof task.pendingApproval.details === 'string' ? task.pendingApproval.details : null);
+                return (
+                  <div className="doera-auth-details-box">
+                    {recipient && (
+                      <div><strong>Recipient:</strong> {recipient}</div>
+                    )}
+                    {subject && (
+                      <div><strong>Subject:</strong> {subject}</div>
+                    )}
 
-                    if (!draftContent) return null;
-
-                    return (
+                    {draftContent && (
                       <div style={{ marginTop: 8 }}>
                         <button
                           type="button"
@@ -301,10 +303,10 @@ const AgentActivity = ({ task }) => {
                           </div>
                         )}
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
+                    )}
+                  </div>
+                );
+              })()}
 
               {showRejectInput && (
                 <div style={{ marginBottom: 12 }}>
