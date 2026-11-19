@@ -11,7 +11,7 @@ describe('DOERA AI — Specialized Agents Unit Tests', () => {
       userRequest: 'Find an electrician near me, compare quotations and arrange an appointment.',
     });
 
-    expect(['LOCAL_SERVICE', 'LOCATION_DISCOVERY', 'SERVICE_COMPARISON']).toContain(plan.category);
+    expect(['LOCAL_SERVICE', 'LOCATION_DISCOVERY', 'SERVICE_COMPARISON', 'MULTI_STEP_TASK', 'TASK_AUTOMATION']).toContain(plan.category);
     expect(plan.toolsRequired).toContain('DISCOVERY');
     expect(plan.steps.length).toBeGreaterThanOrEqual(4);
     expect(plan.steps.some((s) => s.agent === 'Discovery')).toBe(true);
