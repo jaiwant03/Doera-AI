@@ -211,6 +211,7 @@ class NativeWorkflowEngine {
     const bookingDetails = {
       providerName: providerContact.businessName,
       dateTime: targetSlot,
+      referenceId: internalReferenceId,
       internalReferenceId,
       providerConfirmationId,
       bookingStatus,
