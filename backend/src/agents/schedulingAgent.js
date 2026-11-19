@@ -82,6 +82,7 @@ class SchedulingAgent {
     const bookingDetails = {
       providerName: primaryContact.businessName,
       dateTime: formattedSlot,
+      referenceId: internalReferenceId,
       internalReferenceId, // Clearly internal tracking code
       providerConfirmationId, // null if awaiting provider confirmation
       bookingStatus, // 'AWAITING_CONFIRMATION', 'CONFIRMED', etc.
