@@ -117,13 +117,6 @@ User Personalized Context: ${memoryContext || 'None'}`;
       isFollowUp,
     });
   }
-      isBooking,
-      isComparison,
-      isLocation,
-      isGeneralKnowledge,
-      isTechnical,
-    });
-  }
 
   /**
    * Normalizes LLM intent output with safety bounds and deterministic verification
@@ -145,9 +138,11 @@ User Personalized Context: ${memoryContext || 'None'}`;
     const requiredAgents = new Set(parsed.requiredAgents || ['Planner']);
     requiredAgents.add('Planner');
 
-    const isActionTask = parsed.isActionTask !== undefined
-      ? Boolean(parsed.isActionTask)
-      : primaryCategory !== CATEGORIES.GENERAL_QUESTION;
+    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON))
+      ? true
+      : (parsed.isActionTask !== undefined
+          ? Boolean(parsed.isActionTask)
+          : primaryCategory !== CATEGORIES.GENERAL_QUESTION);
 
     if (isActionTask) {
       requiredAgents.add('Verification');

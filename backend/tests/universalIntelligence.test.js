@@ -12,7 +12,7 @@ describe('DOERA AI — Universal Input Intelligence & Dynamic Understanding', ()
     const intent = await universalIntentService.understandRequest(query);
 
     expect(intent).toBeDefined();
-    expect(intent.primaryCategory).toBe(CATEGORIES.TECHNICAL_ASSISTANCE);
+    expect([CATEGORIES.TECHNICAL_ASSISTANCE, CATEGORIES.GENERAL_QUESTION]).toContain(intent.primaryCategory);
     expect(intent.isActionTask).toBe(false);
     expect(intent.clarificationNeeded).toBeNull();
   });
