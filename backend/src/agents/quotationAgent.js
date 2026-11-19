@@ -69,6 +69,8 @@ class QuotationAgent {
       agentName: this.name,
       taskId: taskContext.taskId,
       status: 'completed',
+      quotations: providerQuotes,
+      recommendedProvider: providerQuotes[0]?.providerName || null,
       input: { userRequest: taskContext.userRequest, domain, contactCount: contacts.length },
       output: {
         domain,
