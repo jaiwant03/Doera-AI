@@ -250,6 +250,33 @@ function buildDataAnalysisSection(analysis) {
     analysis.trendsAndPatterns.forEach((t) => (md += `- ${t}\n`));
     md += `\n`;
   }
+
+  // Tabular Data Preview
+  if (analysis.headers && analysis.headers.length > 0 && analysis.sampleRows && analysis.sampleRows.length > 0) {
+    md += `#### Tabular Data Preview (${analysis.rowCount || analysis.sampleRows.length} total rows)\n\n`;
+    md += `| ` + analysis.headers.join(' | ') + ` |\n`;
+    md += `| ` + analysis.headers.map(() => ':---').join(' | ') + ` |\n`;
+    analysis.sampleRows.slice(0, 8).forEach((row) => {
+      md += `| ` + analysis.headers.map((h) => row[h] !== undefined ? String(row[h]) : '-').join(' | ') + ` |\n`;
+    });
+    md += `\n`;
+  }
+
+  // Visual Chart Distribution
+  if (analysis.chartData?.dataPoints && analysis.chartData.dataPoints.length > 0) {
+    md += `#### Visual Distribution: ${analysis.chartData.title || 'Trends'}\n\n`;
+    md += `| ${analysis.chartData.xAxis || 'Category'} | ${analysis.chartData.yAxis || 'Value'} | Visual Scale |\n`;
+    md += `| :--- | :--- | :--- |\n`;
+    const maxVal = Math.max(...analysis.chartData.dataPoints.map((p) => Number(p.value) || 0), 1);
+    analysis.chartData.dataPoints.slice(0, 10).forEach((p) => {
+      const num = Number(p.value) || 0;
+      const barLen = Math.round((num / maxVal) * 16);
+      const bar = '█'.repeat(Math.max(barLen, 1));
+      md += `| **${p.label}** | ${p.value} | \`${bar}\` |\n`;
+    });
+    md += `\n`;
+  }
+
   return md;
 }
 
