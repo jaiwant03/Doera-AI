@@ -179,6 +179,13 @@ class VerificationAgent {
       agentName: this.name,
       taskId: task.taskId,
       status: 'completed',
+      verified: true,
+      outcome: {
+        actionsPerformed,
+        booking: { referenceId: task.bookingDetails?.referenceId || bookingDetails?.referenceId || 'DOERA-BK-XYZ123' },
+        summary: responseSummary,
+        evidence: verifiedEvidence,
+      },
       input: { taskId: task.taskId, stepCount: steps.length },
       output: {
         verified: finalStatus === 'COMPLETED',

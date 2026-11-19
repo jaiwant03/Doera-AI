@@ -98,6 +98,7 @@ class SchedulingAgent {
       agentName: this.name,
       taskId: taskContext.taskId,
       status: 'completed',
+      bookingDetails,
       input: {
         provider: primaryContact.businessName,
         requestedSlot: formattedSlot,
