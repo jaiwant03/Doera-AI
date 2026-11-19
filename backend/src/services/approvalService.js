@@ -282,8 +282,9 @@ class ApprovalService {
   async getApprovalCounts(userId) {
     await this.expireStaleApprovals(userId);
 
+    const userObjId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
     const countsRaw = await Approval.aggregate([
-      { $match: { userId } },
+      { $match: { $or: [{ userId: userObjId }, { userId: String(userId) }] } },
       { $group: { _id: '$status', count: { $sum: 1 } } },
     ]);
 
