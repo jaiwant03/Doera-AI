@@ -584,7 +584,11 @@ const documentNode = async (state) => {
 
   return {
     steps,
-    discoveredData: { ...(state.discoveredData || {}), documents: docResult.documents },
+    discoveredData: {
+      ...(state.discoveredData || {}),
+      documents: docResult.documents,
+      crossDocAnalysis: docResult.crossDocAnalysis,
+    },
     dataPayload: docResult.documents?.[0]?.extractedData || state.dataPayload,
     currentAgent: state.requiredAgents.includes('DataAnalysis') ? 'DataAnalysis' : 'Verification',
     currentAction: 'Document analysis complete.',
