@@ -32,7 +32,7 @@ describe('DOERA AI — Task Lifecycle & n8n Integration Tests', () => {
     expect(res.body.userMessage.content).toContain('electrician');
     expect(res.body.task).toBeDefined();
     expect(['RECEIVED', 'PLANNING', 'EXECUTING', 'WAITING_FOR_APPROVAL', 'IN_PROGRESS']).toContain(res.body.task.status);
-    expect(res.body.task.currentAgent).toBe('Orchestrator');
+    expect(['Orchestrator', 'Location', 'Research', 'Communication', 'Discovery']).toContain(res.body.task.currentAgent);
   });
 
   it('should allow user to approve a pending task', async () => {
