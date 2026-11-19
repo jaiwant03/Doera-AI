@@ -204,7 +204,7 @@ class TaskQueue {
     const task = await Task.findOne(buildTaskLookup(taskId));
     if (!task) throw new Error('Task not found');
 
-    if (task.status !== 'AWAITING_APPROVAL') {
+    if (!['AWAITING_APPROVAL', 'WAITING_FOR_APPROVAL', 'ACTION_REQUIRED'].includes(task.status) && !task.pendingApproval) {
       throw new Error(`Task is in status "${task.status}" and cannot be approved.`);
     }
 
@@ -213,12 +213,13 @@ class TaskQueue {
       task.pendingApproval.approvedAt = new Date();
       task.pendingApproval.comments = comments;
     }
+    task.currentAction = 'Human authorization granted. Executing communication step...';
     await task.save();
 
     realtimeServer.sendToUser(task.userId, 'task_update', { task });
 
-    // Resume execution
-    this.enqueueTask(task);
+    // Resume execution with isResume=true
+    this.enqueueTask(task, true);
     return task;
   }
 

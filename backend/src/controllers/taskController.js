@@ -54,7 +54,7 @@ export const approveTask = async (req, res, next) => {
     // Sync persistent Approval document if present
     if (task) {
       const approval = await Approval.findOne({
-        taskId: task._id,
+        taskId: { $in: [task._id, String(task._id), task.taskId] },
         status: 'PENDING_APPROVAL',
       });
       if (approval) {
@@ -81,7 +81,7 @@ export const rejectTask = async (req, res, next) => {
     // Sync persistent Approval document if present
     if (task) {
       const approval = await Approval.findOne({
-        taskId: task._id,
+        taskId: { $in: [task._id, String(task._id), task.taskId] },
         status: 'PENDING_APPROVAL',
       });
       if (approval) {
