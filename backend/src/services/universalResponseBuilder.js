@@ -32,6 +32,15 @@ export const buildUniversalResponse = (taskOrPayload) => {
   const pendingApproval = task.pendingApproval;
   const followUp = task.followUpData || null;
   const evidence = outcome.evidence || [];
+  const planningData = task.planningData || task.discoveredData?.planning || outcome.planning || taskOrPayload.planning || null;
+  const budgetData = task.budgetData || task.discoveredData?.budget || outcome.budget || taskOrPayload.budget || null;
+  const commData = task.communicationDrafts || task.discoveredData?.communication || outcome.communication || taskOrPayload.communication || null;
+  const directAnswer = task.directAnswer || taskOrPayload.directAnswer || null;
+
+  const isMissionPlanning =
+    category === 'MISSION_PLANNING' ||
+    category === 'PLANNING' ||
+    Boolean(planningData || budgetData);
 
   const isConfirmed = Boolean(
     booking &&
@@ -56,7 +65,10 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   // SECTION B: RESULTS / DISCOVERED INFORMATION
   // ==========================================
-  if (category === 'IMAGE_ANALYSIS' || visionData) {
+  if (isMissionPlanning && (planningData || budgetData)) {
+    // Mission planning and event execution layout
+    md += buildMissionPlanningSection(planningData, budgetData, commData, userRequest);
+  } else if (category === 'IMAGE_ANALYSIS' || visionData) {
     // Vision and image analysis layout
     md += buildVisionSection(visionData, visionComparison, userRequest);
   } else if (category === 'TRAVEL_PLANNING' || travelData) {
@@ -74,6 +86,8 @@ export const buildUniversalResponse = (taskOrPayload) => {
   } else if (contacts.length > 0) {
     // Business / Local / Service provider layout
     md += buildProvidersSection(contacts, category);
+  } else if (directAnswer) {
+    md += `### Direct Response\n\n${directAnswer}\n\n`;
   } else if (outcome.responseReceived && !isConfirmed) {
     md += `### Discovered Details\n\n${outcome.responseReceived}\n\n`;
   }
