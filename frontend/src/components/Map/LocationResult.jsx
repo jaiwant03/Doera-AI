@@ -24,6 +24,11 @@ const LocationResult = ({ place, index, isSelected, onSelect }) => {
           <p className="doera-place-addr">
             {place.address}
           </p>
+          {place.phone && (
+            <p style={{ fontSize: '11px', color: '#FF7BD5', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Phone size={11} /> {place.phone}
+            </p>
+          )}
         </div>
       </div>
 
