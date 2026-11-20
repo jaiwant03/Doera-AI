@@ -506,9 +506,9 @@ ws.onmessage = (event) => {
             <Link to="/login" className="btn-cerebrium-login">
               LOG IN
             </Link>
-            <button onClick={() => navigate('/chat')} className="btn-cerebrium-signup">
+            <Link to="/signup" className="btn-cerebrium-signup">
               SIGN UP
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -1048,6 +1048,7 @@ ws.onmessage = (event) => {
             <a href="#pricing" onClick={(e) => scrollToSection(e, 'pricing')}>Pricing</a>
             <a href="#docs" onClick={(e) => scrollToSection(e, 'docs')}>Docs</a>
             <Link to="/login">Sign In</Link>
+            <Link to="/signup">Create Account</Link>
             <Link to="/chat">Launch Chat</Link>
           </div>
         </div>
