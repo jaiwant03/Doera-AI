@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/env.js';
-import demoResponseService from './demo/DemoResponseService.js';
 import Workflow from '../models/Workflow.js';
 import WorkflowExecution from '../models/WorkflowExecution.js';
 import Notification from '../models/Notification.js';
