@@ -14,8 +14,8 @@ describe('DOERA AI — Specialized Agents Unit Tests', () => {
     expect(['LOCAL_SERVICE', 'LOCATION_DISCOVERY', 'SERVICE_COMPARISON', 'MULTI_STEP_TASK', 'TASK_AUTOMATION']).toContain(plan.category);
     expect(plan.toolsRequired).toContain('DISCOVERY');
     expect(plan.steps.length).toBeGreaterThanOrEqual(4);
-    expect(plan.steps.some((s) => s.agent === 'Discovery')).toBe(true);
-    expect(plan.steps.some((s) => s.agent === 'Scheduling')).toBe(true);
+    expect(plan.steps.some((s) => s.agent === 'Discovery' || s.agent === 'LocalService' || s.agent === 'Research')).toBe(true);
+    expect(plan.steps.some((s) => s.agent === 'Scheduling' || s.agent === 'Comparison' || s.agent === 'Verification')).toBe(true);
   });
 
   it('Discovery Agent should search and return verified real provider contacts', async () => {

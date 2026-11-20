@@ -64,7 +64,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health Check Endpoint
-app.get('/health', (req, res) => {
+const handleHealth = (req, res) => {
   res.json({
     status: 'healthy',
     service: 'DOERA AI Backend Execution Engine',
@@ -74,7 +74,9 @@ app.get('/health', (req, res) => {
     environment: config.nodeEnv,
     database: mongoose.connection.name,
   });
-});
+};
+app.get('/health', handleHealth);
+app.get('/api/health', handleHealth);
 
 // API Routes
 app.use('/api/auth', authRoutes);

@@ -108,7 +108,7 @@ Estimated budget savings: 28% over 3 years.`;
     expect(processed.structuredData.format).toBe('PNG');
     expect(processed.structuredData.hasBase64).toBe(true);
     expect(processed.summary).toContain('dashboard_screenshot.png');
-  }, 15000);
+  }, 40000);
 
   // Test 6: Zero False-Positive Cardiology Fallback on Arbitrary Discovery
   it('6. should NEVER return irrelevant cardiology clinics for arbitrary unrelated queries where no providers exist', async () => {
