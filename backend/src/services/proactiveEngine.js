@@ -171,38 +171,6 @@ class ProactiveEngine {
 
         realtimeServer.sendToUser(item.userId, 'followup_updated', { followUp: item });
       }
-            title: `Follow-Up Completed: ${recipientTitle}`,
-            message: `Outreach monitoring concluded for ${recipientTitle}. Maximum check attempts reached with no verified reply.`,
-            type: 'TASK_COMPLETED',
-          });
-
-          realtimeServer.sendToUser(item.userId, 'followup_updated', { followUp: item });
-          continue;
-        }
-
-        // Reschedule next check
-        const nextTime = new Date(now.getTime() + (item.checkIntervalHours || 24) * 3600000);
-        item.nextCheckAt = nextTime;
-        item.status = 'FOLLOW_UP_DUE';
-        item.history.push({
-          checkedAt: now,
-          outcome: `Attempt ${item.attemptCount} check completed. Pending provider reply.`,
-          details: { nextCheckAt: nextTime },
-        });
-        await item.save();
-
-        // Notify user of follow-up state
-        await this.notifyUser({
-          userId: item.userId,
-          taskId: item.taskId,
-          title: `DOERA Response Tracker: ${recipientTitle}`,
-          message: `Attempt ${item.attemptCount}/${item.maximumAttempts}: Provider response check performed. Next check scheduled at ${nextTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
-          type: 'TASK_UPDATE',
-        });
-
-        // Broadcast live update over WebSocket
-        realtimeServer.sendToUser(item.userId, 'followup_updated', { followUp: item });
-      }
     } catch (followUpErr) {
       logger.warn('[Proactive Engine] FollowUp monitor error:', followUpErr.message);
     }
