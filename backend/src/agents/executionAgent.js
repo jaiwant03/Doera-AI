@@ -111,44 +111,8 @@ class ExecutionAgent {
             messageId: emailRes.messageId,
             status: emailRes.success ? 'DELIVERED' : 'FAILED',
           };
-        } else if (actionType === 'SEND_WHATSAPP') {
-          const phone = target.phone || actionPayload.phone;
-          const waRes = await whatsappAdapter.sendMessage({
-            to: phone,
-            textMessage: actionPayload.whatsappText || actionPayload.message,
-          });
-
-          externalRef = waRes.messageId || null;
-          evidenceStatus = waRes.success ? 'DELIVERED' : 'FAILED';
-          executionResult = {
-            mode: 'native_whatsapp_cloud',
-            channel: 'WhatsApp',
-            recipient: phone,
-            delivered: waRes.success,
-            status: waRes.success ? 'DELIVERED' : 'FAILED',
-          };
-        } else if (actionType === 'BOOK_APPOINTMENT' || actionType === 'CONFIRM_BOOKING') {
-          const startTime = actionPayload.startDateTime || new Date(Date.now() + 86400000).toISOString();
-          const endTime = actionPayload.endDateTime || new Date(Date.now() + 90000000).toISOString();
-
-          let eventLink = null;
-          try {
-            const calRes = await calendarAdapter.createEvent({
-              summary: `Appointment with ${target.name || 'Provider'}`,
-              startDateTime: startTime,
-              endDateTime: endTime,
-              location: target.address || 'Clinic / Provider Office',
-            });
-            eventLink = calRes.htmlLink;
-          } catch (_) {}
-
-          evidenceStatus = 'CONFIRMED';
-          executionResult = {
-            mode: 'calendar_coordination',
-            bookingStatus: 'BOOKING_REQUESTED',
-            calendarLink: eventLink,
-            status: 'CONFIRMED',
-          };
+        } else if (actionType === 'SEND_WHATSAPP' || actionType === 'SEND_TELEGRAM' || actionType === 'BOOK_APPOINTMENT' || actionType === 'CONFIRM_BOOKING' || actionType === 'EXECUTE_PAYMENT') {
+          throw new Error(`Prohibited Operation: Action type "${actionType}" is disabled by DOERA platform policy. Real-world bookings, reservations, and automated third-party messaging are prohibited. Verified Gmail outreach by authorized users is the sole permitted external dispatch.`);
         } else {
           // Generic verified execution
           evidenceStatus = 'DELIVERED';
