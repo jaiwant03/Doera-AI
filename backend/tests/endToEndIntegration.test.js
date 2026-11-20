@@ -419,45 +419,19 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
       expect(draftResult.subject).toBeDefined();
       expect(draftResult.actionType).toBe('SEND_OUTREACH');
 
-      // Test Mode B: Manual User -> MUST route to Demo sandbox with simulation badge
-      jest.spyOn(User, 'findById').mockReturnValue({
-        lean: () => Promise.resolve({
-          _id: userA_Id,
-          authProvider: 'local',
-          executionMode: 'DEMO',
-        }),
+      // Test 1: Manual User -> Can draft and preview emails, but live dispatch is rejected with GMAIL_OAUTH_REQUIRED
+      const manualUserDoc = await User.create({
+        name: 'Manual Account',
+        email: 'manual.tester@college.edu',
+        authProvider: 'local',
+        executionMode: 'UNIFIED',
+        role: 'user',
       });
 
       const manualApproval = {
         _id: new mongoose.Types.ObjectId(),
         taskId: 'MSN-COMM-001',
-        userId: userA_Id,
-        actionTitle: 'Email Dispatch to HOD',
-        actionType: 'SEND_EMAIL',
-        actionPayload: { recipient: 'hod.cse@college.edu', subject: draftResult.subject, body: draftResult.emailText },
-        target: { email: 'hod.cse@college.edu' },
-        status: 'PENDING',
-      };
-
-      const demoExecResult = await executionAuthorizationService.executeApprovedAction(manualApproval, userA_Id);
-      expect(demoExecResult.isSimulated).toBe(true);
-      expect(demoExecResult.simulationNotice).toContain('SIMULATED EXECUTION');
-
-      // Test Mode A: Google User without connected Gmail -> Must block real send and require connection
-      jest.spyOn(User, 'findById').mockReturnValue({
-        lean: () => Promise.resolve({
-          _id: userB_Id,
-          authProvider: 'google',
-          googleSubjectId: 'google-sub-12345',
-          executionMode: 'REAL',
-        }),
-      });
-      jest.spyOn(Integration, 'findOne').mockResolvedValue(null); // No Gmail connected
-
-      const googleApproval = {
-        _id: new mongoose.Types.ObjectId(),
-        taskId: 'MSN-COMM-001',
-        userId: userB_Id,
+        userId: manualUserDoc._id,
         actionTitle: 'Email Dispatch to HOD',
         actionType: 'SEND_EMAIL',
         actionPayload: { recipient: 'hod.cse@college.edu', subject: draftResult.subject, body: draftResult.emailText },
@@ -466,7 +440,33 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
       };
 
       await expect(
-        executionAuthorizationService.executeApprovedAction(googleApproval, userB_Id)
+        executionAuthorizationService.executeApprovedAction(manualApproval, manualUserDoc._id)
+      ).rejects.toThrow(/Live email dispatch is only supported through personal Gmail accounts authorized via Google Sign-In/i);
+
+      // Test 2: Google User without connected Gmail -> Must block real send and require connection
+      const googleUserDoc = await User.create({
+        name: 'Google User Unconnected',
+        email: 'google.unconnected@college.edu',
+        authProvider: 'google',
+        googleSubjectId: 'google-sub-testing-123',
+        googleEmail: 'google.unconnected@college.edu',
+        executionMode: 'UNIFIED',
+        role: 'user',
+      });
+
+      const googleApproval = {
+        _id: new mongoose.Types.ObjectId(),
+        taskId: 'MSN-COMM-001',
+        userId: googleUserDoc._id,
+        actionTitle: 'Email Dispatch to HOD',
+        actionType: 'SEND_EMAIL',
+        actionPayload: { recipient: 'hod.cse@college.edu', subject: draftResult.subject, body: draftResult.emailText },
+        target: { email: 'hod.cse@college.edu' },
+        status: 'PENDING',
+      };
+
+      await expect(
+        executionAuthorizationService.executeApprovedAction(googleApproval, googleUserDoc._id)
       ).rejects.toThrow(/Gmail connection required/i);
     });
   });
