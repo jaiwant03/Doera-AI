@@ -170,36 +170,18 @@ export const upgradePlan = async (req, res, next) => {
   }
 };
 
-// 3. CREATE CHECKOUT SESSION (STRIPE HOSTED CHECKOUT)
-export const createCheckoutSession = async (req, res, next) => {
-  try {
-    const { plan, billingCycle = 'monthly' } = req.body;
-    if (!['pro', 'max'].includes(plan)) {
-      return res.status(400).json({ error: 'Only Pro and Max plans require checkout.' });
-    }
-
-    const session = await paymentService.createStripeCheckout({
-      user: req.user,
-      planKey: plan,
-      billingCycle,
-    });
-
-    res.json(session);
-  } catch (err) {
-    console.error('[DOERA Checkout] Error:', err.message);
-    res.status(500).json({ error: err.message || 'Failed to initiate checkout session.' });
-  }
+// 3. CREATE CHECKOUT SESSION (DISABLED)
+export const createCheckoutSession = async (req, res) => {
+  return res.status(400).json({
+    error: 'Payment gateways and commercial purchase workflows are disabled. DOERA operates as an open universal intelligence and mission platform without payment transactions.',
+  });
 };
 
-// 4. CREATE CUSTOMER BILLING PORTAL
-export const createCustomerPortal = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const portal = await paymentService.createStripePortal(user);
-    res.json(portal);
-  } catch (err) {
-    res.status(500).json({ error: err.message || 'Failed to open billing portal.' });
-  }
+// 4. CREATE CUSTOMER BILLING PORTAL (DISABLED)
+export const createCustomerPortal = async (req, res) => {
+  return res.status(400).json({
+    error: 'External billing portal is disabled.',
+  });
 };
 
 // 5. CANCEL SUBSCRIPTION (GRACE PERIOD END)
