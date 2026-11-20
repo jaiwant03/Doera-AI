@@ -125,6 +125,7 @@ class DocumentProcessor {
     }
 
     extraction.summary = (typeof summary === 'string' ? summary : summary.summary || '').trim();
+    extraction.extractionStatus = extraction.metadata?.extractionStatus || 'COMPLETED';
 
     return extraction;
   }
