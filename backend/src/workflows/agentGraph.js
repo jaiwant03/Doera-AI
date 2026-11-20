@@ -1,5 +1,7 @@
 import { StateGraph, Annotation, START, END } from '@langchain/langgraph';
 import orchestratorAgent from '../agents/orchestratorAgent.js';
+import planningAgent from '../agents/planningAgent.js';
+import budgetAgent from '../agents/budgetAgent.js';
 import researchAgent from '../agents/researchAgent.js';
 import locationAgent from '../agents/locationAgent.js';
 import discoveryAgent from '../agents/discoveryAgent.js';
