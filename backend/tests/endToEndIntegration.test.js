@@ -306,9 +306,9 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
         [{ buffer: pngBuffer, name: 'dashboard_screenshot.png', type: 'image/png', size: pngBuffer.length }]
       );
 
-      expect(visionResult.visualSummary).toBeDefined();
-      expect(visionResult.visualHierarchyScore).toBe(92);
-      expect(visionResult.recommendations.length).toBeGreaterThan(0);
+      expect(visionResult.imageCount).toBe(1);
+      expect(visionResult.images[0].summary).toBeDefined();
+      expect(visionResult.images[0].recommendations.length).toBeGreaterThan(0);
     });
   });
 
