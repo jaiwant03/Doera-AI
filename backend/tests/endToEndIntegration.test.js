@@ -43,7 +43,7 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
   const userB_Id = new mongoose.Types.ObjectId();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
 
     // Universal mock for llmService to ensure reliable, high-speed execution
     jest.spyOn(llmService, 'generate').mockImplementation(async ({ systemPrompt, userPrompt }) => {
@@ -661,6 +661,129 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
       );
       expect(userBResStatus).toBe(404);
       expect(userBResData.error).toContain('not found');
+    });
+  });
+
+  // =========================================================================
+  // UNIFIED AI EXECUTION & GMAIL AUTHORIZATION BOUNDARIES
+  // =========================================================================
+  describe('Unified AI Execution & Gmail Authorization Boundaries', () => {
+    it('should grant equal access to genuine AI capabilities while separating live email dispatch by OAuth status', async () => {
+      // 1. Manual registration user in UNIFIED execution mode
+      const manualUser = await User.create({
+        name: 'Manual Engineer',
+        email: 'manual.engineer@example.com',
+        authProvider: 'local',
+        executionMode: 'UNIFIED',
+        role: 'user',
+      });
+
+      // Evaluate eligibility: Should be UNIFIED mode, but canSendLiveEmail must be false
+      const manualEligibility = await executionAuthorizationService.evaluateUserEligibility(manualUser._id);
+      expect(manualEligibility.mode).toBe('UNIFIED');
+      expect(manualEligibility.canSendLiveEmail).toBe(false);
+
+      // Attempting real email send as manual user -> MUST throw 403 GMAIL_OAUTH_REQUIRED
+      await expect(
+        executionAuthorizationService.executeApprovedAction(
+          {
+            _id: new mongoose.Types.ObjectId(),
+            userId: manualUser._id,
+            actionTitle: 'Outreach to Venue Provider',
+            actionType: 'SEND_EMAIL',
+            actionPayload: { email: 'venue@example.com', message: 'Inquiry' },
+            target: { email: 'venue@example.com' },
+          },
+          manualUser._id
+        )
+      ).rejects.toThrow(/Live email dispatch is only supported through personal Gmail accounts authorized via Google Sign-In/i);
+
+      // 2. Google user without connected Gmail -> MUST throw 403 GMAIL_CONNECTION_REQUIRED
+      const googleUserUnconnected = await User.create({
+        name: 'Google Engineer',
+        email: 'google.dev@example.com',
+        authProvider: 'google',
+        googleSubjectId: 'goog_sub_999888',
+        googleEmail: 'google.dev@example.com',
+        executionMode: 'UNIFIED',
+        role: 'user',
+      });
+
+      const googleEligibility = await executionAuthorizationService.evaluateUserEligibility(googleUserUnconnected._id);
+      expect(googleEligibility.mode).toBe('UNIFIED');
+      expect(googleEligibility.isGoogleAuth).toBe(true);
+      expect(googleEligibility.gmailConnected).toBe(false);
+
+      await expect(
+        executionAuthorizationService.executeApprovedAction(
+          {
+            _id: new mongoose.Types.ObjectId(),
+            userId: googleUserUnconnected._id,
+            actionTitle: 'Outreach to Sponsor',
+            actionType: 'SEND_EMAIL',
+            actionPayload: { email: 'sponsor@example.com', message: 'Sponsorship' },
+            target: { email: 'sponsor@example.com' },
+          },
+          googleUserUnconnected._id
+        )
+      ).rejects.toThrow(/Gmail connection required/i);
+
+      // 3. Google user WITH connected Gmail -> executes real outbound email dispatch
+      const googleUserConnected = await User.create({
+        name: 'Verified Sender',
+        email: 'verified.sender@example.com',
+        authProvider: 'google',
+        googleSubjectId: 'goog_sub_111222',
+        googleEmail: 'verified.sender@example.com',
+        executionMode: 'UNIFIED',
+        gmailIntegrationStatus: 'connected',
+        role: 'user',
+      });
+
+      const integration = await Integration.create({
+        userId: googleUserConnected._id,
+        provider: 'gmail',
+        accountEmail: 'verified.sender@example.com',
+        encryptedRefreshToken: 'enc_mock_refresh_token',
+        status: 'connected',
+      });
+
+      // Mock encryption decrypt and googleAuthService token refresh
+      const { encrypt, decrypt } = await import('../src/utils/encryption.js');
+      const googleAuthService = (await import('../src/services/googleAuthService.js')).default;
+      const emailAdapter = (await import('../src/integrations/emailAdapter.js')).default;
+
+      jest.spyOn(googleAuthService, 'getFreshAccessToken').mockResolvedValue({
+        accessToken: 'mock_fresh_access_token_xyz',
+      });
+
+      jest.spyOn(emailAdapter, 'sendViaGmailOAuth').mockResolvedValue({
+        success: true,
+        messageId: 'gmail_msg_id_12345',
+        threadId: 'gmail_thread_id_abcde',
+      });
+
+      // Update integration with valid encrypted token
+      integration.encryptedRefreshToken = encrypt('real_refresh_token_plain');
+      await integration.save();
+
+      const execResult = await executionAuthorizationService.executeApprovedAction(
+        {
+          _id: new mongoose.Types.ObjectId(),
+          userId: googleUserConnected._id,
+          actionTitle: 'Official Inquiry to Vendor',
+          actionType: 'SEND_EMAIL',
+          actionPayload: { email: 'vendor@domain.com', subject: 'Inquiry', message: 'Hello' },
+          target: { email: 'vendor@domain.com' },
+        },
+        googleUserConnected._id
+      );
+
+      expect(execResult.delivered).toBe(true);
+      expect(execResult.isSimulated).toBe(false);
+      expect(execResult.executionMode).toBe('REAL');
+      expect(execResult.messageId).toBe('gmail_msg_id_12345');
+      expect(execResult.sender).toBe('verified.sender@example.com');
     });
   });
 });
