@@ -24,12 +24,12 @@
   top: -50px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(920px, 94vw);
-  height: 380px;
-  background: radial-gradient(ellipse at 50% 28%, rgba(241, 45, 152, 0.22) 0%, rgba(255, 145, 198, 0.14) 36%, rgba(156, 82, 232, 0.05) 65%, transparent 80%);
+  width: min(880px, 92vw);
+  height: 320px;
+  background: radial-gradient(ellipse at 50% 28%, rgba(241, 45, 152, 0.12) 0%, rgba(156, 82, 232, 0.04) 55%, transparent 75%);
   pointer-events: none;
   z-index: 0;
-  filter: blur(55px);
+  filter: blur(60px);
 }
 
 /* Header Section */
@@ -71,12 +71,12 @@
   z-index: 2;
 }
 
-/* Uniform Feature Card — Crisp, Professional, Zero Glitter Blur */
+/* Uniform Feature Card — Crisp, Professional, Zero Glitter Blur, Pink Border */
 .doera-feature-card {
   appearance: none;
   -webkit-appearance: none;
-  background: rgba(22, 12, 28, 0.82);
-  border: 1px solid rgba(241, 45, 152, 0.16);
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.36);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -98,9 +98,9 @@
 
 .doera-feature-card:hover {
   transform: translateY(-2px);
-  background: rgba(30, 16, 38, 0.95);
-  border-color: rgba(241, 45, 152, 0.45); /* Clean crisp color, no blur */
-  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5); /* Clean elevation shadow only, zero colored blur on border */
+  background: #160C20;
+  border-color: #F12D98;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.8), 0 0 16px rgba(241, 45, 152, 0.2);
 }
 
 .doera-feature-card:focus-visible {
