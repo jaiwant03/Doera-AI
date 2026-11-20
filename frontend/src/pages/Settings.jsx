@@ -97,9 +97,6 @@ const Settings = () => {
       setActivatingPlan(null);
     }
   };
-      setActivatingPlan(null);
-    }
-  };
 
   useEffect(() => {
     const fetchSettings = async () => {
