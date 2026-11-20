@@ -13,7 +13,6 @@ import MissionControlPage from './pages/MissionControlPage';
 import CheckoutPage from './pages/CheckoutPage';
 import NotFound from './pages/NotFound';
 import LoadingIndicator from './components/UI/LoadingIndicator';
-import DemoModeBanner from './components/UI/DemoModeBanner';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -40,7 +39,6 @@ function App() {
       <ErrorBoundary>
         <AuthProvider>
           <ChatProvider>
-            <DemoModeBanner />
             <Routes>
               {/* Public Landing Page at Root / */}
               <Route path="/" element={<LandingPage />} />

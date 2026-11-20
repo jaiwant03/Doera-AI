@@ -239,12 +239,11 @@ class EvidenceService {
   }
 
   /**
-   * 6. Record Email Outbound Evidence (Real or Simulated)
+   * 6. Record Email Outbound Evidence
    */
-  async recordEmailEvidence({ userId, taskId, recipient, subject, isRealGoogleAuth = false, messageId = null, error = null }) {
+  async recordEmailEvidence({ userId, taskId, recipient, subject, messageId = null, error = null }) {
     try {
-      const isSimulated = !isRealGoogleAuth;
-      const status = error ? 'FAILED' : isSimulated ? 'SIMULATED' : 'VERIFIED';
+      const status = error ? 'FAILED' : 'VERIFIED';
 
       const evidence = await ExecutionEvidence.create({
         taskId,
@@ -252,31 +251,30 @@ class EvidenceService {
         agentName: 'Communication',
         evidenceType: 'EMAIL_SENT',
         actionType: 'SEND_EMAIL',
-        externalProvider: isRealGoogleAuth ? 'Gmail OAuth2 Real-Time Dispatch' : 'DOERA Demo Execution Sandbox',
+        externalProvider: 'Gmail OAuth2 Real-Time Dispatch',
         verificationStatus: status,
-        executionMode: isSimulated ? 'SIMULATED' : 'REAL',
-        isSimulated,
-        externalReference: messageId || (isSimulated ? 'SIMULATED-DEMO-MESSAGE' : null),
-        requestSummary: isSimulated
-          ? `SIMULATED: Prepared email draft for "${recipient}" (Demo mode - no real external dispatch).`
+        executionMode: 'REAL',
+        isSimulated: false,
+        externalReference: messageId,
+        requestSummary: error
+          ? `Failed outbound email attempt to "${recipient}": ${error.message}`
           : `Delivered outbound email to "${recipient}" with subject "${subject}".`,
         targetData: {
           recipient,
           subject,
-          isRealGoogleAuth,
           messageId,
         },
         actualProviderResponse: {
           success: !error,
-          provider: isRealGoogleAuth ? 'Gmail OAuth2' : 'Simulation Sandbox',
-          messageId: messageId || (isSimulated ? 'SIM-REF-OK' : null),
+          provider: 'Gmail OAuth2',
+          messageId,
           error: error ? error.message : null,
         },
         verificationDetails: {
           verifiedBy: 'Communication Agent',
           verifiedAt: new Date(),
-          notes: isSimulated
-            ? 'SIMULATED: Action performed in demo sandbox. No real email transmitted to recipient.'
+          notes: error
+            ? `Email dispatch failed: ${error.message}`
             : `Confirmed delivery via Google Mail API with provider messageId ${messageId}.`,
           isTruthful: true,
         },
