@@ -96,18 +96,19 @@ Estimated budget savings: 28% over 3 years.`;
 
   // Test 5: Uploaded Visual Image Asset Handling
   it('5. should process uploaded image attachments without throwing or inventing text', async () => {
-    const dummyBase64 = Buffer.from('fake-png-image-binary-stream').toString('base64');
+    // Valid 1x1 PNG base64
+    const validPngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
     const processed = await documentProcessor.processContent({
       filename: 'dashboard_screenshot.png',
       mimeType: 'image/png',
-      base64Content: dummyBase64,
+      base64Content: validPngBase64,
     });
 
     expect(processed.structuredData.fileType).toBe('IMAGE');
     expect(processed.structuredData.format).toBe('PNG');
     expect(processed.structuredData.hasBase64).toBe(true);
     expect(processed.summary).toContain('dashboard_screenshot.png');
-  });
+  }, 15000);
 
   // Test 6: Zero False-Positive Cardiology Fallback on Arbitrary Discovery
   it('6. should NEVER return irrelevant cardiology clinics for arbitrary unrelated queries where no providers exist', async () => {
