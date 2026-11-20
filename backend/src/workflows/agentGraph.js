@@ -113,21 +113,22 @@ const orchestratorNode = async (state) => {
     { step: { id: 'understand', name: 'Planning task requirements', status: 'completed', timestamp: new Date() } }
   );
 
+  const activeReq = state.requiredAgents && state.requiredAgents.length > 1 ? state.requiredAgents : plan.requiredAgents;
   let nextAgent = 'Verification';
-  if (plan.requiredAgents.includes('Vision')) nextAgent = 'Vision';
-  else if (plan.requiredAgents.includes('Document')) nextAgent = 'Document';
-  else if (plan.requiredAgents.includes('DataAnalysis')) nextAgent = 'DataAnalysis';
-  else if (plan.requiredAgents.includes('LocalService') || plan.requiredAgents.includes('Discovery')) nextAgent = 'LocalService';
-  else if (plan.requiredAgents.includes('Location')) nextAgent = 'Location';
-  else if (plan.requiredAgents.includes('Research')) nextAgent = 'Research';
-  else if (plan.requiredAgents.includes('Planning')) nextAgent = 'Planning';
-  else if (plan.requiredAgents.includes('Budget')) nextAgent = 'Budget';
-  else if (plan.requiredAgents.includes('Comparison')) nextAgent = 'Comparison';
-  else if (plan.requiredAgents.includes('Communication')) nextAgent = 'Communication';
+  if (activeReq.includes('Vision')) nextAgent = 'Vision';
+  else if (activeReq.includes('Document')) nextAgent = 'Document';
+  else if (activeReq.includes('DataAnalysis')) nextAgent = 'DataAnalysis';
+  else if (activeReq.includes('LocalService') || activeReq.includes('Discovery')) nextAgent = 'LocalService';
+  else if (activeReq.includes('Location')) nextAgent = 'Location';
+  else if (activeReq.includes('Research')) nextAgent = 'Research';
+  else if (activeReq.includes('Planning')) nextAgent = 'Planning';
+  else if (activeReq.includes('Budget')) nextAgent = 'Budget';
+  else if (activeReq.includes('Comparison')) nextAgent = 'Comparison';
+  else if (activeReq.includes('Communication')) nextAgent = 'Communication';
 
   return {
     category: plan.category,
-    requiredAgents: plan.requiredAgents,
+    requiredAgents: activeReq,
     subtasks: plan.subtasks,
     steps: updatedSteps,
     intentAnalysis: plan.intent,

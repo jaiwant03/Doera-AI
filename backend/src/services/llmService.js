@@ -136,7 +136,7 @@ class LLMService {
               { role: 'user', content: userPrompt },
             ],
             temperature,
-            max_tokens: 4096,
+            max_tokens: 950,
             response_format: jsonMode ? { type: 'json_object' } : undefined,
           });
 
