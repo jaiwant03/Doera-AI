@@ -266,6 +266,7 @@ export const ChatProvider = ({ children }) => {
       const aiMsg = data.aiMessage;
       const task = data.task;
       const locationData = data.locationData || aiMsg?.locationData || task?.locationData || null;
+      const chartConfig = data.chartConfig || aiMsg?.chartConfig || task?.chartConfig || null;
 
       // Update current conversation safely
       if (conversation && (!currentConversation || currentConversation._id !== conversation._id)) {
@@ -286,6 +287,7 @@ export const ChatProvider = ({ children }) => {
             ...aiMsg,
             task: aiMsg.task || task,
             locationData: locationData,
+            chartConfig: chartConfig,
           }
         : null;
       setMessages(prev => {

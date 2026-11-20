@@ -355,6 +355,15 @@ const MessageItem = ({ message, activeTask }) => {
             </div>
           )}
 
+          {/* DOERA ADVANCED SPREADSHEET INTELLIGENCE: Dynamic Interactive Chart */}
+          {activeChartConfig && (
+            <div style={{ marginTop: 14 }}>
+              <ErrorBoundary>
+                <SpreadsheetChart chartConfig={activeChartConfig} />
+              </ErrorBoundary>
+            </div>
+          )}
+
           {/* Interactive Human Approval Gate (Only when awaiting approval) */}
           {attachedTask && ['AWAITING_APPROVAL', 'WAITING_FOR_APPROVAL', 'ACTION_REQUIRED'].includes(attachedTask.status) && (
             <div style={{ marginTop: 14 }}>
