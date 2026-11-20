@@ -419,7 +419,7 @@ class MissionCoordinatorService {
       agentName: 'Verification',
       status: 'completed',
       allTasksSucceeded: missionContext.errors.length === 0,
-      verificationDimensions,
+      verificationDimensions: verifiedDimensions,
       completedAt: new Date(),
     };
   }

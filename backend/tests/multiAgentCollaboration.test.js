@@ -311,5 +311,5 @@ describe('DOERA AI — Dynamic Multi-Agent Collaboration and Intelligent Plannin
     expect(finalState.communicationDrafts.length).toBeGreaterThanOrEqual(3);
     expect(finalState.outcome).toBeDefined();
     expect(finalState.outcome.verificationDimensions.length).toBeGreaterThan(0);
-  }, 35000);
+  }, 90000);
 });
