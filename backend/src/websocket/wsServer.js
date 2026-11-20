@@ -38,7 +38,7 @@ class RealtimeServer {
         return;
       }
 
-      const userId = decoded.userId;
+      const userId = String(decoded.userId || decoded.id || decoded._id);
       ws.userId = userId;
       ws.isAlive = true;
 
@@ -105,8 +105,12 @@ class RealtimeServer {
   }
 
   sendToSocket(ws, type, payload) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type, payload }));
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type, payload }));
+      }
+    } catch (err) {
+      logger.warn('[DOERA WS] sendToSocket notice:', err.message);
     }
   }
 
