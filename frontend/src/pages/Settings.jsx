@@ -60,6 +60,14 @@ const Settings = () => {
   const [planSuccessMessage, setPlanSuccessMessage] = useState(null);
   const [planErrorMessage, setPlanErrorMessage] = useState(null);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate('/', { replace: true });
+    }
+  };
+
   const handleActivatePlan = async (planKey) => {
     if ((subscription?.plan || 'free') === planKey) return;
 

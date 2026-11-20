@@ -423,7 +423,7 @@ const Sidebar = ({ isOpen, onToggle, onClose }) => {
               <span className="doera-user-email">{user?.email || 'user@doera.ai'}</span>
             </div>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="doera-btn-icon doera-logout-btn"
               title="Sign out of DOERA"
             >
