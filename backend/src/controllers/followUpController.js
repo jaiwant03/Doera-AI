@@ -73,42 +73,6 @@ export const checkFollowUpNow = async (req, res, next) => {
     const now = new Date();
     followUp.attemptCount += 1;
 
-    if (config.demoMode) {
-      const simReply = await demoResponseService.generateSimulatedResponse({
-        providerName: followUp.recipientName || followUp.recipient,
-        recipient: followUp.recipient,
-        scenario: 'SUCCESS',
-      });
-
-      followUp.status = 'RESPONSE_RECEIVED';
-      followUp.lastResponse = simReply;
-      followUp.responseDetectedAt = now;
-      followUp.notes = `Simulated provider reply verified: "${simReply.responseMessage}"`;
-      followUp.history.push({
-        checkedAt: now,
-        outcome: 'RESPONSE_RECEIVED',
-        details: simReply,
-      });
-      await followUp.save();
-
-      // Sync with task
-      if (followUp.taskId) {
-        try {
-          const task = await Task.findOne({
-            $or: [{ taskId: followUp.taskId }, { _id: String(followUp.taskId).match(/^[0-9a-fA-F]{24}$/) ? followUp.taskId : null }],
-          });
-          if (task) {
-            task.currentAction = `Simulated response received from ${followUp.recipientName || 'Provider'}.`;
-            await task.save().catch(() => {});
-            realtimeServer.sendToUser(userId, 'task_update', { task });
-          }
-        } catch (_) {}
-      }
-
-      realtimeServer.sendToUser(userId, 'followup_updated', { followUp });
-      return res.json({ success: true, followUp, simulated: true });
-    }
-
     followUp.history.push({
       checkedAt: now,
       outcome: `Manual check initiated by user. Attempt ${followUp.attemptCount}/${followUp.maximumAttempts}. No external reply detected yet.`,
@@ -126,45 +90,11 @@ export const checkFollowUpNow = async (req, res, next) => {
   }
 };
 
-// 4. SIMULATE PROVIDER RESPONSE (DEMO MODE HELPER)
+// 4. SIMULATE PROVIDER RESPONSE (DISABLED IN UNIFIED EXECUTION)
 export const simulateProviderReply = async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const { id } = req.params;
-    const { scenario = 'SUCCESS', customMessage } = req.body;
-
-    const followUp = await FollowUp.findOne({ _id: id, userId });
-    if (!followUp) {
-      return res.status(404).json({ error: 'Follow-up tracker not found.' });
-    }
-
-    const simReply = await demoResponseService.generateSimulatedResponse({
-      providerName: followUp.recipientName || followUp.recipient,
-      recipient: followUp.recipient,
-      scenario,
-    });
-
-    if (customMessage) {
-      simReply.responseMessage = customMessage;
-    }
-
-    const now = new Date();
-    followUp.status = scenario === 'NO_RESPONSE' ? 'FOLLOW_UP_DUE' : 'RESPONSE_RECEIVED';
-    followUp.lastResponse = simReply;
-    followUp.responseDetectedAt = now;
-    followUp.history.push({
-      checkedAt: now,
-      outcome: scenario === 'NO_RESPONSE' ? 'NO_RESPONSE_SIMULATED' : 'RESPONSE_RECEIVED',
-      details: simReply,
-    });
-    await followUp.save();
-
-    realtimeServer.sendToUser(userId, 'followup_updated', { followUp });
-
-    res.json({ success: true, followUp, simulatedReply: simReply });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(400).json({
+    error: 'Simulation endpoints are disabled. DOERA AI operates with genuine execution telemetry and does not generate fabricated provider responses.',
+  });
 };
 
 // 4. STOP TRACKING FOLLOW-UP
