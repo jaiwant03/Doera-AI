@@ -139,6 +139,15 @@ const handleShutdown = async (signal) => {
 process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 process.on('SIGINT', () => handleShutdown('SIGINT'));
 
+// Process-level unhandled exception and rejection handlers — prevents unexpected crash/restart loops
+process.on('uncaughtException', (err) => {
+  logger.error('[DOERA PROCESS ERROR] Uncaught exception caught:', err?.stack || err?.message || err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('[DOERA PROCESS ERROR] Unhandled rejection caught:', reason?.stack || reason?.message || reason);
+});
+
 if (process.env.NODE_ENV !== 'test') {
   startServer().catch((err) => {
     logger.error('[DOERA] Failed to start server:', err);

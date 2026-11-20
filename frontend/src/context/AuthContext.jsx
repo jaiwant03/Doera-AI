@@ -62,7 +62,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const initiateGoogleOAuth = () => {
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const backendUrl = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
     window.location.href = `${backendUrl}/auth/google?redirect=true`;
   };
 
