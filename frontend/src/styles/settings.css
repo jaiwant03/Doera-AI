@@ -51,11 +51,11 @@
 
 /* Header Card */
 .doera-settings-card-header {
-  background: #12091A;
+  background: #0D0713;
   padding: 22px 28px;
   border-radius: 16px;
-  border: 1px solid #281432;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(241, 45, 152, 0.35);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -104,8 +104,8 @@
 /* Segmented Tabs Bar */
 .doera-settings-tabs-wrapper {
   display: flex;
-  background: #0E0715;
-  border: 1px solid #281432;
+  background: #08040C;
+  border: 1px solid rgba(241, 45, 152, 0.32);
   border-radius: 12px;
   padding: 4px;
   gap: 4px;
@@ -130,24 +130,24 @@
 
 .doera-settings-tab:hover {
   color: #FFFFFF;
-  background: #180C23;
+  background: rgba(241, 45, 152, 0.1);
 }
 
 .doera-settings-tab.active {
-  background: rgba(241, 45, 152, 0.16);
-  border-color: rgba(241, 45, 152, 0.4);
-  color: #FF55BD;
+  background: rgba(241, 45, 152, 0.2);
+  border-color: #F12D98;
+  color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 0 12px rgba(241, 45, 152, 0.2);
+  box-shadow: 0 0 12px rgba(241, 45, 152, 0.3);
 }
 
 /* Settings Main Panel Card */
 .doera-settings-card {
-  background: #12091A;
-  border: 1px solid #281432;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 16px;
   padding: 12px 24px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
 }
 
 /* Integration List & Grid Alignment */
@@ -155,9 +155,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 8px;
-  border-bottom: 1px solid #1E0F28;
-  gap: 20px;
+  padding: 20px 10px;
+  border-bottom: 1px solid rgba(241, 45, 152, 0.15);
+  gap: 24px;
   border-radius: 10px;
   transition: background 0.15s ease;
 }
@@ -167,7 +167,7 @@
 }
 
 .doera-integration-row:hover {
-  background: rgba(255, 255, 255, 0.015);
+  background: rgba(241, 45, 152, 0.03);
 }
 
 /* Left: Icon + Content */
@@ -284,28 +284,29 @@
   border: 1px solid rgba(241, 45, 152, 0.25);
 }
 
-/* Right: Fixed Uniform Action Buttons / Pills */
+/* Right: Fixed Uniform Action Buttons / Pills Aligned Column */
 .doera-integration-right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
-  min-width: 140px;
+  min-width: 220px;
+  width: 220px;
 }
 
 .doera-btn-action-outline {
-  width: 140px;
-  height: 36px;
+  width: 210px;
+  height: 38px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0 14px;
-  font-size: 12.5px;
-  font-weight: 600;
-  border: 1px solid #361744;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #F12D98;
   border-radius: 8px;
-  background: #170B20;
-  color: #EDE4EE;
+  background: rgba(241, 45, 152, 0.14);
+  color: #FFFFFF;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -313,10 +314,10 @@
 }
 
 .doera-btn-action-outline:hover:not(:disabled) {
-  background: #251035;
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
   border-color: #F12D98;
   color: #FFFFFF;
-  box-shadow: 0 0 14px rgba(241, 45, 152, 0.3);
+  box-shadow: 0 0 16px rgba(241, 45, 152, 0.5);
   transform: translateY(-1px);
 }
 
@@ -326,17 +327,18 @@
 }
 
 .doera-pill-model-spec {
-  width: 140px;
-  height: 36px;
+  width: 210px;
+  height: 38px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #100717;
-  border: 1px solid #2B1634;
+  background: #08040C;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 8px;
-  color: #A391AC;
-  font-family: monospace;
+  color: #FF7BD5;
+  font-family: var(--font-mono, monospace);
   font-size: 11.5px;
+  font-weight: 600;
   text-align: center;
   box-sizing: border-box;
 }

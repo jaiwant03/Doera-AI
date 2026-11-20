@@ -24,12 +24,12 @@
   transition: max-width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Floating Rounded Dark Container (#17101B) */
+/* Floating Rounded Dark Container (#0E0715) with Pink Border */
 .doera-composer-container {
-  background: var(--bg-composer, #17101B);
-  border: 1px solid var(--border-dark, #302535);
+  background: var(--bg-composer, #0E0715);
+  border: 1px solid rgba(241, 45, 152, 0.38);
   border-radius: 24px;
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 85, 189, 0.08);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.9), 0 0 16px rgba(241, 45, 152, 0.15);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: visible;
@@ -37,8 +37,8 @@
 }
 
 .doera-composer-container.focused {
-  border-color: rgba(255, 85, 189, 0.6);
-  box-shadow: 0 20px 48px -6px rgba(0, 0, 0, 0.9), 0 0 24px rgba(255, 85, 189, 0.25);
+  border-color: #F12D98;
+  box-shadow: 0 20px 48px -6px rgba(0, 0, 0, 0.95), 0 0 24px rgba(241, 45, 152, 0.35);
   transform: translateY(-1px);
 }
 
@@ -48,8 +48,8 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 10px 14px 4px;
-  border-bottom: 1px solid var(--border-dark, #302535);
-  background: #110B14;
+  border-bottom: 1px solid rgba(241, 45, 152, 0.25);
+  background: #09040D;
   border-top-left-radius: 23px;
   border-top-right-radius: 23px;
 }
@@ -58,8 +58,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #1D1521;
-  border: 1px solid var(--border-dark, #302535);
+  background: rgba(241, 45, 152, 0.12);
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 8px;
   padding: 4px 10px;
   font-size: 11.5px;
@@ -236,20 +236,21 @@
 }
 
 .doera-send-btn.disabled {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(241, 45, 152, 0.08);
+  border: 1px solid rgba(241, 45, 152, 0.2);
   color: var(--text-muted, #807486);
   cursor: not-allowed;
 }
 
 .doera-send-btn.active {
-  background: linear-gradient(135deg, #FF55BD 0%, #C53A9F 100%);
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
   color: #FFFFFF;
-  box-shadow: 0 0 18px rgba(255, 85, 189, 0.6);
+  box-shadow: 0 0 18px rgba(241, 45, 152, 0.6);
 }
 
 .doera-send-btn.active:hover {
   transform: scale(1.06);
-  box-shadow: 0 0 24px rgba(255, 85, 189, 0.85);
+  box-shadow: 0 0 24px rgba(241, 45, 152, 0.85);
 }
 
 .doera-send-btn.streaming-stop {

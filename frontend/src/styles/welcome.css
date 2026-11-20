@@ -220,16 +220,16 @@
   box-sizing: border-box;
 }
 
-/* Modal Card Box — Clean Solid Color Border, Zero Glitter Blur Effect */
+/* Modal Card Box — Crisp Pink Border, Luxury Black Background */
 .doera-tutorial-modal {
   width: 100%;
   max-width: 620px;
   max-height: min(85vh, 680px);
-  background: #140B1A;
-  border: 1px solid rgba(241, 45, 152, 0.28); /* Crisp solid clean color without any blur effect */
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.42); /* Crisp solid pink border */
   border-radius: 16px;
-  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.85),
-              0 2px 8px rgba(0, 0, 0, 0.4); /* Zero neon glow, crisp clean elevation shadow */
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.95),
+              0 0 24px rgba(241, 45, 152, 0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -242,8 +242,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  border-bottom: 1px solid rgba(241, 45, 152, 0.14);
-  background: rgba(22, 12, 28, 0.7);
+  border-bottom: 1px solid rgba(241, 45, 152, 0.22);
+  background: #12091A;
 }
 
 .doera-modal-header-left {
@@ -474,48 +474,48 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 14px 24px;
-  border-top: 1px solid rgba(241, 45, 152, 0.14);
-  background: rgba(18, 9, 24, 0.85);
+  border-top: 1px solid rgba(241, 45, 152, 0.22);
+  background: #12091A;
 }
 
 .doera-btn-secondary {
   appearance: none;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #C0B5C6;
+  background: rgba(241, 45, 152, 0.08);
+  border: 1px solid rgba(241, 45, 152, 0.35);
+  color: #EDE4EE;
   font-size: 13px;
-  font-weight: 500;
-  padding: 8px 16px;
+  font-weight: 600;
+  padding: 8px 18px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
 }
 
 .doera-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(241, 45, 152, 0.18);
   color: #FFFFFF;
-  border-color: rgba(255, 255, 255, 0.22);
+  border-color: #F12D98;
 }
 
 .doera-btn-primary {
   appearance: none;
-  background: linear-gradient(135deg, #F12D98 0%, #9C52E8 100%);
-  border: none;
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #FFFFFF;
   font-size: 13px;
-  font-weight: 600;
-  padding: 8px 18px;
+  font-weight: 700;
+  padding: 8px 20px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(241, 45, 152, 0.35);
+  box-shadow: 0 0 16px rgba(241, 45, 152, 0.45);
   transition: all 0.18s ease;
 }
 
 .doera-btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(241, 45, 152, 0.5);
+  box-shadow: 0 0 24px rgba(241, 45, 152, 0.7);
   transform: translateY(-1px);
 }
 
