@@ -65,6 +65,8 @@ const TaskSchema = new mongoose.Schema(
         'GENERAL_QUESTION',
         'MULTI_STEP_TASK',
         'LOCAL_SERVICE_RESEARCH',
+        'MISSION_PLANNING',
+        'PLANNING',
         // Legacy compatibility
         'LOCAL_SERVICE',
         'MEDICAL',

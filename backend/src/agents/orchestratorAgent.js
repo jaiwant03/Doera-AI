@@ -154,16 +154,26 @@ Output pure JSON:
     if (requiredAgents.includes('Location')) {
       list.push({ id: 'location', title: 'Retrieving geographic coordinates & map layer', agent: 'Location', status: 'pending', dependencies: ['research'] });
     }
+    if (requiredAgents.includes('Planning')) {
+      list.push({ id: 'planning', title: 'Formulating chronological schedule, phases & volunteer matrix', agent: 'Planning', status: 'pending', dependencies: ['understand'] });
+    }
+    if (requiredAgents.includes('Budget')) {
+      list.push({ id: 'budget', title: 'Calculating itemized financial breakdown & verifying totals against budget constraints', agent: 'Budget', status: 'pending', dependencies: ['planning'] });
+    }
     if (requiredAgents.includes('Comparison')) {
       list.push({ id: 'compare', title: 'Comparing options against key criteria', agent: 'Comparison', status: 'pending', dependencies: ['research'] });
     }
     if (requiredAgents.includes('Communication')) {
-      list.push({ id: 'communicate', title: 'Drafting message & awaiting human approval', agent: 'Communication', status: 'pending', dependencies: ['compare'] });
+      const commTitle = requiredAgents.includes('Planning')
+        ? 'Drafting institutional approval, sponsor outreach & participant onboarding communications'
+        : 'Drafting message & awaiting human approval';
+      const commDeps = requiredAgents.includes('Budget') ? ['budget'] : (requiredAgents.includes('Planning') ? ['planning'] : ['compare']);
+      list.push({ id: 'communicate', title: commTitle, agent: 'Communication', status: 'pending', dependencies: commDeps });
     }
-    if (requiredAgents.includes('Execution')) {
+    if (requiredAgents.includes('Execution') && !requiredAgents.includes('Planning')) {
       list.push({ id: 'execute', title: 'Dispatching authorized external operations', agent: 'Execution', status: 'pending', dependencies: ['communicate'] });
     }
-    if (requiredAgents.includes('Scheduling') || requiredAgents.includes('Communication') || /appointment|book|schedule/i.test(request)) {
+    if (!requiredAgents.includes('Planning') && (requiredAgents.includes('Scheduling') || requiredAgents.includes('Communication') || /appointment|book|schedule/i.test(request))) {
       list.push({ id: 'schedule', title: 'Coordinating appointment slot', agent: 'Scheduling', status: 'pending', dependencies: ['execute'] });
     }
     if (requiredAgents.includes('Verification')) {

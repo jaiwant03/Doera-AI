@@ -47,9 +47,11 @@ class UniversalIntentService {
       (hasAttachments || /(dataset|dataframe|spreadsheet|numbers|rows|columns|expenses?|sales|table|chart)/i.test(lower))
     );
     const isDocAnalysis = (hasAttachments && !hasSpreadsheetAttachment) || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
-    const isTravel = /(plan a trip|travel to|itinerary|route from|trip to|driving to|visit.*for \d+ days|flight|road trip)/i.test(lower);
-    const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower);
-    const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower);
+    const isMissionPlanning = /(organize|plan|host|conduct|manage|execution\s*plan|complete\s*plan)\s+(?:a|an)?\s*(?:two-day|2-day|\d+-day)?\s*(?:college\s*)?(?:hackathon|event|symposium|conference|workshop|fest|competition)/i.test(lower) ||
+      ((/hackathon|symposium|conference|fest/i.test(lower) || /organize/i.test(lower)) && /budget|participants|schedule|plan/i.test(lower));
+    const isTravel = /(plan a trip|travel to|itinerary|route from|trip to|driving to|visit.*for \d+ days|flight|road trip)/i.test(lower) && !isMissionPlanning;
+    const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower) && !isMissionPlanning;
+    const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower) && !isMissionPlanning;
     const isComparison = /(compare|difference between|vs\b|versus|pros and cons|best (among|of|option)|which is better)/i.test(lower);
     const isLocation = /(near|in |at |around|coimbatore|chennai|bangalore|mumbai|delhi|ooty|city|local|hospital|clinic|electrician|plumber|mechanic|restaurant|store|shop)/i.test(lower);
     const isGeneralKnowledge = /^(what is|who is|explain|how (does|do|can)|why is|tell me about|history of|define|give me an overview)/i.test(lower) && !isOutreach && !isBooking && !isLocation;
@@ -117,6 +119,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
       hasImageAttachment,
       isDocAnalysis,
       isDataAnalysis,
+      isMissionPlanning,
       isTravel,
       isOutreach,
       isBooking,
@@ -200,6 +203,13 @@ User Personalized Context: ${memoryContext || 'None'}`;
     if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasSpreadsheetAttachment) {
       requiredAgents.add('DataAnalysis');
     }
+    if (categories.includes(CATEGORIES.MISSION_PLANNING) || /(organize|plan|host|conduct|execution\s*plan|complete\s*plan).*(hackathon|event|symposium|conference)/i.test(text)) {
+      requiredAgents.add('Research');
+      requiredAgents.add('Planning');
+      requiredAgents.add('Budget');
+      requiredAgents.add('Communication');
+      requiredAgents.add('Verification');
+    }
 
     return {
       primaryObjective: parsed.primaryObjective || text,
@@ -225,7 +235,14 @@ User Personalized Context: ${memoryContext || 'None'}`;
     const categories = [];
     const requiredAgents = new Set(['Planner']);
 
-    if (flags.hasImageAttachment) {
+    if (flags.isMissionPlanning) {
+      categories.push(CATEGORIES.MISSION_PLANNING);
+      requiredAgents.add('Research');
+      requiredAgents.add('Planning');
+      requiredAgents.add('Budget');
+      requiredAgents.add('Communication');
+      requiredAgents.add('Verification');
+    } else if (flags.hasImageAttachment) {
       categories.push(CATEGORIES.IMAGE_ANALYSIS);
       requiredAgents.add('Vision');
       requiredAgents.add('Verification');
