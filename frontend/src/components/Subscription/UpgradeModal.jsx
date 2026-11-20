@@ -61,35 +61,27 @@ const UpgradeModal = ({
     if (e) e.stopPropagation();
     if (isActivating || planKey === activeTier) return;
 
-    // Paid plans (pro and max) must go through the simulated professional checkout flow!
-    if (planKey === 'pro' || planKey === 'max') {
-      setSelectedPlan(planKey);
-      setCheckoutPlan(planKey);
-      return;
-    }
-
-    // Direct switch for Free tier ($0)
-    setSelectedPlan('free');
+    setSelectedPlan(planKey);
     setIsActivating(true);
-    setActivatingKey('free');
+    setActivatingKey(planKey);
     setNotification(null);
 
     try {
       const res = await api.post('/subscription/upgrade', {
-        plan: 'free',
+        plan: planKey,
         billingCycle,
       });
       
-      const successMessage = res.data?.message || 'Switched to DOERA FREE (20 daily requests)';
+      const successMessage = res.data?.message || `Switched to DOERA ${planKey.toUpperCase()}`;
       setNotification({
         type: 'success',
         message: successMessage,
       });
 
-      setActiveTier('free');
+      setActiveTier(planKey);
 
       if (onPlanUpdated) {
-        onPlanUpdated('free', res.data?.usage);
+        onPlanUpdated(planKey, res.data?.usage);
       }
 
       setTimeout(() => {
@@ -98,7 +90,7 @@ const UpgradeModal = ({
         onClose();
       }, 1000);
     } catch (err) {
-      console.error('[DOERA Subscription] Free plan switch failed:', err);
+      console.error('[DOERA Subscription] Plan switch failed:', err);
       setNotification({
         type: 'error',
         message: err.response?.data?.error || 'Unable to update subscription. Please check your network and try again.',
