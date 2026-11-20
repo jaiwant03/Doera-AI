@@ -273,13 +273,16 @@ export const streamMessage = async (req, res) => {
             .slice()
             .reverse()
             .find((m) => Array.isArray(m.attachments) && m.attachments.length > 0);
-          if (
-            prevWithAttachments &&
-            /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(
-              message
-            )
-          ) {
-            effectiveAttachments = prevWithAttachments.attachments;
+          if (prevWithAttachments) {
+            const hasSpreadsheet = prevWithAttachments.attachments.some(a =>
+              /\.(csv|tsv|xlsx|xls)$/i.test(a.name || '') || a.type === 'text/csv'
+            );
+            const isFollowUpDataQuery = /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(message) ||
+              (hasSpreadsheet && /(chart|graph|trend|bar|line|pie|doughnut|donut|area|scatter|histogram|top|lowest|highest|average|mean|sum|total|percentage|expenses?|sales|revenue|profit|spending|transactions?|columns?|rows?|categories|unusual|missing|rank|growth)/i.test(message));
+
+            if (isFollowUpDataQuery) {
+              effectiveAttachments = prevWithAttachments.attachments;
+            }
           }
         }
       }
@@ -695,13 +698,16 @@ export const sendMessage = async (req, res, next) => {
             .slice()
             .reverse()
             .find((m) => Array.isArray(m.attachments) && m.attachments.length > 0);
-          if (
-            prevWithAttachments &&
-            /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(
-              message
-            )
-          ) {
-            effectiveAttachments = prevWithAttachments.attachments;
+          if (prevWithAttachments) {
+            const hasSpreadsheet = prevWithAttachments.attachments.some(a =>
+              /\.(csv|tsv|xlsx|xls)$/i.test(a.name || '') || a.type === 'text/csv'
+            );
+            const isFollowUpDataQuery = /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(message) ||
+              (hasSpreadsheet && /(chart|graph|trend|bar|line|pie|doughnut|donut|area|scatter|histogram|top|lowest|highest|average|mean|sum|total|percentage|expenses?|sales|revenue|profit|spending|transactions?|columns?|rows?|categories|unusual|missing|rank|growth)/i.test(message));
+
+            if (isFollowUpDataQuery) {
+              effectiveAttachments = prevWithAttachments.attachments;
+            }
           }
         }
       }
