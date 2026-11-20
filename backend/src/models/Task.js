@@ -64,6 +64,7 @@ const TaskSchema = new mongoose.Schema(
         'TASK_AUTOMATION',
         'GENERAL_QUESTION',
         'MULTI_STEP_TASK',
+        'LOCAL_SERVICE_RESEARCH',
         // Legacy compatibility
         'LOCAL_SERVICE',
         'MEDICAL',
