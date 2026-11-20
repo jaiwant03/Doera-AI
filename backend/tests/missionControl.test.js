@@ -331,18 +331,19 @@ describe('DOERA AI — Mission Control, Proof of Execution & Follow-Up Tracker',
   // Test 7: Strict User Isolation (Prevent Accessing Other Users' Missions)
   it('7. should enforce strict user isolation: User B cannot access or modify User A missions or evidence', async () => {
     // User A owns the mission
-    jest.spyOn(Task, 'findOne').mockImplementation(({ userId }) => {
-      // If query matches User A, return mission; if User B, return null
-      if (String(userId) === String(userA_Id)) {
-        return Promise.resolve({
-          _id: new mongoose.Types.ObjectId(),
-          taskId: 'MSN-USER-A-ONLY',
-          userId: userA_Id,
-          deliverables: [],
-        });
-      }
-      return Promise.resolve(null);
-    });
+    jest.spyOn(Task, 'findOne').mockImplementation(({ userId }) => ({
+      lean: () => {
+        if (String(userId) === String(userA_Id)) {
+          return Promise.resolve({
+            _id: new mongoose.Types.ObjectId(),
+            taskId: 'MSN-USER-A-ONLY',
+            userId: userA_Id,
+            deliverables: [],
+          });
+        }
+        return Promise.resolve(null);
+      },
+    }));
 
     let resStatus = 200;
     let resError = null;
