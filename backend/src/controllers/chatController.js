@@ -378,12 +378,14 @@ export const streamMessage = async (req, res) => {
         task.discoveredData = resultState.discoveredData || task.discoveredData;
         task.comparisonMatrix = resultState.comparisonMatrix || task.comparisonMatrix;
         task.verificationReport = resultState.outcome?.verificationDimensions || [];
+        task.chartConfig = resultState.chartConfig || resultState.discoveredData?.dataAnalysis?.chartConfig || task.chartConfig || null;
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
         await task.save().catch(() => {});
       }
 
       const locationData = await enrichLocationData(task);
+      const chartConfig = task.chartConfig || task.discoveredData?.dataAnalysis?.chartConfig || null;
       const aiMessageContent = buildUniversalResponse(task);
 
       const aiMessage = await Message.create({
@@ -393,6 +395,7 @@ export const streamMessage = async (req, res) => {
         content: aiMessageContent,
         taskId: task._id,
         locationData,
+        chartConfig,
         status: 'complete',
       });
 
@@ -402,6 +405,7 @@ export const streamMessage = async (req, res) => {
         aiMessage,
         task,
         locationData,
+        chartConfig,
       });
 
       sendEvent('done', {
@@ -409,6 +413,7 @@ export const streamMessage = async (req, res) => {
         aiMessage,
         task,
         locationData,
+        chartConfig,
         usage: {
           used: quota.used,
           limit: quota.limit,
@@ -813,12 +818,14 @@ export const sendMessage = async (req, res, next) => {
         task.discoveredData = resultState.discoveredData || task.discoveredData;
         task.comparisonMatrix = resultState.comparisonMatrix || task.comparisonMatrix;
         task.verificationReport = resultState.outcome?.verificationDimensions || [];
+        task.chartConfig = resultState.chartConfig || resultState.discoveredData?.dataAnalysis?.chartConfig || task.chartConfig || null;
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
         await task.save().catch(() => {});
       }
 
       const locationData = await enrichLocationData(task);
+      const chartConfig = task.chartConfig || task.discoveredData?.dataAnalysis?.chartConfig || null;
       const aiMessageContent = buildUniversalResponse(task);
 
       aiMessage = await Message.create({
@@ -828,6 +835,7 @@ export const sendMessage = async (req, res, next) => {
         content: aiMessageContent,
         taskId: task._id,
         locationData,
+        chartConfig,
         status: 'complete',
       });
 
