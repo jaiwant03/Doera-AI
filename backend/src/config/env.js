@@ -1,27 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Permanent Fail-Closed Demo Mode: Default to true unless explicitly 'false'
-const isDemoMode = process.env.DEMO_MODE !== 'false';
-
-// Database Isolation: Always target doera_hackathon_demo in demo mode
+// Standard MongoDB URI from environment or local fallback
 let baseMongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/doera-ai';
-if (isDemoMode) {
-  if (baseMongoUri.includes('/doera-ai')) {
-    baseMongoUri = baseMongoUri.replace('/doera-ai', '/doera_hackathon_demo');
-  } else if (!baseMongoUri.includes('doera_hackathon_demo')) {
-    // Append or replace db name
-    const urlParts = baseMongoUri.split('?');
-    const pathAndHost = urlParts[0].replace(/\/+$/, '');
-    const query = urlParts[1] ? `?${urlParts[1]}` : '';
-    const lastSlash = pathAndHost.lastIndexOf('/');
-    if (lastSlash > 10) { // has db segment
-      baseMongoUri = `${pathAndHost.substring(0, lastSlash)}/doera_hackathon_demo${query}`;
-    } else {
-      baseMongoUri = `${pathAndHost}/doera_hackathon_demo${query}`;
-    }
-  }
-}
 
 export const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
@@ -30,12 +11,6 @@ export const config = {
   mongoUri: baseMongoUri,
   jwtSecret: process.env.JWT_SECRET || 'doera_ai_development_jwt_secret_key_super_secure_32chars!',
   encryptionKey: process.env.ENCRYPTION_KEY || 'doera_ai_32_bytes_super_secure_encrypt_key_0123',
-  
-  // Centralized Demo Mode Configuration
-  demoMode: isDemoMode,
-  demoDatabaseName: 'doera_hackathon_demo',
-  demoIndicatorText: 'DOERA AI — HACKATHON DEMO MODE',
-  demoIndicatorDisclaimer: 'All external actions are simulated. No real emails, WhatsApp messages, bookings or payments are performed.',
 
   // Cloud LLM Provider (groq, openai, or built-in intelligent fallback)
   llmProvider: process.env.LLM_PROVIDER || 'groq',
