@@ -39,7 +39,7 @@
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 16px;
-  border-bottom: 1px solid #1E0F28;
+  border-bottom: 1px solid rgba(241, 45, 152, 0.2);
   padding-bottom: 20px;
 }
 
@@ -104,11 +104,12 @@
 .doera-approval-stat-chip {
   display: flex;
   flex-direction: column;
-  background: #140A1D;
-  border: 1px solid #2B1634;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 10px;
   padding: 8px 14px;
   min-width: 90px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .doera-stat-num {
@@ -144,8 +145,8 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  background: #100717;
-  border: 1px solid #281432;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 12px;
   padding: 8px 12px;
 }
@@ -174,15 +175,15 @@
 }
 
 .doera-approval-tab-btn:hover {
-  background: #1B0E25;
+  background: rgba(241, 45, 152, 0.1);
   color: #FFF;
 }
 
 .doera-approval-tab-btn.active {
-  background: rgba(241, 45, 152, 0.15);
-  border-color: rgba(241, 45, 152, 0.4);
-  color: #FF55BD;
-  font-weight: 600;
+  background: rgba(241, 45, 152, 0.2);
+  border-color: #F12D98;
+  color: #FFFFFF;
+  font-weight: 700;
 }
 
 .doera-tab-counter {
@@ -217,8 +218,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #160B20;
-  border: 1px solid #32173F;
+  background: #08040C;
+  border: 1px solid rgba(241, 45, 152, 0.32);
   border-radius: 8px;
   padding: 6px 10px;
   width: 100%;
@@ -238,8 +239,8 @@
 }
 
 .doera-risk-select {
-  background: #160B20;
-  border: 1px solid #32173F;
+  background: #08040C;
+  border: 1px solid rgba(241, 45, 152, 0.32);
   border-radius: 8px;
   color: #D3C4D6;
   font-size: 12px;
@@ -256,20 +257,20 @@
 }
 
 .doera-approval-card {
-  background: #12091A;
-  border: 1px solid #281432;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 14px;
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .doera-approval-card:hover {
-  border-color: rgba(241, 45, 152, 0.4);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(241, 45, 152, 0.1);
+  border-color: #F12D98;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 16px rgba(241, 45, 152, 0.2);
   transform: translateY(-1px);
 }
 
