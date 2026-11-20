@@ -192,6 +192,7 @@ const TaskSchema = new mongoose.Schema(
       },
     ],
     locationData: mongoose.Schema.Types.Mixed,
+    chartConfig: mongoose.Schema.Types.Mixed,
     discoveredData: mongoose.Schema.Types.Mixed,
     verificationReport: mongoose.Schema.Types.Mixed,
     comparisonMatrix: mongoose.Schema.Types.Mixed,
