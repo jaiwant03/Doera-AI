@@ -294,7 +294,7 @@ describe('DOERA AI — Dynamic Multi-Agent Collaboration and Intelligent Plannin
       taskId: 'test-langgraph-planning-001',
       userRequest: 'I want to organize a two-day college hackathon for 100 participants with a budget of ₹50,000. Prepare a complete execution plan.',
       category: 'MISSION_PLANNING',
-      requiredAgents: ['Planner', 'Research', 'Planning', 'Budget', 'Communication', 'Verification'],
+      requiredAgents: ['Planner', 'Planning', 'Budget', 'Communication', 'Verification'],
       status: 'EXECUTING',
       currentAgent: 'Orchestrator',
       currentAction: 'Initiating multi-agent collaboration...',
