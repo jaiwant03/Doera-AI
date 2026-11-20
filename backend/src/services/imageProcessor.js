@@ -197,8 +197,8 @@ class ImageProcessor {
     };
 
     try {
-      // 1. Header Region (Top 15%)
-      const headerH = Math.max(10, Math.round(height * 0.15));
+      // 1. Header Region (Top 10-12%)
+      const headerH = Math.max(10, Math.round(height * 0.10));
       const headerStats = await sharpInstance
         .clone()
         .extract({ left: 0, top: 0, width, height: headerH })
@@ -211,8 +211,8 @@ class ImageProcessor {
           0.114 * headerStats.channels[2].mean
         );
         zones.headerLuminance = hLum;
-        // Significant difference in header brightness indicates a distinct top navigation / header bar
-        zones.hasHeaderBar = Math.abs(hLum - baseLuminance) >= 8;
+        // Measurable variance in header brightness indicates a distinct top navigation / header bar
+        zones.hasHeaderBar = Math.abs(hLum - baseLuminance) >= 2;
       }
 
       // 2. Sidebar Region (Left 20% on landscape images)
