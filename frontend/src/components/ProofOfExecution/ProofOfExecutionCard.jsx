@@ -151,49 +151,6 @@ export const ProofOfExecutionCard = ({ evidence }) => {
         </span>
       </div>
 
-      {/* Execution Mode Banner (Real vs Simulated) */}
-      {!isSim ? (
-        <div
-          style={{
-            margin: '8px 0 12px 0',
-            padding: '6px 10px',
-            background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.35)',
-            borderRadius: 6,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 10.5,
-            fontWeight: 700,
-            color: '#10B981',
-            letterSpacing: '0.3px',
-          }}
-        >
-          <CheckCircle2 size={13} color="#10B981" style={{ flexShrink: 0 }} />
-          <span>REAL AUTOMATION VERIFIED — PROVEN EXECUTION METRICS</span>
-        </div>
-      ) : (
-        <div
-          style={{
-            margin: '8px 0 12px 0',
-            padding: '6px 10px',
-            background: 'rgba(8, 127, 140, 0.15)',
-            border: '1px solid rgba(8, 127, 140, 0.4)',
-            borderRadius: 6,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 10.5,
-            fontWeight: 700,
-            color: '#2DD4BF',
-            letterSpacing: '0.3px',
-          }}
-        >
-          <ShieldCheck size={13} color="#2DD4BF" style={{ flexShrink: 0 }} />
-          <span>SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED</span>
-        </div>
-      )}
-
       {/* Detailed Target Data Display */}
       <div className="doera-proof-body">
         {targetData?.filename && (
