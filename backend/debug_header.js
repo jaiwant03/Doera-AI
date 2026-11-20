@@ -20,19 +20,31 @@ async function main() {
       <text x="650" y="230" font-family="Arial" font-size="14" fill="#B9AEBE">Proof of Execution hashes and live tracking.</text>
     </svg>
   `;
-  const buf = await sharp(Buffer.from(darkSvg)).png().toBuffer();
+  const imgBuffer = await sharp(Buffer.from(darkSvg)).png().toBuffer();
   const width = 1200;
   const height = 800;
-  const headerH = 80;
 
-  const hBuf = await sharp(buf).extract({ left: 0, top: 0, width, height: headerH }).toBuffer();
-  const hStats = await sharp(hBuf).stats();
+  const baseStats = await sharp(imgBuffer).stats();
+  const baseLuminance = Math.round(
+    0.299 * baseStats.channels[0].mean +
+    0.587 * baseStats.channels[1].mean +
+    0.114 * baseStats.channels[2].mean
+  );
 
-  const bodyBuf = await sharp(buf).extract({ left: 0, top: headerH, width, height: height - headerH }).toBuffer();
-  const bodyStats = await sharp(bodyBuf).stats();
-  
-  console.log('hStats:', JSON.stringify(hStats.channels.map(c => ({ mean: c.mean, stdev: c.stdev }))));
-  console.log('bodyStats:', JSON.stringify(bodyStats.channels.map(c => ({ mean: c.mean, stdev: c.stdev }))));
+  const headerH = Math.max(10, Math.round(height * 0.10));
+  const headerBuf = await sharp(imgBuffer)
+    .extract({ left: 0, top: 0, width, height: headerH })
+    .toBuffer();
+  const headerStats = await sharp(headerBuf).stats();
+
+  const hLum = Math.round(
+    0.299 * headerStats.channels[0].mean +
+    0.587 * headerStats.channels[1].mean +
+    0.114 * headerStats.channels[2].mean
+  );
+  const hasHeaderBar = Math.abs(hLum - baseLuminance) >= 4;
+
+  console.log({ baseLuminance, hLum, diff: Math.abs(hLum - baseLuminance), hasHeaderBar });
 }
 
 main().catch(console.error);
