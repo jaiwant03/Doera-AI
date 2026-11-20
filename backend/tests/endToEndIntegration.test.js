@@ -215,7 +215,8 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
       expect(evidence.evidenceType).toBe('RESEARCH_COMPLETED');
       expect(evidence.verificationStatus).toBe('VERIFIED');
       expect(evidence.isSimulated).toBe(false);
-      expect(evidence.targetData.sources.length).toBe(researchResult.providers.length);
+      expect(evidence.sourceUrls.length).toBe(researchResult.providers.length);
+      expect(evidence.targetData.sourcesCount).toBe(researchResult.providers.length);
     });
   });
 
