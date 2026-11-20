@@ -10,6 +10,7 @@ export const CATEGORIES = {
   APPOINTMENT_COORDINATION: 'APPOINTMENT_COORDINATION',
   COMMUNICATION: 'COMMUNICATION',
   DOCUMENT_ANALYSIS: 'DOCUMENT_ANALYSIS',
+  IMAGE_ANALYSIS: 'IMAGE_ANALYSIS',
   TECHNICAL_ASSISTANCE: 'TECHNICAL_ASSISTANCE',
   DATA_ANALYSIS: 'DATA_ANALYSIS',
   TASK_AUTOMATION: 'TASK_AUTOMATION',
@@ -58,6 +59,7 @@ Analyze the user request and classify it precisely into one or more categories:
 - APPOINTMENT_COORDINATION: Coordinating dates, time slots, scheduling with providers.
 - COMMUNICATION: Drafting, authorizing, or dispatching external emails or messages.
 - DOCUMENT_ANALYSIS: Analyzing uploaded documents, extracting text, summarizing files.
+- IMAGE_ANALYSIS: Visual understanding of uploaded images, screenshots, website UIs, diagrams, flowcharts, charts, photographs, and image OCR text.
 - TECHNICAL_ASSISTANCE: Technical explanations, code solutions, debugging, architectural advice.
 - DATA_ANALYSIS: Analyzing datasets, statistics, distributions, trends, CSV data.
 - TASK_AUTOMATION: Creating multi-step automated workflows or project development plans.
@@ -75,7 +77,7 @@ Determine:
 8. requestedExternalActions: Array of external operations (e.g. ['SEND_EMAIL', 'BOOK_APPOINTMENT']) if requested.
 9. missingInformation: Array of missing essential details if any.
 10. clarificationNeeded: Set this ONLY if the user request is fundamentally ambiguous or incomplete such that NO initial research, discovery, or explanation can even begin (e.g. user says only "book it" or "find options" with zero context, subject, or location). If the user provided a topic, service, location, or question (e.g. "Find electricians in Coimbatore" or "Compare three cloud platforms" or "Explain how transformers work"), DO NOT ask clarification upfront—proceed with execution and set clarificationNeeded to null.
-11. requiredAgents: Array of agents to activate from: ['Planner', 'Research', 'Location', 'Comparison', 'Communication', 'Execution', 'Verification', 'Document', 'DataAnalysis', 'FollowUp'].
+11. requiredAgents: Array of agents to activate from: ['Planner', 'Research', 'Location', 'Comparison', 'Communication', 'Execution', 'Verification', 'Document', 'DataAnalysis', 'Vision', 'FollowUp'].
 
 JSON format ONLY.`;
 
@@ -94,7 +96,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
       });
 
       if (parsed && parsed.primaryCategory) {
-        return this.normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment);
+        return this.normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment, hasImageAttachment);
       }
     } catch (err) {
       logger.warn(`[UniversalIntent] LLM classification notice, using deterministic classifier: ${err.message}`);
@@ -121,24 +123,29 @@ User Personalized Context: ${memoryContext || 'None'}`;
   /**
    * Normalizes LLM intent output with safety bounds and deterministic verification
    */
-  normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment = false) {
+  normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment = false, hasImageAttachment = false) {
     const categories = Array.isArray(parsed.categories) && parsed.categories.length > 0
       ? parsed.categories
       : [parsed.primaryCategory || CATEGORIES.GENERAL_QUESTION];
 
+    if (hasImageAttachment && !categories.includes(CATEGORIES.IMAGE_ANALYSIS)) {
+      categories.unshift(CATEGORIES.IMAGE_ANALYSIS);
+    }
     if (hasCsvAttachment && !categories.includes(CATEGORIES.DATA_ANALYSIS)) {
       categories.unshift(CATEGORIES.DATA_ANALYSIS);
     }
 
-    const primaryCategory = hasCsvAttachment 
-      ? CATEGORIES.DATA_ANALYSIS 
-      : (parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION);
+    const primaryCategory = hasImageAttachment
+      ? CATEGORIES.IMAGE_ANALYSIS
+      : (hasCsvAttachment 
+          ? CATEGORIES.DATA_ANALYSIS 
+          : (parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION));
 
     // Determine required agents dynamically
     const requiredAgents = new Set(parsed.requiredAgents || ['Planner']);
     requiredAgents.add('Planner');
 
-    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON))
+    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON) || categories.includes(CATEGORIES.IMAGE_ANALYSIS))
       ? true
       : (parsed.isActionTask !== undefined
           ? Boolean(parsed.isActionTask)
@@ -148,6 +155,9 @@ User Personalized Context: ${memoryContext || 'None'}`;
       requiredAgents.add('Verification');
     }
 
+    if (categories.includes(CATEGORIES.IMAGE_ANALYSIS) || hasImageAttachment) {
+      requiredAgents.add('Vision');
+    }
     if (categories.includes(CATEGORIES.LOCATION_DISCOVERY) || categories.includes(CATEGORIES.TRAVEL_PLANNING)) {
       requiredAgents.add('Location');
       requiredAgents.add('Research');
@@ -161,7 +171,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
       requiredAgents.add('Execution');
       requiredAgents.add('FollowUp');
     }
-    if (categories.includes(CATEGORIES.DOCUMENT_ANALYSIS) || hasAttachments) {
+    if ((categories.includes(CATEGORIES.DOCUMENT_ANALYSIS) || hasAttachments) && !hasImageAttachment) {
       requiredAgents.add('Document');
     }
     if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasCsvAttachment) {
@@ -193,7 +203,11 @@ User Personalized Context: ${memoryContext || 'None'}`;
     const categories = [];
     const requiredAgents = new Set(['Planner']);
 
-    if (flags.hasCsvAttachment || flags.isDataAnalysis) {
+    if (flags.hasImageAttachment) {
+      categories.push(CATEGORIES.IMAGE_ANALYSIS);
+      requiredAgents.add('Vision');
+      requiredAgents.add('Verification');
+    } else if (flags.hasCsvAttachment || flags.isDataAnalysis) {
       categories.push(CATEGORIES.DATA_ANALYSIS);
       requiredAgents.add('DataAnalysis');
       requiredAgents.add('Document');

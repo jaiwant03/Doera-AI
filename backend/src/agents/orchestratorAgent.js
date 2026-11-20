@@ -26,7 +26,7 @@ class OrchestratorAgent {
       const systemPrompt = `You are DOERA AI's Supervisor & Planner Agent.
 Formulate a minimal, efficient list of subtasks for: "${userRequest}".
 Activated Agents: ${requiredAgents.join(', ')}.
-Available Agents: Planner, Research, Location, Comparison, Communication, Execution, Verification, Document, DataAnalysis, FollowUp.
+Available Agents: Planner, Research, Location, Comparison, Communication, Execution, Verification, Document, DataAnalysis, Vision, FollowUp.
 
 Output pure JSON:
 {
@@ -113,6 +113,9 @@ Output pure JSON:
       { id: 'understand', title: 'Request understood and plan created', agent: 'Planner', status: 'completed', dependencies: [] },
     ];
 
+    if (requiredAgents.includes('Vision')) {
+      list.push({ id: 'vision', title: 'Analyzing visual structures, layout, and image content', agent: 'Vision', status: 'pending', dependencies: ['understand'] });
+    }
     if (requiredAgents.includes('Document')) {
       list.push({ id: 'doc', title: 'Analyzing uploaded files and documents', agent: 'Document', status: 'pending', dependencies: ['understand'] });
     }
