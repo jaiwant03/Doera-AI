@@ -640,6 +640,52 @@ const dataAnalysisNode = async (state) => {
 };
 
 /**
+ * 8E. VISION INTELLIGENCE NODE
+ */
+const visionNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Vision Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Vision',
+    'Analyzing visual structures, layout geometry, UI components, and image content...',
+    { step: { id: 'vision', name: 'Visual analysis and image understanding', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const visionResult = await visionAgent.analyzeImage(state, state.attachments || []);
+
+  const steps = state.steps.map((s) =>
+    s.agent === 'Vision' || s.id === 'vision'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Audited ${visionResult.imageCount} image(s). Visual structure, layout, and content parsed.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Vision',
+    `Audited ${visionResult.imageCount} image(s) with visual feature extraction.`,
+    { step: { id: 'vision', name: 'Visual analysis and image understanding', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    steps,
+    discoveredData: {
+      ...(state.discoveredData || {}),
+      vision: visionResult.images,
+      visionComparison: visionResult.comparison,
+    },
+    currentAgent: state.requiredAgents?.includes('DataAnalysis') ? 'DataAnalysis' : 'Verification',
+    currentAction: 'Visual analysis complete.',
+  };
+};
+
+/**
  * 9. SCHEDULING NODE
  */
 const schedulingNode = async (state) => {
