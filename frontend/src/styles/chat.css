@@ -15,7 +15,7 @@
   z-index: 2;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  background: var(--bg-canvas, #080609);
+  background: var(--bg-canvas, #08050B);
 }
 
 .doera-chat-content-width {

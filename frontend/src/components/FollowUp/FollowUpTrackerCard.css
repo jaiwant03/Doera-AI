@@ -3,17 +3,18 @@
 .doera-followup-card {
   margin: 14px 0;
   padding: 16px;
-  background: #09040D;
-  border: 1px solid #2B1238;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(156, 82, 232, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(241, 45, 152, 0.15);
   font-family: inherit;
   color: #EDE4EE;
   transition: all 0.2s ease;
 }
 
 .doera-followup-card:hover {
-  border-color: rgba(156, 82, 232, 0.45);
+  border-color: #F12D98;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(241, 45, 152, 0.2);
 }
 
 .doera-followup-header {
