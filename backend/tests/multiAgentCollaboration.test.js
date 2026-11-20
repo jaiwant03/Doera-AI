@@ -8,6 +8,10 @@ import buildUniversalResponse from '../src/services/universalResponseBuilder.js'
 import agentGraph from '../src/workflows/agentGraph.js';
 
 describe('DOERA AI — Dynamic Multi-Agent Collaboration and Intelligent Planning Engine', () => {
+  beforeAll(() => {
+    jest.setTimeout(120000);
+  });
+
   // Test 1: Complex Multi-Agent Planning Demonstration (College Hackathon)
   it('1. should execute dynamic multi-agent collaboration for hackathon planning with Planning, Budget, Communication, and Verification agents', async () => {
     const userRequest = 'I want to organize a two-day college hackathon for 100 participants with a budget of ₹50,000. Prepare a complete execution plan.';

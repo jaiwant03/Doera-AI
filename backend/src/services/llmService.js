@@ -160,6 +160,10 @@ class LLMService {
               if (match) return JSON.parse(match[0]);
             } catch {}
           }
+          // If Groq is rate-limited on tokens, break early so robust deterministic agent fallbacks can engage without hanging
+          if (err.message?.includes('rate_limit_exceeded') || err.message?.includes('Rate limit reached') || err.status === 429) {
+            break;
+          }
         }
       }
     }
