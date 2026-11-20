@@ -51,6 +51,7 @@ const TaskStateAnnotation = Annotation.Root({
   comparisonMatrix: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   intentAnalysis: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   dataPayload: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  chartConfig: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   error: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   userIntegration: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   onEvent: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
@@ -634,6 +635,7 @@ const dataAnalysisNode = async (state) => {
   return {
     steps,
     discoveredData: { ...(state.discoveredData || {}), dataAnalysis: dataResult.analysis },
+    chartConfig: dataResult.chartConfig || dataResult.analysis?.chartConfig || null,
     currentAgent: 'Verification',
     currentAction: 'Data analysis complete.',
   };
