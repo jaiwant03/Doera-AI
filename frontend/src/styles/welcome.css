@@ -1,6 +1,7 @@
 /* ==============================================================================
    DOERA AI — Clean Minimalist New Chat Experience (Pure CSS)
-   Theme: Luxury Black (#08050B) + Neon Pink (#F12D98) + Royal Purple (#9C52E8)
+   Theme: Luxury Black (#08050B) + Light Pink Shade + Neon Pink (#F12D98)
+   Professional Design: Zero Glitter Blur, Crisp Borders, Centered in Chat Interface
    ============================================================================== */
 
 /* Main Welcome Container */
@@ -8,7 +9,7 @@
   width: 100%;
   max-width: 960px;
   margin: auto auto;
-  padding: clamp(16px, 2.5vh, 32px) clamp(16px, 2.5vw, 28px);
+  padding: clamp(20px, 3vh, 36px) clamp(16px, 2.5vw, 28px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,18 +18,18 @@
   box-sizing: border-box;
 }
 
-/* Subtle Ambient Glow Aura */
+/* Light Pink Ambient Shade Aura behind Header and Cards */
 .doera-welcome-top-aura {
   position: absolute;
-  top: -40px;
+  top: -50px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(800px, 92vw);
-  height: 220px;
-  background: radial-gradient(ellipse at 50% 15%, rgba(241, 45, 152, 0.12) 0%, rgba(156, 82, 232, 0.06) 45%, transparent 70%);
+  width: min(920px, 94vw);
+  height: 380px;
+  background: radial-gradient(ellipse at 50% 28%, rgba(241, 45, 152, 0.22) 0%, rgba(255, 145, 198, 0.14) 36%, rgba(156, 82, 232, 0.05) 65%, transparent 80%);
   pointer-events: none;
   z-index: 0;
-  filter: blur(45px);
+  filter: blur(55px);
 }
 
 /* Header Section */
@@ -70,12 +71,12 @@
   z-index: 2;
 }
 
-/* Uniform Feature Card */
+/* Uniform Feature Card — Crisp, Professional, Zero Glitter Blur */
 .doera-feature-card {
   appearance: none;
   -webkit-appearance: none;
-  background: rgba(18, 11, 25, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 12, 28, 0.82);
+  border: 1px solid rgba(241, 45, 152, 0.16);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -85,29 +86,27 @@
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+              background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   min-height: 136px;
   box-sizing: border-box;
   color: inherit;
   outline: none;
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .doera-feature-card:hover {
   transform: translateY(-2px);
-  background: rgba(26, 15, 36, 0.88);
-  border-color: var(--card-accent, #F12D98);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 
-              0 0 20px -6px var(--card-accent, rgba(241, 45, 152, 0.3));
+  background: rgba(30, 16, 38, 0.95);
+  border-color: rgba(241, 45, 152, 0.45); /* Clean crisp color, no blur */
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5); /* Clean elevation shadow only, zero colored blur on border */
 }
 
 .doera-feature-card:focus-visible {
-  border-color: var(--card-accent, #F12D98);
-  box-shadow: 0 0 0 2px rgba(241, 45, 152, 0.35);
+  border-color: #F12D98;
+  outline: 2px solid rgba(241, 45, 152, 0.4);
+  outline-offset: 1px;
 }
 
 .doera-feature-card:active {
@@ -201,31 +200,36 @@
 
 /* ==============================================================================
    Interactive Feature Tutorial Modal
+   Clean Professional Styling: Zero Glitter Blur, Crisp Borders, Centered in Chat Interface
    ============================================================================== */
 
+/* Modal Backdrop — Centered in the Chat Interface Workspace */
 .doera-modal-backdrop {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  background: rgba(4, 2, 8, 0.82);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 9999;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 2, 8, 0.76);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 150;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: clamp(16px, 3.5vh, 32px) clamp(16px, 3vw, 32px);
   box-sizing: border-box;
 }
 
+/* Modal Card Box — Clean Solid Color Border, Zero Glitter Blur Effect */
 .doera-tutorial-modal {
   width: 100%;
   max-width: 620px;
-  max-height: min(88vh, 740px);
-  background: #11091A;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8),
-              0 0 35px -10px var(--modal-accent, rgba(241, 45, 152, 0.25));
+  max-height: min(85vh, 680px);
+  background: #140B1A;
+  border: 1px solid rgba(241, 45, 152, 0.28); /* Crisp solid clean color without any blur effect */
+  border-radius: 16px;
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.85),
+              0 2px 8px rgba(0, 0, 0, 0.4); /* Zero neon glow, crisp clean elevation shadow */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -237,9 +241,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(18, 11, 26, 0.6);
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(241, 45, 152, 0.14);
+  background: rgba(22, 12, 28, 0.7);
 }
 
 .doera-modal-header-left {
@@ -249,9 +253,9 @@
 }
 
 .doera-modal-icon-badge {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   border: 1px solid;
   display: flex;
   align-items: center;
@@ -260,11 +264,11 @@
 }
 
 .doera-modal-badge {
-  font-size: 9.5px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .doera-modal-title {
@@ -297,13 +301,13 @@
 
 /* Modal Scrollable Body */
 .doera-modal-body {
-  padding: 20px 22px;
+  padding: 22px 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: rgba(241, 45, 152, 0.2) transparent;
 }
 
 .doera-modal-body::-webkit-scrollbar {
@@ -311,7 +315,7 @@
 }
 
 .doera-modal-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(241, 45, 152, 0.25);
   border-radius: 999px;
 }
 
@@ -326,7 +330,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #8E8296;
+  color: #9C8FA3;
   margin: 0;
 }
 
@@ -344,13 +348,13 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .doera-step-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .doera-step-number {
@@ -402,28 +406,28 @@
 }
 
 .doera-prompt-box {
-  background: rgba(6, 3, 10, 0.6);
+  background: rgba(8, 4, 12, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 12px 16px;
 }
 
 .doera-prompt-text {
-  font-size: 13px;
-  color: #F0EAF5;
-  line-height: 1.5;
-  font-style: italic;
+  font-size: 13.5px;
+  color: #F5EEFA;
+  line-height: 1.55;
+  font-style: normal;
   margin: 0;
 }
 
 /* Output Box */
 .doera-output-box {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
 }
 
@@ -463,21 +467,21 @@
   margin: 0;
 }
 
-/* Modal Footer */
+/* Modal Footer Actions */
 .doera-modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding: 14px 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(14, 8, 20, 0.65);
+  padding: 14px 24px;
+  border-top: 1px solid rgba(241, 45, 152, 0.14);
+  background: rgba(18, 9, 24, 0.85);
 }
 
 .doera-btn-secondary {
   appearance: none;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #C0B5C6;
   font-size: 13px;
   font-weight: 500;
@@ -490,7 +494,7 @@
 .doera-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #FFFFFF;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .doera-btn-primary {
@@ -519,7 +523,7 @@
   transform: translateY(0);
 }
 
-/* Modal Animations */
+/* Clean Modal Entrance Animation */
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -532,7 +536,7 @@
 @keyframes modalScaleUp {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: scale(0.97) translateY(6px);
   }
   to {
     opacity: 1;
@@ -541,9 +545,9 @@
 }
 
 .animate-fade-in {
-  animation: modalFadeIn 0.18s ease forwards;
+  animation: modalFadeIn 0.16s ease forwards;
 }
 
 .animate-scale-up {
-  animation: modalScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: modalScaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
