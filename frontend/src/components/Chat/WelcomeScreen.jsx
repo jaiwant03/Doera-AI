@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 // 3 Preconfigured Guided Universal AI Scenarios
-const HACKATHON_GUIDED_SCENARIOS = [
+const FEATURED_AI_MISSIONS = [
   {
     id: 'scenario-laptop-repair',
     title: 'Local Service Research: Coimbatore Laptop Repair',
@@ -118,7 +118,7 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
         </div>
 
         <div className="doera-scenarios-grid">
-          {HACKATHON_GUIDED_SCENARIOS.map((sc) => {
+          {FEATURED_AI_MISSIONS.map((sc) => {
             const Icon = sc.icon;
             return (
               <div
