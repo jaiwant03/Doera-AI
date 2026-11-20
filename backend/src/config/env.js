@@ -42,6 +42,7 @@ export const config = {
   groqApiKey: process.env.GROQ_API_KEY || '',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+  geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
   
   // Google Integrations
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',

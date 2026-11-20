@@ -61,6 +61,30 @@ class ModelManager {
       );
     }
 
+    // 3. Google Gemini Provider (Configured in .env)
+    if (config.geminiApiKey) {
+      models.push(
+        {
+          id: 'gemini-1.5-flash',
+          name: 'Gemini 1.5 Flash',
+          provider: 'Google',
+          description: 'High-speed multimodal vision & reasoning',
+          speed: 'Ultra-Fast',
+          contextWindow: '1M',
+          isDefault: false,
+        },
+        {
+          id: 'gemini-1.5-pro',
+          name: 'Gemini 1.5 Pro',
+          provider: 'Google',
+          description: 'Deep multimodal reasoning & complex visual understanding',
+          speed: 'Fast',
+          contextWindow: '2M',
+          isDefault: false,
+        }
+      );
+    }
+
     // Fallback baseline model if no keys configured
     if (models.length === 0) {
       models.push({
