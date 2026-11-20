@@ -106,7 +106,9 @@ class DocumentProcessor {
 
     // Generate grounded executive summary using configured LLM
     let summary = '';
-    if (extraction.metadata.isScanned && text.length < 50) {
+    if (extraction.metadata?.extractionStatus === 'FAILED' || extraction.extractionStatus === 'FAILED') {
+      summary = `Processed ${filename}. ${extraction.error || extraction.extractedText || 'Extraction failed.'}`;
+    } else if (extraction.metadata.isScanned && text.length < 50) {
       summary = `Scanned or rasterized document "${filename}" (${extraction.metadata.pageCount} pages). Direct text layer was not present; visual inspection registered.`;
     } else if (text.length > 0) {
       try {
