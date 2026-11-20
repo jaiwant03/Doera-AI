@@ -53,8 +53,9 @@ class UniversalIntentService {
     const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower) && !isMissionPlanning;
     const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower) && !isMissionPlanning;
     const isComparison = /(compare|difference between|vs\b|versus|pros and cons|best (among|of|option)|which is better)/i.test(lower);
-    const isLocation = /(near|in |at |around|coimbatore|chennai|bangalore|mumbai|delhi|ooty|city|local|hospital|clinic|electrician|plumber|mechanic|restaurant|store|shop)/i.test(lower);
-    const isGeneralKnowledge = /^(what is|who is|explain|how (does|do|can)|why is|tell me about|history of|define|give me an overview)/i.test(lower) && !isOutreach && !isBooking && !isLocation;
+    const isLocation = /(?:(?:near|around)\s+(?:me|here|[a-z]+)|(?:in|at|near)\s+(?:coimbatore|chennai|bangalore|bengaluru|mumbai|delhi|hyderabad|kolkata|pune|ooty|tirupur|salem|madurai|calicut|kochi)|local\s+(?:businesses?|services?|shops?|stores?)|hospital|clinic|electrician|plumber|mechanic|restaurant|repair|printing\s+shop)/i.test(lower) &&
+      !/at\s+(?:sea\s+level|home|work|all|first|last|least|once|random|present|night|noon)/i.test(lower);
+    const isGeneralKnowledge = /^(what is|who is|explain|how (does|do|can)|why is|tell me about|history of|define|give me an overview)/i.test(lower) && !isOutreach && !isBooking;
     const isTechnical = /(code|script|function|debug|algorithm|architecture|transformer|api|database|sql|python|javascript|react|node|docker|kubernetes)/i.test(lower) && !isOutreach && !isBooking;
     const isFollowUp = /(second|first|third|previous|that|those|the other|again|same|furthermore|elaborate|details on|tell me more about (it|them))/i.test(lower);
 
