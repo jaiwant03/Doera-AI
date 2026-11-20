@@ -55,28 +55,37 @@ Output pure JSON:
       subtasks = this.buildDefaultSubtasks(userRequest, requiredAgents);
     }
 
-    // Ensure discovery agent step exists for search / discovery tasks
+    const isLocalResearch =
+      requiredAgents.includes('LocalService') ||
+      (!requiredAgents.includes('Communication') &&
+        !/book\s+an?\s+appointment|reserve\s+slot|send\s+email/i.test(userRequest) &&
+        /find|search|compare|repair|centres?|shops?|institutions?|hospitals?|schools?|clinics?/i.test(userRequest));
+
+    // Ensure local service / discovery agent step exists for search & discovery tasks
     if (
-      (requiredAgents.includes('Location') || requiredAgents.includes('Research') || /discover|find|search|repair|electrician|plumber|clinic|doctor|venue/i.test(userRequest)) &&
-      !subtasks.some((st) => st.agent === 'Discovery')
+      (isLocalResearch || requiredAgents.includes('Location') || requiredAgents.includes('Research')) &&
+      !subtasks.some((st) => st.agent === 'LocalService' || st.agent === 'Discovery')
     ) {
       const idx = subtasks.findIndex((st) => st.agent === 'Research' || /find|search|discover/i.test(st.title));
+      const targetAgent = isLocalResearch ? 'LocalService' : 'Discovery';
       if (idx !== -1) {
-        subtasks[idx].agent = 'Discovery';
+        subtasks[idx].agent = targetAgent;
+        subtasks[idx].title = 'Discovering and evaluating verified service providers';
       } else {
         subtasks.splice(1, 0, {
-          id: 'discover',
-          title: 'Discovering verified service providers',
-          agent: 'Discovery',
+          id: 'local_service',
+          title: 'Discovering and evaluating verified service providers',
+          agent: targetAgent,
           status: 'pending',
           dependencies: ['sub_1'],
         });
       }
     }
 
-    // Ensure scheduling agent step exists if appointment/booking is requested
+    // Ensure scheduling agent step exists ONLY if appointment/booking is explicitly requested and NOT research-only
     if (
-      (requiredAgents.includes('Scheduling') || /appointment|book|schedule|arrange/i.test(userRequest)) &&
+      !isLocalResearch &&
+      (requiredAgents.includes('Scheduling') || /book\s+an?\s+appointment|reserve\s+slot/i.test(userRequest)) &&
       !subtasks.some((st) => st.agent === 'Scheduling')
     ) {
       subtasks.push({
@@ -112,6 +121,20 @@ Output pure JSON:
     const list = [
       { id: 'understand', title: 'Request understood and plan created', agent: 'Planner', status: 'completed', dependencies: [] },
     ];
+
+    const isLocalResearch =
+      requiredAgents.includes('LocalService') ||
+      (!requiredAgents.includes('Communication') &&
+        !/book\s+an?\s+appointment|reserve\s+slot|send\s+email/i.test(request) &&
+        /find|search|compare|repair|centres?|shops?|institutions?|hospitals?|schools?|clinics?/i.test(request));
+
+    if (isLocalResearch) {
+      list.push({ id: 'local_service', title: 'Discovering verified providers & evaluating suitability', agent: 'LocalService', status: 'pending', dependencies: ['understand'] });
+      list.push({ id: 'location', title: 'Retrieving geographic coordinates & map layer', agent: 'Location', status: 'pending', dependencies: ['local_service'] });
+      list.push({ id: 'compare', title: 'Comparing options against key criteria', agent: 'Comparison', status: 'pending', dependencies: ['local_service'] });
+      list.push({ id: 'verify', title: 'Auditing verification dimensions & zero-contact guarantee', agent: 'Verification', status: 'pending', dependencies: ['compare'] });
+      return list;
+    }
 
     if (requiredAgents.includes('Vision')) {
       list.push({ id: 'vision', title: 'Analyzing visual structures, layout, and image content', agent: 'Vision', status: 'pending', dependencies: ['understand'] });

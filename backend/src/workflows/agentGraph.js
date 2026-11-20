@@ -3,6 +3,7 @@ import orchestratorAgent from '../agents/orchestratorAgent.js';
 import researchAgent from '../agents/researchAgent.js';
 import locationAgent from '../agents/locationAgent.js';
 import discoveryAgent from '../agents/discoveryAgent.js';
+import localServiceAgent from '../agents/localServiceAgent.js';
 import communicationAgent from '../agents/communicationAgent.js';
 import executionAgent from '../agents/executionAgent.js';
 import quotationAgent from '../agents/quotationAgent.js';
@@ -111,6 +112,7 @@ const orchestratorNode = async (state) => {
   if (plan.requiredAgents.includes('Vision')) nextAgent = 'Vision';
   else if (plan.requiredAgents.includes('Document')) nextAgent = 'Document';
   else if (plan.requiredAgents.includes('DataAnalysis')) nextAgent = 'DataAnalysis';
+  else if (plan.requiredAgents.includes('LocalService') || plan.requiredAgents.includes('Discovery')) nextAgent = 'LocalService';
   else if (plan.requiredAgents.includes('Location')) nextAgent = 'Location';
   else if (plan.requiredAgents.includes('Research')) nextAgent = 'Research';
   else if (plan.requiredAgents.includes('Comparison')) nextAgent = 'Comparison';
@@ -845,11 +847,61 @@ const recoveryNode = async (state) => {
   };
 };
 
+/**
+ * LOCAL SERVICE RESEARCH NODE (Strictly Research-Only, Zero Bookings)
+ */
+const localServiceNode = async (state) => {
+  logger.info(`[LangGraph Workflow] LocalService Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'LocalService',
+    'Researching verified regional providers, evaluating service suitability, and geocoding coordinates...',
+    { step: { id: 'local_service', name: 'Local service research and verification', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const res = await localServiceAgent.execute(state);
+
+  const steps = (state.steps || []).map((s) =>
+    s.agent === 'LocalService' || s.agent === 'Discovery' || s.id === 'discover' || s.id === 'local_service'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Researched and evaluated ${res.providers?.length || 0} verified providers. Zero bookings or transactions initiated.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'LocalService',
+    `Research complete: ${res.providers?.length || 0} verified providers cataloged. Interactive map coordinates synchronized.`,
+    { step: { id: 'local_service', name: 'Local service research and verification', status: 'completed', timestamp: new Date() } }
+  );
+
+  return {
+    externalContacts: res.providers || [],
+    locationData: res.locationData || null,
+    comparisonMatrix: res.comparisonMatrix || null,
+    researchSummary: res.output?.recommendation?.rationale || null,
+    discoveredData: {
+      ...(state.discoveredData || {}),
+      localService: res.output,
+    },
+    steps,
+    currentAgent: 'Verification',
+    currentAction: 'Verifying data sources and enforcing research-only guarantee...',
+  };
+};
+
 // =========================================================================
 // ASSEMBLE DYNAMIC STATE GRAPH
 // =========================================================================
 const workflow = new StateGraph(TaskStateAnnotation)
   .addNode('orchestrator', orchestratorNode)
+  .addNode('local_service', localServiceNode)
   .addNode('location', locationNode)
   .addNode('research', researchNode)
   .addNode('merging', mergingNode)
@@ -876,6 +928,7 @@ const workflow = new StateGraph(TaskStateAnnotation)
     if (req.includes('Vision')) return 'vision';
     if (req.includes('Document')) return 'document';
     if (req.includes('DataAnalysis') && !req.includes('Research')) return 'data_analysis';
+    if (req.includes('LocalService') || req.includes('Discovery')) return 'local_service';
     if (req.includes('Location')) return 'location';
     if (req.includes('Research')) return 'research';
     if (req.includes('Comparison') && !state.comparisonMatrix) return 'comparison';
@@ -883,6 +936,9 @@ const workflow = new StateGraph(TaskStateAnnotation)
     if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
     return 'verification';
   })
+
+  // LocalService -> Verification
+  .addEdge('local_service', 'verification')
 
   // Vision -> DataAnalysis or Research or Verification
   .addConditionalEdges('vision', (state) => {
