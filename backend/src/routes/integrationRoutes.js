@@ -5,7 +5,6 @@ import {
   getGmailAuthUrl,
   disconnectGmail,
   connectGmail,
-  connectGoogleCalendar,
 } from '../controllers/integrationController.js';
 import { handleGoogleCallback } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
@@ -22,6 +21,5 @@ router.get('/status', getIntegrationStatus);
 router.get('/gmail/auth-url', getGmailAuthUrl);
 router.post('/gmail/disconnect', disconnectGmail);
 router.post('/gmail/connect', connectGmail);
-router.post('/google-calendar/connect', connectGoogleCalendar);
 
 export default router;
