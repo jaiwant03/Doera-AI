@@ -27,6 +27,8 @@ export const buildUniversalResponse = (taskOrPayload) => {
   const docData = task.discoveredData?.documents || null;
   const crossDocAnalysis = task.discoveredData?.crossDocAnalysis || null;
   const dataAnalysis = task.discoveredData?.dataAnalysis || null;
+  const visionData = task.discoveredData?.vision || null;
+  const visionComparison = task.discoveredData?.visionComparison || null;
   const pendingApproval = task.pendingApproval;
   const followUp = task.followUpData || null;
   const evidence = outcome.evidence || [];
@@ -48,7 +50,10 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   // SECTION B: RESULTS / DISCOVERED INFORMATION
   // ==========================================
-  if (category === 'TRAVEL_PLANNING' || travelData) {
+  if (category === 'IMAGE_ANALYSIS' || visionData) {
+    // Vision and image analysis layout
+    md += buildVisionSection(visionData, visionComparison, userRequest);
+  } else if (category === 'TRAVEL_PLANNING' || travelData) {
     // Travel planning layout
     md += buildTravelSection(travelData, task.locationData);
   } else if (category === 'DOCUMENT_ANALYSIS' || docData) {
@@ -144,6 +149,8 @@ function getCategorySummary(category, userRequest, isConfirmed, status) {
       return `I have analyzed and cross-referenced verified service providers in this sector for: **"${userRequest}"**.`;
     case 'DOCUMENT_ANALYSIS':
       return `I have analyzed the document content, extracted key findings, and referenced important sections for: **"${userRequest}"**.`;
+    case 'IMAGE_ANALYSIS':
+      return `I have conducted a genuine visual audit, layout analysis, and image understanding for: **"${userRequest}"**.`;
     case 'DATA_ANALYSIS':
       return `I have audited the dataset metrics, identified significant trends, and evaluated statistical patterns for: **"${userRequest}"**.`;
     case 'COMMUNICATION':
