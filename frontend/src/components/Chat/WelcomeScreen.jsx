@@ -239,149 +239,152 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
         })}
       </div>
 
-      {/* 3. Interactive Feature Tutorial Modal */}
-      {selectedFeature && (
-        <div 
-          className="doera-modal-backdrop animate-fade-in"
-          onClick={() => setSelectedFeature(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-feature-title"
-        >
+      {/* 3. Interactive Feature Tutorial Modal (Positioned Centered in Chat Interface) */}
+      {selectedFeature &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div 
-            className="doera-tutorial-modal animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
-            style={{ '--modal-accent': selectedFeature.accentColor }}
+            className="doera-modal-backdrop animate-fade-in"
+            onClick={() => setSelectedFeature(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-feature-title"
           >
-            {/* Modal Header */}
-            <div className="doera-modal-header">
-              <div className="doera-modal-header-left">
-                <div 
-                  className="doera-modal-icon-badge"
-                  style={{
-                    backgroundColor: `${selectedFeature.accentColor}18`,
-                    borderColor: `${selectedFeature.accentColor}40`,
-                    color: selectedFeature.accentColor
-                  }}
-                >
-                  {React.createElement(selectedFeature.icon, { size: 20, strokeWidth: 2.2 })}
-                </div>
-                <div>
-                  <div className="doera-modal-badge" style={{ color: selectedFeature.accentColor }}>
-                    {selectedFeature.badgeText}
-                  </div>
-                  <h2 id="modal-feature-title" className="doera-modal-title">
-                    {selectedFeature.title}
-                  </h2>
-                </div>
-              </div>
-              <button 
-                type="button"
-                className="doera-modal-close-btn"
-                onClick={() => setSelectedFeature(null)}
-                aria-label="Close feature details"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Scrollable Content */}
-            <div className="doera-modal-body">
-              {/* Section 1: What It Does */}
-              <div className="doera-modal-section">
-                <h3 className="doera-section-heading">What it does</h3>
-                <p className="doera-section-text">{selectedFeature.whatItDoes}</p>
-              </div>
-
-              {/* Section 2: How To Use (Numbered Steps) */}
-              <div className="doera-modal-section">
-                <h3 className="doera-section-heading">How to use</h3>
-                <ol className="doera-steps-list">
-                  {selectedFeature.howToUse.map((step, idx) => (
-                    <li key={idx} className="doera-step-item">
-                      <span 
-                        className="doera-step-number"
-                        style={{
-                          backgroundColor: `${selectedFeature.accentColor}1A`,
-                          borderColor: `${selectedFeature.accentColor}4D`,
-                          color: selectedFeature.accentColor
-                        }}
-                      >
-                        {idx + 1}
-                      </span>
-                      <span className="doera-step-content">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              {/* Section 3: Example Prompt */}
-              <div className="doera-modal-section">
-                <div className="doera-prompt-header">
-                  <h3 className="doera-section-heading">Example prompt</h3>
-                  <button
-                    type="button"
-                    className="doera-copy-prompt-btn"
-                    onClick={() => handleCopyPrompt(selectedFeature.examplePrompt)}
-                    title="Copy prompt"
+            <div 
+              className="doera-tutorial-modal animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+              style={{ '--modal-accent': selectedFeature.accentColor }}
+            >
+              {/* Modal Header */}
+              <div className="doera-modal-header">
+                <div className="doera-modal-header-left">
+                  <div 
+                    className="doera-modal-icon-badge"
+                    style={{
+                      backgroundColor: `${selectedFeature.accentColor}18`,
+                      borderColor: `${selectedFeature.accentColor}40`,
+                      color: selectedFeature.accentColor
+                    }}
                   >
-                    {copied ? (
-                      <>
-                        <Check size={13} className="text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={13} />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
+                    {React.createElement(selectedFeature.icon, { size: 20, strokeWidth: 2.2 })}
+                  </div>
+                  <div>
+                    <div className="doera-modal-badge" style={{ color: selectedFeature.accentColor }}>
+                      {selectedFeature.badgeText}
+                    </div>
+                    <h2 id="modal-feature-title" className="doera-modal-title">
+                      {selectedFeature.title}
+                    </h2>
+                  </div>
                 </div>
-                <div className="doera-prompt-box">
-                  <p className="doera-prompt-text">"{selectedFeature.examplePrompt}"</p>
-                </div>
+                <button 
+                  type="button"
+                  className="doera-modal-close-btn"
+                  onClick={() => setSelectedFeature(null)}
+                  aria-label="Close feature details"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-              {/* Section 4: Expected Output */}
-              <div className="doera-modal-section">
-                <h3 className="doera-section-heading">Expected output</h3>
-                <div className="doera-output-box">
-                  <div className="doera-output-indicator" style={{ backgroundColor: selectedFeature.accentColor }} />
-                  <p className="doera-output-text">{selectedFeature.expectedOutput}</p>
+              {/* Modal Scrollable Content */}
+              <div className="doera-modal-body">
+                {/* Section 1: What It Does */}
+                <div className="doera-modal-section">
+                  <h3 className="doera-section-heading">What it does</h3>
+                  <p className="doera-section-text">{selectedFeature.whatItDoes}</p>
                 </div>
+
+                {/* Section 2: How To Use (Numbered Steps) */}
+                <div className="doera-modal-section">
+                  <h3 className="doera-section-heading">How to use</h3>
+                  <ol className="doera-steps-list">
+                    {selectedFeature.howToUse.map((step, idx) => (
+                      <li key={idx} className="doera-step-item">
+                        <span 
+                          className="doera-step-number"
+                          style={{
+                            backgroundColor: `${selectedFeature.accentColor}1A`,
+                            borderColor: `${selectedFeature.accentColor}4D`,
+                            color: selectedFeature.accentColor
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+                        <span className="doera-step-content">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Section 3: Example Prompt */}
+                <div className="doera-modal-section">
+                  <div className="doera-prompt-header">
+                    <h3 className="doera-section-heading">Example prompt</h3>
+                    <button
+                      type="button"
+                      className="doera-copy-prompt-btn"
+                      onClick={() => handleCopyPrompt(selectedFeature.examplePrompt)}
+                      title="Copy prompt"
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={13} className="text-emerald-400" />
+                          <span className="text-emerald-400">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="doera-prompt-box">
+                    <p className="doera-prompt-text">"{selectedFeature.examplePrompt}"</p>
+                  </div>
+                </div>
+
+                {/* Section 4: Expected Output */}
+                <div className="doera-modal-section">
+                  <h3 className="doera-section-heading">Expected output</h3>
+                  <div className="doera-output-box">
+                    <div className="doera-output-indicator" style={{ backgroundColor: selectedFeature.accentColor }} />
+                    <p className="doera-output-text">{selectedFeature.expectedOutput}</p>
+                  </div>
+                </div>
+
+                {/* Optional Notice */}
+                {selectedFeature.notice && (
+                  <div className="doera-modal-notice">
+                    <Info size={16} className="doera-notice-icon" />
+                    <p className="doera-notice-text">{selectedFeature.notice}</p>
+                  </div>
+                )}
               </div>
 
-              {/* Optional Notice */}
-              {selectedFeature.notice && (
-                <div className="doera-modal-notice">
-                  <Info size={16} className="doera-notice-icon" />
-                  <p className="doera-notice-text">{selectedFeature.notice}</p>
-                </div>
-              )}
+              {/* Modal Footer Actions */}
+              <div className="doera-modal-footer">
+                <button
+                  type="button"
+                  className="doera-btn-secondary"
+                  onClick={() => setSelectedFeature(null)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="doera-btn-primary"
+                  onClick={() => handleTryFeature(selectedFeature.examplePrompt)}
+                >
+                  <Sparkles size={16} />
+                  <span>Try This Feature</span>
+                </button>
+              </div>
             </div>
-
-            {/* Modal Footer Actions */}
-            <div className="doera-modal-footer">
-              <button
-                type="button"
-                className="doera-btn-secondary"
-                onClick={() => setSelectedFeature(null)}
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className="doera-btn-primary"
-                onClick={() => handleTryFeature(selectedFeature.examplePrompt)}
-              >
-                <Sparkles size={16} />
-                <span>Try This Feature</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.getElementById('doera-chat-workspace') || document.body
+        )}
     </div>
   );
 };
