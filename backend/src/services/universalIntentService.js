@@ -168,6 +168,21 @@ User Personalized Context: ${memoryContext || 'None'}`;
     if (categories.includes(CATEGORIES.LOCATION_DISCOVERY) || categories.includes(CATEGORIES.TRAVEL_PLANNING)) {
       requiredAgents.add('Location');
       requiredAgents.add('Research');
+      if (categories.includes(CATEGORIES.LOCATION_DISCOVERY)) {
+        requiredAgents.add('LocalService');
+        requiredAgents.add('Comparison');
+        // Strictly enforce research-only policy for local discovery & service research
+        const lowerText = text.toLowerCase();
+        const hasExplicitOutreach = /send\s+email|contact\s+them\s+directly|reach\s+out\s+via/i.test(lowerText);
+        const hasExplicitBooking = /book\s+an?\s+appointment|reserve\s+slot/i.test(lowerText);
+        if (!hasExplicitOutreach && !hasExplicitBooking) {
+          requiredAgents.delete('Communication');
+          requiredAgents.delete('Execution');
+          requiredAgents.delete('Scheduling');
+          requiredAgents.delete('FollowUp');
+          parsed.requestedExternalActions = [];
+        }
+      }
     }
     if (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON)) {
       requiredAgents.add('Comparison');
@@ -230,7 +245,9 @@ User Personalized Context: ${memoryContext || 'None'}`;
       requiredAgents.add('Verification');
     } else if (flags.isLocation) {
       categories.push(CATEGORIES.LOCATION_DISCOVERY);
+      requiredAgents.add('LocalService');
       requiredAgents.add('Location');
+      requiredAgents.add('Comparison');
       requiredAgents.add('Research');
       requiredAgents.add('Verification');
     }
@@ -238,6 +255,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
     if (flags.isComparison) {
       if (flags.isLocation) {
         categories.push(CATEGORIES.SERVICE_COMPARISON);
+        requiredAgents.add('LocalService');
       } else {
         categories.push(CATEGORIES.PRODUCT_COMPARISON);
       }
