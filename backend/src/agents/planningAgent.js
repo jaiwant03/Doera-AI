@@ -100,6 +100,8 @@ Upstream Research Findings: ${researchContext ? JSON.stringify(researchContext) 
       const completedAt = new Date();
 
       if (plan && plan.schedule && plan.schedule.length > 0) {
+        if (!plan.scale) plan.scale = {};
+        plan.scale.participants = this.extractParticipantCount(userRequest);
         return {
           agentName: this.name,
           status: 'completed',
@@ -127,13 +129,19 @@ Upstream Research Findings: ${researchContext ? JSON.stringify(researchContext) 
     };
   }
 
+  extractParticipantCount(text) {
+    const match = text.match(/(\d+)\s*(?:participants?|students?|hackers?|attendees?|delegates?|people|members?)/i);
+    return match ? parseInt(match[1], 10) : 100;
+  }
+
   buildDeterministicPlan(text) {
     const isHackathon = /hackathon|coding|competition/i.test(text);
+    const participants = this.extractParticipantCount(text);
     return {
       missionTitle: isHackathon ? 'College Hackathon Operational Roadmap' : 'Project Execution Plan',
       objective: text,
       scale: {
-        participants: 100,
+        participants,
         duration: '2 Days',
         targetAudience: 'College students & technical innovators',
       },
