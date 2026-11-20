@@ -10,6 +10,10 @@ import {
   AlertCircle,
   Copy,
   Check,
+  BarChart3,
+  FileSpreadsheet,
+  Search,
+  Mail,
 } from 'lucide-react';
 import './ProofOfExecutionCard.css';
 
@@ -21,21 +25,42 @@ export const ProofOfExecutionCard = ({ evidence }) => {
 
   const {
     actionType,
-    status = 'DELIVERED',
+    evidenceType,
+    status = 'VERIFIED',
+    verificationStatus,
     actionSummary,
+    requestSummary,
     target = {},
-    service = 'Gmail / Native API',
+    targetData = {},
+    service = 'DOERA Execution Engine',
+    externalProvider,
     externalReferenceId,
+    externalReference,
     verifiedResponse,
+    actualProviderResponse,
     executedAt,
+    createdAt,
     sourceUrl,
+    sourceUrls = [],
+    isSimulated,
+    executionMode,
+    deliverableRef,
   } = evidence;
 
+  const effectiveStatus = (verificationStatus || status || 'VERIFIED').toUpperCase();
+  const effectiveRef = externalReference || externalReferenceId;
+  const effectiveService = externalProvider || service;
+  const isSim = isSimulated === true || executionMode === 'SIMULATED' || effectiveStatus === 'SIMULATED';
+
   const statusClass = (() => {
-    switch (status) {
+    switch (effectiveStatus) {
       case 'CONFIRMED':
       case 'VERIFIED':
-        return 'status-confirmed';
+        return 'status-verified';
+      case 'COMPLETED_UNVERIFIED':
+        return 'status-unverified';
+      case 'SIMULATED':
+        return 'status-simulated';
       case 'DELIVERED':
       case 'ACCEPTED':
         return 'status-delivered';
@@ -44,11 +69,31 @@ export const ProofOfExecutionCard = ({ evidence }) => {
         return 'status-submitted';
       case 'APPROVAL_PENDING':
       case 'PREPARED':
+      case 'PENDING':
         return 'status-pending';
       case 'FAILED':
         return 'status-failed';
       default:
-        return 'status-delivered';
+        return 'status-verified';
+    }
+  })();
+
+  const statusDisplay = (() => {
+    switch (effectiveStatus) {
+      case 'VERIFIED':
+      case 'CONFIRMED':
+        return 'VERIFIED';
+      case 'COMPLETED_UNVERIFIED':
+        return 'COMPLETED (UNVERIFIED)';
+      case 'SIMULATED':
+        return 'SIMULATED';
+      case 'PENDING':
+      case 'APPROVAL_PENDING':
+        return 'PENDING';
+      case 'FAILED':
+        return 'FAILED';
+      default:
+        return effectiveStatus.replace(/_/g, ' ');
     }
   })();
 
@@ -59,8 +104,8 @@ export const ProofOfExecutionCard = ({ evidence }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const formattedDate = executedAt
-    ? new Date(executedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const formattedDate = (executedAt || createdAt)
+    ? new Date(executedAt || createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : 'Just now';
 
   return (
@@ -68,35 +113,52 @@ export const ProofOfExecutionCard = ({ evidence }) => {
       <div className="doera-proof-header">
         <div className="doera-proof-title-wrap">
           <div className="doera-proof-badge-icon">
-            <ShieldCheck size={14} />
+            {evidenceType === 'SPREADSHEET_ANALYSED' ? (
+              <FileSpreadsheet size={14} />
+            ) : evidenceType === 'CHART_GENERATED' ? (
+              <BarChart3 size={14} />
+            ) : evidenceType === 'RESEARCH_COMPLETED' ? (
+              <Search size={14} />
+            ) : evidenceType === 'EMAIL_SENT' ? (
+              <Mail size={14} />
+            ) : evidenceType === 'DOCUMENT_PROCESSED' ? (
+              <FileText size={14} />
+            ) : (
+              <ShieldCheck size={14} />
+            )}
           </div>
           <div>
             <div className="doera-proof-title">
-              {actionSummary || `Execution Proof: ${actionType || 'Verified Action'}`}
+              {requestSummary || actionSummary || `Execution Proof: ${actionType || 'Verified Task'}`}
             </div>
+            {evidenceType && (
+              <div style={{ fontSize: 10, color: '#A38FA8', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>
+                Evidence Record: {evidenceType.replace(/_/g, ' ')}
+              </div>
+            )}
           </div>
         </div>
 
         <span className={`doera-proof-status-pill ${statusClass}`}>
-          {status === 'CONFIRMED' ? (
+          {effectiveStatus === 'VERIFIED' || effectiveStatus === 'CONFIRMED' ? (
             <CheckCircle2 size={11} />
-          ) : status === 'FAILED' ? (
+          ) : effectiveStatus === 'FAILED' ? (
             <AlertCircle size={11} />
           ) : (
             <Clock size={11} />
           )}
-          {status.replace(/_/g, ' ')}
+          {statusDisplay}
         </span>
       </div>
 
       {/* Execution Mode Banner (Real vs Simulated) */}
-      {evidence.isSimulated === false || evidence.executionMode === 'REAL' || (evidence.service && evidence.service.includes('Gmail OAuth2')) ? (
+      {!isSim ? (
         <div
           style={{
-            margin: '8px 14px 10px 14px',
+            margin: '8px 0 12px 0',
             padding: '6px 10px',
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
             borderRadius: 6,
             display: 'flex',
             alignItems: 'center',
@@ -108,15 +170,15 @@ export const ProofOfExecutionCard = ({ evidence }) => {
           }}
         >
           <CheckCircle2 size={13} color="#10B981" style={{ flexShrink: 0 }} />
-          <span>REAL AUTOMATION VERIFIED — OUTBOUND DISPATCH DELIVERED VIA GMAIL</span>
+          <span>REAL AUTOMATION VERIFIED — PROVEN EXECUTION METRICS</span>
         </div>
       ) : (
         <div
           style={{
-            margin: '8px 14px 10px 14px',
+            margin: '8px 0 12px 0',
             padding: '6px 10px',
             background: 'rgba(8, 127, 140, 0.15)',
-            border: '1px solid rgba(8, 127, 140, 0.35)',
+            border: '1px solid rgba(8, 127, 140, 0.4)',
             borderRadius: 6,
             display: 'flex',
             alignItems: 'center',
@@ -132,10 +194,30 @@ export const ProofOfExecutionCard = ({ evidence }) => {
         </div>
       )}
 
+      {/* Detailed Target Data Display */}
       <div className="doera-proof-body">
+        {targetData?.filename && (
+          <div className="doera-proof-field">
+            <span className="doera-proof-label">Processed File</span>
+            <span className="doera-proof-value" style={{ fontFamily: 'monospace' }}>
+              {targetData.filename} {targetData.pageCount ? `(${targetData.pageCount} pages)` : ''}
+              {targetData.rowCount ? `(${targetData.rowCount} rows, ${targetData.columnCount} cols)` : ''}
+            </span>
+          </div>
+        )}
+
+        {targetData?.chartType && (
+          <div className="doera-proof-field">
+            <span className="doera-proof-label">Chart Type & Series</span>
+            <span className="doera-proof-value">
+              {targetData.chartType.toUpperCase()} ({targetData.dataPointsCount || targetData.labels?.length || 0} Data Points)
+            </span>
+          </div>
+        )}
+
         {target?.recipient && (
           <div className="doera-proof-field">
-            <span className="doera-proof-label">Recipient / Provider</span>
+            <span className="doera-proof-label">Recipient</span>
             <span className="doera-proof-value">
               {target.name ? `${target.name} (${target.recipient})` : target.recipient}
             </span>
@@ -143,18 +225,18 @@ export const ProofOfExecutionCard = ({ evidence }) => {
         )}
 
         <div className="doera-proof-field">
-          <span className="doera-proof-label">Transport Channel</span>
-          <span className="doera-proof-value">{service}</span>
+          <span className="doera-proof-label">Execution Channel</span>
+          <span className="doera-proof-value">{effectiveService}</span>
         </div>
 
-        {externalReferenceId && (
+        {effectiveRef && (
           <div className="doera-proof-field">
-            <span className="doera-proof-label">Verification Reference ID</span>
+            <span className="doera-proof-label">Reference ID</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="doera-proof-ref">{externalReferenceId}</span>
+              <span className="doera-proof-ref">{effectiveRef}</span>
               <button
                 type="button"
-                onClick={() => handleCopyRef(externalReferenceId)}
+                onClick={() => handleCopyRef(effectiveRef)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A38FA8', padding: 0 }}
                 title="Copy reference ID"
               >
@@ -164,13 +246,77 @@ export const ProofOfExecutionCard = ({ evidence }) => {
           </div>
         )}
 
+        {deliverableRef && (
+          <div className="doera-proof-field">
+            <span className="doera-proof-label">Deliverable Ref</span>
+            <span className="doera-proof-value" style={{ color: '#F12D98', fontWeight: 600 }}>
+              {deliverableRef}
+            </span>
+          </div>
+        )}
+
         <div className="doera-proof-field">
-          <span className="doera-proof-label">Timestamp</span>
+          <span className="doera-proof-label">Execution Time</span>
           <span className="doera-proof-value">{formattedDate}</span>
         </div>
       </div>
 
-      {verifiedResponse && (
+      {/* Citations / Source URLs */}
+      {(sourceUrls.length > 0 || sourceUrl) && (
+        <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #1E0F28' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#A38FA8', marginBottom: 4, textTransform: 'uppercase' }}>
+            Verified Research Sources ({sourceUrls.length || (sourceUrl ? 1 : 0)})
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {sourceUrls.map((s, idx) => (
+              <a
+                key={idx}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  background: 'rgba(241, 45, 152, 0.1)',
+                  color: '#FF55BD',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(241, 45, 152, 0.25)',
+                }}
+              >
+                {s.title || s.url} <ExternalLink size={10} />
+              </a>
+            ))}
+            {sourceUrls.length === 0 && sourceUrl && (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  background: 'rgba(241, 45, 152, 0.1)',
+                  color: '#FF55BD',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(241, 45, 152, 0.25)',
+                }}
+              >
+                Source Proof <ExternalLink size={10} />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Raw Provider Response Dropdown */}
+      {(actualProviderResponse || verifiedResponse) && (
         <div style={{ marginTop: 10 }}>
           <button
             type="button"
@@ -200,7 +346,7 @@ export const ProofOfExecutionCard = ({ evidence }) => {
                 background: '#040206',
                 border: '1px solid #23112E',
                 borderRadius: 8,
-                fontSize: 11.5,
+                fontSize: 11,
                 fontFamily: 'monospace',
                 color: '#D1C4D4',
                 maxHeight: 160,
@@ -208,9 +354,7 @@ export const ProofOfExecutionCard = ({ evidence }) => {
                 whiteSpace: 'pre-wrap',
               }}
             >
-              {typeof verifiedResponse === 'object'
-                ? JSON.stringify(verifiedResponse, null, 2)
-                : verifiedResponse}
+              {JSON.stringify(actualProviderResponse || verifiedResponse, null, 2)}
             </div>
           )}
         </div>
@@ -221,24 +365,6 @@ export const ProofOfExecutionCard = ({ evidence }) => {
           <ShieldCheck size={12} />
           DOERA Anti-Hallucination & Truthful Execution Policy Active
         </span>
-
-        {sourceUrl && (
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              color: '#F12D98',
-              textDecoration: 'none',
-              fontWeight: 600,
-            }}
-          >
-            Source Proof <ExternalLink size={11} />
-          </a>
-        )}
       </div>
     </div>
   );

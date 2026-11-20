@@ -34,7 +34,10 @@ const ExecutionEvidenceSchema = new mongoose.Schema(
         'Supervisor',
         'Planner',
         'Research',
+        'Planning',
+        'Budget',
         'Location',
+        'LocalService',
         'Communication',
         'Communication Agent',
         'Quotation',
@@ -42,22 +45,47 @@ const ExecutionEvidenceSchema = new mongoose.Schema(
         'Execution',
         'Execution Agent',
         'Verification',
+        'Document',
+        'DataAnalysis',
+        'Vision',
         'FollowUp',
         'Recovery',
       ],
     },
+    evidenceType: {
+      type: String,
+      enum: [
+        'DOCUMENT_PROCESSED',
+        'RESEARCH_COMPLETED',
+        'SPREADSHEET_ANALYSED',
+        'CHART_GENERATED',
+        'REPORT_GENERATED',
+        'EMAIL_SENT',
+        'LOCATION_RESEARCH',
+        'MISSION_PLANNING',
+        'OTHER',
+      ],
+      default: 'OTHER',
+      index: true,
+    },
     actionType: {
       type: String,
-      required: true, // e.g. 'SEND_EMAIL', 'SEND_WHATSAPP', 'SEND_TELEGRAM', 'BOOK_APPOINTMENT', 'SUBMIT_FORM', 'DISCOVER_LOCATIONS', 'CALCULATE_ROUTE'
+      required: true,
       index: true,
     },
     externalProvider: {
-      type: String, // e.g. 'Gmail / SMTP', 'WhatsApp Cloud API', 'Telegram Bot', 'OpenStreetMap', 'OSRM', 'n8n Master Orchestrator'
+      type: String,
       required: true,
     },
     verificationStatus: {
       type: String,
       enum: [
+        'VERIFIED',
+        'COMPLETED_UNVERIFIED',
+        'SIMULATED',
+        'PENDING',
+        'FAILED',
+        // Compatibility statuses
         'PREPARED',
         'APPROVAL_PENDING',
         'APPROVED',
@@ -65,12 +93,27 @@ const ExecutionEvidenceSchema = new mongoose.Schema(
         'ACCEPTED',
         'DELIVERED',
         'CONFIRMED',
-        'VERIFIED',
-        'FAILED',
         'UNKNOWN',
       ],
-      default: 'PREPARED',
+      default: 'VERIFIED',
       index: true,
+    },
+    executionMode: {
+      type: String,
+      enum: ['REAL', 'SIMULATED'],
+      default: 'REAL',
+    },
+    isSimulated: {
+      type: Boolean,
+      default: false,
+    },
+    targetData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    deliverableRef: {
+      type: String,
+      default: null,
     },
     requestSummary: {
       type: String,
@@ -120,6 +163,10 @@ ExecutionEvidenceSchema.pre('validate', function (next) {
   if (!this.verificationStatus && this.status) this.verificationStatus = this.status;
   if (!this.status && this.verificationStatus) this.status = this.verificationStatus;
   if (!this.externalReference && this.externalReferenceId) this.externalReference = this.externalReferenceId;
+  if (this.verificationStatus === 'SIMULATED' || this.isSimulated) {
+    this.isSimulated = true;
+    this.executionMode = 'SIMULATED';
+  }
   next();
 });
 

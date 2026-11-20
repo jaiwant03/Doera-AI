@@ -61,10 +61,22 @@
   gap: 5px;
 }
 
-.status-confirmed {
+.status-confirmed, .status-verified {
   background: rgba(16, 185, 129, 0.15);
   color: #10B981;
   border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.status-unverified, .status-completed-unverified {
+  background: rgba(168, 85, 247, 0.15);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.status-simulated {
+  background: rgba(8, 127, 140, 0.15);
+  color: #2DD4BF;
+  border: 1px solid rgba(8, 127, 140, 0.35);
 }
 
 .status-delivered, .status-accepted {

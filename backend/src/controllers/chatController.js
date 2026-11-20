@@ -13,6 +13,7 @@ import usageService, { QuotaExceededError } from '../services/usageService.js';
 import buildUniversalResponse from '../services/universalResponseBuilder.js';
 import universalIntentService, { CATEGORIES } from '../services/universalIntentService.js';
 import locationService from '../services/locationService.js';
+import extractAndRegisterDeliverables from '../services/deliverableExtractor.js';
 
 /**
  * Geocodes missing contact coordinates and creates structured locationData for interactive maps
@@ -317,17 +318,21 @@ export const streamMessage = async (req, res) => {
 
     // 3. Action Task / Multi-Agent Orchestration
     if (intent.isActionTask) {
-      const taskId = `task-${uuidv4().substring(0, 8)}`;
+      const missionId = `MSN-${Date.now().toString(36).toUpperCase()}-${uuidv4().substring(0, 6).toUpperCase()}`;
+      const taskId = missionId;
       const task = await Task.create({
         taskId,
+        missionId,
         userId,
         conversationId: conversation._id,
         userRequest: message,
+        title: intent.primaryObjective?.slice(0, 70) || message.slice(0, 60),
         category: intent.primaryCategory,
         status: 'EXECUTING',
         currentAgent: 'Orchestrator',
         currentAction: `Coordinating specialized agents for ${intent.primaryCategory.toLowerCase().replace('_', ' ')}...`,
         intentAnalysis: intent,
+        assignedAgents: intent.requiredAgents || ['Planner', 'Research', 'Verification'],
       });
 
       // Run execution through LangGraph dynamic agent workflow
@@ -387,6 +392,8 @@ export const streamMessage = async (req, res) => {
       const locationData = await enrichLocationData(task);
       const chartConfig = task.chartConfig || task.discoveredData?.dataAnalysis?.chartConfig || null;
       const aiMessageContent = buildUniversalResponse(task);
+
+      await extractAndRegisterDeliverables(task, resultState, userId, aiMessageContent);
 
       const aiMessage = await Message.create({
         conversationId: conversation._id,
@@ -757,17 +764,21 @@ export const sendMessage = async (req, res, next) => {
     let task = null;
 
     if (intent.isActionTask) {
-      const taskId = `task-${uuidv4().substring(0, 8)}`;
+      const missionId = `MSN-${Date.now().toString(36).toUpperCase()}-${uuidv4().substring(0, 6).toUpperCase()}`;
+      const taskId = missionId;
       task = await Task.create({
         taskId,
+        missionId,
         userId,
         conversationId: conversation._id,
         userRequest: message,
+        title: intent.primaryObjective?.slice(0, 70) || message.slice(0, 60),
         category: intent.primaryCategory,
         status: 'EXECUTING',
         currentAgent: 'Orchestrator',
         currentAction: `Coordinating specialized agents for ${intent.primaryCategory.toLowerCase().replace('_', ' ')}...`,
         intentAnalysis: intent,
+        assignedAgents: intent.requiredAgents || ['Planner', 'Research', 'Verification'],
       });
 
       // Run execution through LangGraph dynamic agent workflow
@@ -827,6 +838,8 @@ export const sendMessage = async (req, res, next) => {
       const locationData = await enrichLocationData(task);
       const chartConfig = task.chartConfig || task.discoveredData?.dataAnalysis?.chartConfig || null;
       const aiMessageContent = buildUniversalResponse(task);
+
+      await extractAndRegisterDeliverables(task, resultState, userId, aiMessageContent);
 
       aiMessage = await Message.create({
         conversationId: conversation._id,

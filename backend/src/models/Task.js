@@ -30,6 +30,10 @@ const TaskSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    missionId: {
+      type: String,
+      index: true,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -84,10 +88,20 @@ const TaskSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
+        // Standard Mission Control States
         'CREATED',
+        'PLANNING',
+        'IN_PROGRESS',
+        'WAITING_FOR_INPUT',
+        'VERIFICATION',
+        'COMPLETED',
+        'PARTIALLY_COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'PAUSED',
+        // Legacy & sub-state aliases
         'RECEIVED',
         'UNDERSTANDING',
-        'PLANNING',
         'RESEARCHING',
         'DISCOVERING',
         'COMPARING',
@@ -101,13 +115,8 @@ const TaskSchema = new mongoose.Schema(
         'VERIFYING',
         'WAITING_FOR_RESPONSE',
         'AWAITING_CONFIRMATION',
-        'PAUSED',
-        'COMPLETED',
-        'PARTIALLY_COMPLETED',
-        'FAILED',
-        'CANCELLED',
       ],
-      default: 'RECEIVED',
+      default: 'CREATED',
       index: true,
     },
     title: {
@@ -128,7 +137,7 @@ const TaskSchema = new mongoose.Schema(
     },
     currentAction: {
       type: String,
-      default: 'Task received and queued.',
+      default: 'Mission created and queued.',
     },
     progress: {
       type: Number,
@@ -150,15 +159,58 @@ const TaskSchema = new mongoose.Schema(
         agent: { type: String, required: true },
         status: {
           type: String,
-          enum: ['pending', 'in_progress', 'completed', 'failed', 'paused'],
+          enum: ['pending', 'in_progress', 'completed', 'failed', 'paused', 'skipped'],
           default: 'pending',
         },
         dependencies: [{ type: String }],
+        details: String,
+        error: String,
         startedAt: Date,
         completedAt: Date,
         result: mongoose.Schema.Types.Mixed,
+        evidenceRef: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'ExecutionEvidence',
+        },
       },
     ],
+    deliverables: [
+      {
+        id: { type: String, required: true },
+        title: { type: String, required: true },
+        type: {
+          type: String,
+          enum: [
+            'DOCUMENT',
+            'SPREADSHEET',
+            'CHART',
+            'REPORT',
+            'CODE',
+            'EMAIL_DRAFT',
+            'DATA_ANALYSIS',
+            'LOCATION_DOSSIER',
+            'COMMUNICATION_SUITE',
+            'PLANNING_SCHEDULE',
+            'BUDGET_BREAKDOWN',
+            'OTHER',
+          ],
+          default: 'OTHER',
+        },
+        format: { type: String, default: 'markdown' },
+        content: mongoose.Schema.Types.Mixed,
+        summary: String,
+        fileUrl: String,
+        filename: String,
+        generatedAt: { type: Date, default: Date.now },
+        verified: { type: Boolean, default: false },
+        evidenceRef: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'ExecutionEvidence',
+        },
+      },
+    ],
+    executionResults: mongoose.Schema.Types.Mixed,
+    verificationResults: mongoose.Schema.Types.Mixed,
     evidenceReferences: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -270,6 +322,16 @@ const TaskSchema = new mongoose.Schema(
 
 TaskSchema.virtual('originalRequest').get(function () {
   return this.userRequest;
+});
+
+TaskSchema.virtual('actualProgress').get(function () {
+  if (Array.isArray(this.subtasks) && this.subtasks.length > 0) {
+    const completed = this.subtasks.filter((s) => s.status === 'completed').length;
+    return Math.round((completed / this.subtasks.length) * 100);
+  }
+  if (this.status === 'COMPLETED') return 100;
+  if (this.status === 'FAILED' || this.status === 'CANCELLED') return 0;
+  return this.progress || 0;
 });
 
 TaskSchema.index({ userId: 1, createdAt: -1 });

@@ -299,3 +299,166 @@
   background: #F12D98;
   border: 2px solid #09040D;
 }
+
+/* Dossier Inner Navigation Tabs */
+.doera-dossier-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #1E0F28;
+  padding-bottom: 12px;
+  overflow-x: auto;
+}
+
+.doera-dossier-tab-btn {
+  background: none;
+  border: none;
+  color: #A38FA8;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.doera-dossier-tab-btn.active {
+  background: rgba(241, 45, 152, 0.15);
+  color: #F12D98;
+  border: 1px solid rgba(241, 45, 152, 0.35);
+}
+
+.doera-dossier-tab-btn:hover:not(.active) {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Subtask Detail Cards */
+.doera-subtask-detail-card {
+  background: #0D0714;
+  border: 1px solid #23112E;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+
+.doera-subtask-detail-card.completed {
+  border-left: 3px solid #10B981;
+}
+
+.doera-subtask-detail-card.in_progress {
+  border-left: 3px solid #F12D98;
+}
+
+.doera-subtask-detail-card.pending {
+  border-left: 3px solid #6B7280;
+}
+
+.doera-subtask-detail-card.failed {
+  border-left: 3px solid #EF4444;
+}
+
+/* Deliverable Cards */
+.doera-deliverable-card {
+  background: #0D0714;
+  border: 1px solid #2B1238;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+}
+
+.doera-deliverable-card:hover {
+  border-color: rgba(241, 45, 152, 0.4);
+}
+
+.doera-deliverable-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.doera-deliverable-type-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(156, 82, 232, 0.15);
+  color: #C084FC;
+  border: 1px solid rgba(156, 82, 232, 0.35);
+}
+
+.doera-deliverable-preview {
+  background: #040206;
+  border: 1px solid #1E0F28;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #EDE4EE;
+  max-height: 240px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin-top: 10px;
+}
+
+/* Follow-Up Tracker Terminal */
+.doera-followup-box {
+  background: #0D0714;
+  border: 1px solid #361744;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+}
+
+.doera-followup-textarea {
+  width: 100%;
+  min-height: 80px;
+  background: #050208;
+  border: 1px solid #2B1238;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #FFFFFF;
+  font-size: 13px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.doera-followup-textarea:focus {
+  border-color: #F12D98;
+  box-shadow: 0 0 10px rgba(241, 45, 152, 0.2);
+}
+
+.doera-followup-send-btn {
+  background: linear-gradient(135deg, #F12D98 0%, #9C52E8 100%);
+  color: #FFFFFF;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.doera-followup-send-btn:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(241, 45, 152, 0.4);
+  transform: translateY(-1px);
+}
+
+.doera-followup-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

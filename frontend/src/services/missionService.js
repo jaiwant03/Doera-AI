@@ -19,6 +19,24 @@ export const missionService = {
     return res.data;
   },
 
+  // Create a mission directly
+  async createMission(data) {
+    const res = await api.post('/missions', data);
+    return res.data;
+  },
+
+  // Submit follow-up instruction to continue a mission
+  async addFollowUp(id, instruction) {
+    const res = await api.post(`/missions/${id}/follow-up`, { instruction });
+    return res.data;
+  },
+
+  // Get deliverables for a mission
+  async getDeliverables(id) {
+    const res = await api.get(`/missions/${id}/deliverables`);
+    return res.data;
+  },
+
   // Pause a mission
   async pauseMission(id) {
     const res = await api.post(`/missions/${id}/pause`);
