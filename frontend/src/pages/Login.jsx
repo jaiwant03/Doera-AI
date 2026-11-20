@@ -203,32 +203,6 @@ const Login = () => {
               <span>OR</span>
             </div>
             <GoogleSignInButton onError={(msg) => setError(msg)} />
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('judge@doera.ai');
-                setPassword('hackathon2026');
-              }}
-              style={{
-                width: '100%',
-                marginTop: '10px',
-                padding: '9px 12px',
-                background: 'rgba(45, 212, 191, 0.1)',
-                border: '1px solid rgba(45, 212, 191, 0.35)',
-                borderRadius: '8px',
-                color: '#2DD4BF',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <span>⚡ Fill Demo Judge Account (judge@doera.ai)</span>
-            </button>
           </>
         )}
 
