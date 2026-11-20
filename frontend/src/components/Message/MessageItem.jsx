@@ -18,6 +18,7 @@ import AgentActivity from '../AgentActivity/AgentActivity';
 import LocationMap from '../Map/LocationMap';
 import ProofOfExecutionCard from '../ProofOfExecution/ProofOfExecutionCard';
 import FollowUpTrackerCard from '../FollowUp/FollowUpTrackerCard';
+import SpreadsheetChart from '../Chart/SpreadsheetChart';
 import ErrorBoundary from '../UI/ErrorBoundary';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
