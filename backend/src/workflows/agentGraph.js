@@ -254,11 +254,17 @@ const mergingNode = async (state) => {
     step: { id: 'merge', name: 'Cross-verifying findings', status: 'completed', timestamp: new Date() },
   });
 
+  const next = state.requiredAgents.includes('Planning')
+    ? 'Planning'
+    : (state.requiredAgents.includes('Communication') ? 'Communication' : 'Verification');
+
   return {
-    currentAgent: state.requiredAgents.includes('Communication') ? 'Communication' : 'Verification',
-    currentAction: state.requiredAgents.includes('Communication')
-      ? 'Outreach required. Preparing draft and staging human authorization gate.'
-      : 'Synthesizing final verified response.',
+    currentAgent: next,
+    currentAction: state.requiredAgents.includes('Planning')
+      ? 'Synthesizing research into structured execution plan and schedule...'
+      : (state.requiredAgents.includes('Communication')
+          ? 'Outreach required. Preparing draft and staging human authorization gate.'
+          : 'Synthesizing final verified response.'),
   };
 };
 
