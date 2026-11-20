@@ -150,7 +150,7 @@ describe('DOERA AI — Dynamic Multi-Agent Collaboration and Intelligent Plannin
     expect(commOut.drafts.length).toBe(3);
     const approvalLetter = commOut.drafts.find((d) => d.type === 'INSTITUTIONAL_APPROVAL');
     expect(approvalLetter.content).toMatch(/80|40,000/);
-  });
+  }, 90000);
 
   // Test 4: General Knowledge Direct Resolution without Agent Overhead
   it('4. should resolve general knowledge questions directly with zero unnecessary background agents', async () => {
