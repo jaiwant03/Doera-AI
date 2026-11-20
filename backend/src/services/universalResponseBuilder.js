@@ -220,6 +220,139 @@ function buildTravelSection(route, locationData) {
   return md;
 }
 
+function buildVisionSection(images, comparison, userRequest) {
+  let md = '';
+  const imgList = Array.isArray(images) ? images : [];
+
+  // 1. Multi-Image Comparative Intelligence
+  if (imgList.length > 1 && comparison) {
+    md += `### Multi-Image Comparative Intelligence\n\n`;
+    if (comparison.summary) {
+      md += `> ${comparison.summary}\n\n`;
+    }
+
+    if (comparison.matrix && Array.isArray(comparison.matrix) && comparison.matrix.length > 0) {
+      md += `#### Visual & Design Comparison Matrix\n\n`;
+      const colHeaders = imgList.map((img) => img.filename || 'Image').join(' | ');
+      const colDividers = imgList.map(() => ':---').join(' | ');
+      md += `| Evaluation Dimension | ${colHeaders} | Comparative Finding |\n`;
+      md += `| :--- | ${colDividers} | :--- |\n`;
+
+      comparison.matrix.forEach((row) => {
+        const valCells = imgList.map((img) => row[img.filename] || row.values?.[img.filename] || '-').join(' | ');
+        md += `| **${row.dimension}** | ${valCells} | ${row.verdict || row.notes || '-'} |\n`;
+      });
+      md += `\n`;
+    }
+
+    if (comparison.keyDifferences && comparison.keyDifferences.length > 0) {
+      md += `**Key Visual Differences**:\n`;
+      comparison.keyDifferences.forEach((diff) => {
+        md += `- **${diff.aspect || 'Aspect'}**: ${diff.details}\n`;
+      });
+      md += `\n`;
+    }
+
+    if (comparison.recommendation) {
+      md += `**Comparative Recommendation**:\n`;
+      md += `> 💡 ${comparison.recommendation}\n\n`;
+    }
+  }
+
+  // 2. Individual Image Intelligence
+  imgList.forEach((img, idx) => {
+    md += `### Image Analysis: ${img.filename}\n\n`;
+
+    // Visual Asset Profile Table
+    md += `| Visual Attribute | Verified Telemetry |\n`;
+    md += `| :--- | :--- |\n`;
+    md += `| **Classified Asset Type** | \`${img.detectedType || 'IMAGE'}\` |\n`;
+    md += `| **Resolution & Format** | ${img.dimensions?.width || '?'} × ${img.dimensions?.height || '?'} px (${img.format || 'IMG'}, Aspect: ${img.dimensions?.aspectRatio || 'N/A'}, ${img.dimensions?.orientation || 'Landscape'}) |\n`;
+    md += `| **Visual Theme** | ${img.visualMetrics?.theme || 'Standard'} (Perceived Luminance: ${img.visualMetrics?.luminance ?? 'N/A'}/255) |\n`;
+    if (img.visualMetrics?.dominantColors?.length > 0) {
+      md += `| **Dominant Color Palette** | ${img.visualMetrics.dominantColors.join(', ')} |\n`;
+    }
+    if (img.visualMetrics?.contrastIndex !== undefined) {
+      md += `| **Contrast Index** | ${img.visualMetrics.contrastIndex} (${img.visualMetrics.estimatedWcagContrast || 'Normal'}) |\n`;
+    }
+    if (img.layoutZones?.layoutStructure) {
+      md += `| **Layout Structure** | ${img.layoutZones.layoutStructure} |\n`;
+    }
+    if (img.ocr?.wordsCount !== undefined) {
+      md += `| **OCR Text Layer** | ${img.ocr.wordsCount > 0 ? `${img.ocr.wordsCount} words detected (${img.ocr.confidence}% confidence)` : 'No embedded text characters detected'} |\n`;
+    }
+    md += `\n`;
+
+    // Executive Summary
+    if (img.summary) {
+      md += `#### Executive Summary\n\n${img.summary}\n\n`;
+    }
+
+    // Grounded Observations
+    if (img.observations && (Array.isArray(img.observations) ? img.observations.length > 0 : Object.keys(img.observations).length > 0)) {
+      md += `#### Grounded Visual Observations\n\n`;
+      if (Array.isArray(img.observations)) {
+        img.observations.forEach((obs) => {
+          if (typeof obs === 'string') {
+            md += `- ${obs}\n`;
+          } else if (obs.category && obs.observation) {
+            md += `- **${obs.category}**: ${obs.observation}\n`;
+          }
+        });
+      } else {
+        Object.entries(img.observations).forEach(([cat, text]) => {
+          md += `- **${cat}**: ${text}\n`;
+        });
+      }
+      md += `\n`;
+    }
+
+    // Detected Text Transcript (OCR)
+    if (img.ocr?.text && img.ocr.text.trim().length > 0) {
+      md += `#### Detected Text (OCR Transcript)\n\n`;
+      md += `\`\`\`text\n${img.ocr.text.trim()}\n\`\`\`\n\n`;
+    }
+
+    // Detailed Contextual Explanation
+    if (img.detailedExplanation) {
+      md += `#### Contextual Visual Explanation\n\n${img.detailedExplanation}\n\n`;
+    }
+
+    // Identified Issues (Explicitly separated from recommendations)
+    if (img.identifiedIssues && img.identifiedIssues.length > 0) {
+      md += `#### Identified Visual & UX Issues\n\n`;
+      img.identifiedIssues.forEach((issue) => {
+        if (typeof issue === 'string') {
+          md += `- ⚠️ ${issue}\n`;
+        } else {
+          md += `- ⚠️ **${issue.title || 'Visual Issue'}** (${issue.severity || 'Medium'})${issue.location ? ` — *${issue.location}*` : ''}: ${issue.visualEvidence || issue.description || ''}\n`;
+        }
+      });
+      md += `\n`;
+    }
+
+    // Actionable Recommendations
+    if (img.recommendations && img.recommendations.length > 0) {
+      md += `#### Actionable Recommendations\n\n`;
+      img.recommendations.forEach((rec) => {
+        md += `- 💡 ${typeof rec === 'string' ? rec : (rec.recommendation || rec.suggestion || JSON.stringify(rec))}\n`;
+      });
+      md += `\n`;
+    }
+
+    // Limitations / Uncertainties
+    if (img.limitations && img.limitations.length > 0) {
+      md += `#### Limitations & Uncertain Observations\n\n`;
+      img.limitations.forEach((lim) => {
+        md += `- ℹ️ *${lim}*\n`;
+      });
+      md += `\n`;
+    }
+  });
+
+  return md;
+}
+
 function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
   let md = '';
 

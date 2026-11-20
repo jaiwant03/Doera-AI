@@ -2,6 +2,7 @@ import { createRequire } from 'module';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
+import imageProcessor from './imageProcessor.js';
 import llmService from './llmService.js';
 import { logger } from '../utils/logger.js';
 
@@ -477,36 +478,59 @@ class DocumentProcessor {
   }
 
   /**
-   * Image Extraction with OCR Engine
+   * Image Extraction with Genuine Pixel Telemetry & OCR Engine
    */
   async extractImage(buffer, filename, ext) {
-    const ocr = await this.runOCR(buffer, filename).catch(() => null);
+    try {
+      const img = await imageProcessor.processImage({
+        filename,
+        buffer,
+      });
 
-    const hasText = Boolean(ocr?.text && ocr.text.length > 5);
-    const extractedText = hasText
-      ? `[OCR Extracted Text from ${filename}]\n${ocr.text}`
-      : `[Visual Image: ${filename} (${ext.toUpperCase()}) - Visual asset inspected, no direct textual content detected]`;
+      const hasText = Boolean(img.ocr?.text && img.ocr.text.length > 5);
+      const textSummary = `[Visual Asset: ${filename} | ${img.detectedType} | ${img.dimensions.width}x${img.dimensions.height}px | ${img.visualMetrics.theme}]\n` +
+        (hasText ? `[OCR Extracted Text]:\n${img.ocr.text}` : `[Visual Characteristics]: ${img.layoutZones.layoutStructure}, ${img.visualMetrics.dominantColors.join(', ')} tones.`);
 
-    return {
-      filename,
-      fileType: 'IMAGE',
-      extractedText,
-      pages: [{ pageNumber: 1, text: ocr?.text || '' }],
-      sections: [],
-      tables: [],
-      structuredData: {
-        format: ext.toUpperCase(),
-        ocrConfidence: ocr?.confidence || 0,
-        isOcr: true,
-      },
-      metadata: {
-        pageCount: 1,
-        isScanned: true,
-        isOcr: hasText,
-        extractionStatus: 'COMPLETED',
-      },
-      limitations: hasText ? [] : ['No high-confidence text detected in image.'],
-    };
+      return {
+        filename,
+        fileType: 'IMAGE',
+        extractedText: textSummary,
+        pages: [{ pageNumber: 1, text: img.ocr?.text || '' }],
+        sections: [
+          { title: 'Visual Telemetry', content: `${img.dimensions.width}x${img.dimensions.height}px, ${img.visualMetrics.theme}, ${img.layoutZones.layoutStructure}` },
+        ],
+        tables: [],
+        structuredData: {
+          format: img.format,
+          dimensions: img.dimensions,
+          visualMetrics: img.visualMetrics,
+          layoutZones: img.layoutZones,
+          detectedType: img.detectedType,
+          ocrConfidence: img.ocr.confidence,
+          isOcr: hasText,
+        },
+        metadata: {
+          pageCount: 1,
+          isScanned: true,
+          isOcr: hasText,
+          extractionStatus: 'COMPLETED',
+        },
+        limitations: img.limitations || [],
+      };
+    } catch (err) {
+      logger.warn(`[Document Processor] Image extraction notice for ${filename}:`, err.message);
+      return {
+        filename,
+        fileType: 'IMAGE',
+        extractedText: `[Image: ${filename} - extraction notice: ${err.message}]`,
+        pages: [{ pageNumber: 1, text: '' }],
+        sections: [],
+        tables: [],
+        structuredData: {},
+        metadata: { pageCount: 1, isScanned: false, isOcr: false, extractionStatus: 'FAILED' },
+        limitations: [err.message],
+      };
+    }
   }
 
   /**
