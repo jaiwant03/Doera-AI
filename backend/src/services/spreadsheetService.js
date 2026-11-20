@@ -40,10 +40,9 @@ class SpreadsheetService {
     let workbook;
     try {
       if (isCsv) {
-        // Read CSV/TSV with cell parsing
+        // Read CSV/TSV without converting string dates
         workbook = XLSX.read(buffer, {
           type: 'buffer',
-          cellDates: true,
           raw: false,
           codepage: 65001, // UTF-8
         });
@@ -581,7 +580,17 @@ class SpreadsheetService {
       }));
 
       // Sort order based on operation
-      if (operation === 'BOTTOM_N') {
+      const isDateDim = columnSchema[dimensionCol]?.type === 'date' || /(date|month|year|quarter|period)/i.test(dimensionCol);
+      if (operation === 'TREND' || (isDateDim && operation !== 'TOP_N' && operation !== 'BOTTOM_N')) {
+        items.sort((a, b) => {
+          const da = new Date(a.label);
+          const db = new Date(b.label);
+          if (!isNaN(da.getTime()) && !isNaN(db.getTime())) {
+            return da - db;
+          }
+          return String(a.label).localeCompare(String(b.label));
+        });
+      } else if (operation === 'BOTTOM_N') {
         items.sort((a, b) => a.value - b.value);
         items = items.slice(0, topN);
       } else {
