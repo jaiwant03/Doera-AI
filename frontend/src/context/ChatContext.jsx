@@ -355,8 +355,12 @@ export const ChatProvider = ({ children }) => {
 
       // Determine user-friendly error message
       let errorText = 'I encountered an error processing your request. Please check your network and configuration, then try again.';
-      if (!err.response && (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || err.message?.includes('ECONNREFUSED'))) {
+      if (!err.response && (err.code === 'ECONNABORTED' || err.message?.includes('timeout'))) {
+        errorText = 'The analysis took longer than expected to complete. DOERA may still be compiling your dataset insights in the background. Please refresh in a moment or retry with a specific focus.';
+      } else if (!err.response && (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || err.message?.includes('ECONNREFUSED'))) {
         errorText = 'Unable to connect to DOERA Backend Engine. Please verify that the backend server is running on port 5000.';
+      } else if (err.response?.status === 413) {
+        errorText = 'The uploaded dataset exceeds the maximum allowable upload size. Please upload a spreadsheet under 50MB.';
       } else if (err.response?.data?.error && typeof err.response.data.error === 'string') {
         errorText = `Error: ${err.response.data.error}`;
       } else if (err.response?.data?.message && typeof err.response.data.message === 'string') {

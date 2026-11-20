@@ -121,24 +121,32 @@ class SpreadsheetService {
       });
       totalDuplicateRows += sheetDuplicates;
 
-      // Column Schema Inference
+      // Column Schema Inference (with fast sample optimization for large datasets)
+      const sampleForInference = cleanRows.length > 1000 ? cleanRows.slice(0, 1000) : cleanRows;
       const columnSchema = {};
       let sheetNulls = 0;
 
       headers.forEach((h) => {
-        const values = cleanRows.map((r) => r[h]);
-        const nonNulls = values.filter((v) => v !== null && v !== undefined && v !== '');
-        const nullCount = values.length - nonNulls.length;
+        const sampleValues = sampleForInference.map((r) => r[h]);
+        const sampleNonNulls = sampleValues.filter((v) => v !== null && v !== undefined && v !== '');
+        
+        let nullCount = 0;
+        if (cleanRows.length > 2000) {
+          const sampleNulls = sampleValues.length - sampleNonNulls.length;
+          nullCount = Math.round((sampleNulls / sampleValues.length) * cleanRows.length);
+        } else {
+          nullCount = cleanRows.filter((r) => r[h] === null || r[h] === undefined || r[h] === '').length;
+        }
         sheetNulls += nullCount;
 
-        const inferred = this.inferColumnType(nonNulls, h);
+        const inferred = this.inferColumnType(sampleNonNulls, h);
 
         columnSchema[h] = {
           name: h,
           type: inferred.type,
           nullCount,
-          totalCount: values.length,
-          uniqueCount: new Set(nonNulls).size,
+          totalCount: cleanRows.length,
+          uniqueCount: new Set(sampleNonNulls).size,
           stats: inferred.stats || null,
           topCategories: inferred.topCategories || null,
           dateRange: inferred.dateRange || null,
