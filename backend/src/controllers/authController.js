@@ -252,7 +252,7 @@ export const googleLoginWithCredential = async (req, res, next) => {
         googleSubjectId: profile.googleId,
         googleEmail: profile.email.toLowerCase(),
         authProvider: 'google',
-        executionMode: 'REAL',
+        executionMode: 'UNIFIED',
         gmailIntegrationStatus: 'not_connected',
         avatar: profile.avatar,
         subscription: {
@@ -260,13 +260,13 @@ export const googleLoginWithCredential = async (req, res, next) => {
           status: 'active',
         },
       });
-      logger.info(`[Google Auth] Created new user via Google Sign-In: ${user.email} (executionMode: REAL)`);
+      logger.info(`[Google Auth] Created new user via Google Sign-In: ${user.email} (executionMode: UNIFIED)`);
     } else {
       user.googleId = profile.googleId;
       user.googleSubjectId = profile.googleId;
       user.googleEmail = profile.email.toLowerCase();
       user.authProvider = 'google';
-      user.executionMode = 'REAL';
+      user.executionMode = 'UNIFIED';
       if (!user.avatar && profile.avatar) user.avatar = profile.avatar;
 
       // Sync active Gmail integration status
@@ -286,7 +286,7 @@ export const googleLoginWithCredential = async (req, res, next) => {
     });
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role, executionMode: 'REAL', authProvider: 'google' },
+      { userId: user._id, role: user.role, executionMode: 'UNIFIED', authProvider: 'google' },
       config.jwtSecret,
       { expiresIn: '7d' }
     );
@@ -302,7 +302,7 @@ export const googleLoginWithCredential = async (req, res, next) => {
         authProvider: 'google',
         googleSubjectId: user.googleSubjectId,
         googleEmail: user.googleEmail,
-        executionMode: 'REAL',
+        executionMode: 'UNIFIED',
         gmailIntegrationStatus: activeGmail ? 'connected' : 'not_connected',
         connectedGmailEmail: activeGmail?.accountEmail || activeGmail?.providerEmail || null,
         preferences: user.preferences,
