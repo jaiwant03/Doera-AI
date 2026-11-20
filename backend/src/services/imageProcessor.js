@@ -212,7 +212,7 @@ class ImageProcessor {
         );
         zones.headerLuminance = hLum;
         // Significant difference in header brightness indicates a distinct top navigation / header bar
-        zones.hasHeaderBar = Math.abs(hLum - baseLuminance) > 18;
+        zones.hasHeaderBar = Math.abs(hLum - baseLuminance) >= 8;
       }
 
       // 2. Sidebar Region (Left 20% on landscape images)
