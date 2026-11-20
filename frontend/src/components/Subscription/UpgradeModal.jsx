@@ -11,23 +11,21 @@ import {
   Clock,
 } from 'lucide-react';
 import api from '../../services/api';
-import SubscriptionCheckout from './SubscriptionCheckout';
 import './UpgradeModal.css';
 
 const UpgradeModal = ({ 
   isOpen, 
   onClose, 
   currentPlan = 'free', 
-  usedRequests = 0,
-  dailyLimit = 20,
-  remainingRequests = 20,
-  resetsIn = '24h 00m',
-  resetAt,
+  usedRequests = 0, 
+  dailyLimit = 20, 
+  remainingRequests = 20, 
+  resetsIn = '24h 00m', 
+  resetAt, 
   onPlanUpdated 
 }) => {
   const [activeTier, setActiveTier] = useState(currentPlan || 'free');
   const [selectedPlan, setSelectedPlan] = useState(currentPlan === 'free' ? 'pro' : currentPlan);
-  const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
   const [isActivating, setIsActivating] = useState(false);
   const [activatingKey, setActivatingKey] = useState(null);
@@ -36,7 +34,6 @@ const UpgradeModal = ({
   useEffect(() => {
     setActiveTier(currentPlan || 'free');
     setSelectedPlan(currentPlan === 'free' ? 'pro' : currentPlan);
-    setCheckoutPlan(null);
   }, [currentPlan, isOpen]);
 
   const isLimitReached = remainingRequests <= 0 || usedRequests >= dailyLimit;
@@ -45,7 +42,6 @@ const UpgradeModal = ({
     try {
       sessionStorage.setItem('doera_upgrade_dismissed', 'true');
     } catch (_) {}
-    setCheckoutPlan(null);
     onClose();
   };
 
@@ -53,7 +49,6 @@ const UpgradeModal = ({
     try {
       sessionStorage.setItem('doera_limit_remind_tomorrow', new Date().toISOString().split('T')[0]);
     } catch (_) {}
-    setCheckoutPlan(null);
     onClose();
   };
 
@@ -105,33 +100,18 @@ const UpgradeModal = ({
   return (
     <div className="doera-modal-backdrop" onClick={!isActivating ? handleDismiss : undefined}>
       <div 
-        className={`doera-upgrade-modal animate-fadeIn ${checkoutPlan ? 'is-checkout' : ''}`} 
+        className="doera-upgrade-modal animate-fadeIn" 
         onClick={(e) => e.stopPropagation()}
       >
-        {checkoutPlan ? (
-          <SubscriptionCheckout
-            plan={checkoutPlan}
-            billingCycle={billingCycle}
-            onBack={() => setCheckoutPlan(null)}
-            onClose={handleDismiss}
-            onSuccess={(activatedPlan, usage) => {
-              setActiveTier(activatedPlan);
-              if (onPlanUpdated) {
-                onPlanUpdated(activatedPlan, usage);
-              }
-            }}
-          />
-        ) : (
-          <>
-            {/* Close Button */}
-            <button 
-              onClick={handleDismiss} 
-              className="doera-modal-close-btn" 
-              title="Close modal"
-              disabled={isActivating}
-            >
-              <X size={18} />
-            </button>
+        {/* Close Button */}
+        <button 
+          onClick={handleDismiss} 
+          className="doera-modal-close-btn" 
+          title="Close modal"
+          disabled={isActivating}
+        >
+          <X size={18} />
+        </button>
 
         {/* Modal Header */}
         <div className="doera-upgrade-header">
@@ -394,10 +374,8 @@ const UpgradeModal = ({
           <Shield size={14} style={{ color: '#10B981' }} />
           <span>256-Bit TLS Security • Instant Plan Activation • Daily Limits Auto-Renew Every 24h</span>
         </div>
-      </>
-    )}
-  </div>
-</div>
+      </div>
+    </div>
   );
 };
 
