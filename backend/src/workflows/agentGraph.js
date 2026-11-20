@@ -380,6 +380,57 @@ const approvalGateNode = async (state) => {
  * 6. COMMUNICATION NODE
  */
 const communicationNode = async (state) => {
+  const isMissionPlanning =
+    state.category === 'MISSION_PLANNING' ||
+    state.requiredAgents.includes('Planning') ||
+    Boolean(state.planningData || state.discoveredData?.planning);
+
+  if (isMissionPlanning) {
+    logger.info(`[LangGraph Workflow] Communication Agent preparing mission communications for: ${state.taskId}`);
+    await logMissionEvent(
+      state,
+      'STEP_PROGRESS',
+      'Communication',
+      'Preparing institutional approval letter, sponsor proposal, and participant onboarding guide...',
+      { step: { id: 'communicate', name: 'Preparing mission communications', status: 'in_progress', timestamp: new Date() } }
+    );
+
+    const commRes = await communicationAgent.prepareMissionCommunications(state, {
+      planning: state.planningData || state.discoveredData?.planning,
+      budget: state.budgetData || state.discoveredData?.budget,
+    });
+
+    const steps = (state.steps || []).map((s) =>
+      s.agent === 'Communication' || s.id === 'communicate' || s.id === 'sub_comm'
+        ? {
+            ...s,
+            status: 'completed',
+            details: `Prepared ${commRes.drafts?.length || 3} ready-to-use communication drafts (Institutional, Sponsor, Participant).`,
+            timestamp: new Date(),
+          }
+        : s
+    );
+
+    await logMissionEvent(
+      state,
+      'STEP_PROGRESS',
+      'Communication',
+      'Communication drafts compiled for institutional approval, sponsor outreach, and participant onboarding.',
+      { step: { id: 'communicate', name: 'Preparing mission communications', status: 'completed', timestamp: new Date() } }
+    );
+
+    return {
+      communicationDrafts: commRes.drafts || [],
+      discoveredData: {
+        ...(state.discoveredData || {}),
+        communication: commRes,
+      },
+      steps,
+      currentAgent: 'Verification',
+      currentAction: 'Auditing mission deliverables and cross-agent findings...',
+    };
+  }
+
   const primaryContact = state.externalContacts?.[0];
   await logMissionEvent(
     state,
