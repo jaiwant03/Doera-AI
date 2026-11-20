@@ -10,6 +10,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^0.3.30",
     "@langchain/langgraph": "^0.2.40",
     "adm-zip": "^0.6.1",
@@ -26,6 +27,7 @@
     "nodemailer": "^6.9.16",
     "pdf-parse": "^2.4.5",
     "playwright": "^1.49.1",
+    "sharp": "^0.35.5",
     "tesseract.js": "^7.0.0",
     "uuid": "^11.0.5",
     "ws": "^8.18.0",
