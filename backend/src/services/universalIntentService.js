@@ -236,6 +236,26 @@ User Personalized Context: ${memoryContext || 'None'}`;
     const categories = [];
     const requiredAgents = new Set(['Planner']);
 
+    if (flags.isGeneralKnowledge && !flags.isMissionPlanning && !flags.hasAttachments && !flags.hasImageAttachment && !flags.hasSpreadsheetAttachment && !flags.isDataAnalysis && !flags.isDocAnalysis && !flags.isOutreach && !flags.isBooking) {
+      categories.push(CATEGORIES.GENERAL_QUESTION);
+      // General question does not need specialized external action agents
+      return {
+        primaryObjective: text,
+        categories,
+        primaryCategory: CATEGORIES.GENERAL_QUESTION,
+        isActionTask: false,
+        location: null,
+        constraints: [],
+        requestedComparisons: [],
+        requestedExternalActions: [],
+        requiresHumanApproval: false,
+        expectedOutput: 'STRUCTURED_RESPONSE',
+        missingInformation: [],
+        clarificationNeeded: null,
+        requiredAgents: [],
+      };
+    }
+
     if (flags.isMissionPlanning) {
       categories.push(CATEGORIES.MISSION_PLANNING);
       requiredAgents.add('Research');

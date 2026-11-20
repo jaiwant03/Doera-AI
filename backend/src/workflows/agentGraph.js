@@ -19,6 +19,7 @@ import followUpAgent from '../agents/followUpAgent.js';
 import recoveryAgent from '../agents/recoveryAgent.js';
 import universalIntentService from '../services/universalIntentService.js';
 
+import mongoose from 'mongoose';
 import Approval from '../models/Approval.js';
 import TaskEvent from '../models/TaskEvent.js';
 import approvalService from '../services/approvalService.js';
