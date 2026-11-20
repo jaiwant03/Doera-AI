@@ -131,6 +131,18 @@ describe('DOERA AI — Dynamic Multi-Agent Collaboration and Intelligent Plannin
         };
       }
 
+      // Intent understanding for general knowledge
+      if (jsonMode && user.includes('boiling point')) {
+        return {
+          primaryObjective: 'Answer general knowledge question regarding boiling point of water at sea level',
+          primaryCategory: 'GENERAL_QUESTION',
+          categories: ['GENERAL_QUESTION'],
+          isActionTask: false,
+          requiredAgents: [],
+          clarificationNeeded: null,
+        };
+      }
+
       // Direct general knowledge answer
       if (user.includes('boiling point')) {
         return 'The boiling point of water at sea level under standard atmospheric pressure (1 atm) is 100°C (212°F).';
