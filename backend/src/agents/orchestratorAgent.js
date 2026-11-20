@@ -16,16 +16,19 @@ class OrchestratorAgent {
     const attachments = taskContext.attachments || [];
     logger.info(`[Supervisor/Planner Agent] Formulating dynamic orchestration plan for: "${userRequest}"`);
 
-    // 1. Analyze request through Universal Intent Understanding
-    const intent = await universalIntentService.understandRequest(userRequest, attachments);
+    // 1. Analyze request through Universal Intent Understanding (reuse pre-computed intent if present)
+    const intent = taskContext.intentAnalysis || (await universalIntentService.understandRequest(userRequest, attachments));
     const requiredAgents = (taskContext.requiredAgents && taskContext.requiredAgents.length > 0)
       ? taskContext.requiredAgents
       : (intent.requiredAgents || ['Planner', 'Research', 'Verification']);
 
     // 2. Formulate subtasks dynamically
     let subtasks = [];
-    try {
-      const systemPrompt = `You are DOERA AI's Supervisor & Planner Agent.
+    const isDataOrVision = requiredAgents.includes('DataAnalysis') || requiredAgents.includes('Vision');
+
+    if (!isDataOrVision) {
+      try {
+        const systemPrompt = `You are DOERA AI's Supervisor & Planner Agent.
 Formulate a minimal, efficient list of subtasks for: "${userRequest}".
 Activated Agents: ${requiredAgents.join(', ')}.
 Available Agents: Planner, Research, Location, Comparison, Communication, Execution, Verification, Document, DataAnalysis, Vision, FollowUp.
@@ -39,18 +42,19 @@ Output pure JSON:
   ]
 }`;
 
-      const planResult = await llmService.generate({
-        systemPrompt,
-        userPrompt: `Category: ${intent.primaryCategory}\nRequest: "${userRequest}"`,
-        jsonMode: true,
-        temperature: 0.1,
-      });
+        const planResult = await llmService.generate({
+          systemPrompt,
+          userPrompt: `Category: ${intent.primaryCategory}\nRequest: "${userRequest}"`,
+          jsonMode: true,
+          temperature: 0.1,
+        });
 
-      if (planResult && Array.isArray(planResult.subtasks) && planResult.subtasks.length > 0) {
-        subtasks = planResult.subtasks;
+        if (planResult && Array.isArray(planResult.subtasks) && planResult.subtasks.length > 0) {
+          subtasks = planResult.subtasks;
+        }
+      } catch (err) {
+        logger.warn('[Supervisor/Planner Agent] Subtask LLM formulation notice, using structured defaults:', err.message);
       }
-    } catch (err) {
-      logger.warn('[Supervisor/Planner Agent] Subtask LLM formulation notice, using structured defaults:', err.message);
     }
 
     if (subtasks.length === 0) {
