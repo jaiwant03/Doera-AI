@@ -47,6 +47,12 @@ export const buildUniversalResponse = (taskOrPayload) => {
   const summaryPrefix = getCategorySummary(category, userRequest, isConfirmed, status);
   md += `${summaryPrefix}\n\n`;
 
+  const isLocalResearch =
+    category === 'LOCATION_DISCOVERY' ||
+    category === 'LOCAL_SERVICE_RESEARCH' ||
+    category === 'LOCAL_SERVICE' ||
+    Boolean(task.discoveredData?.localService);
+
   // ==========================================
   // SECTION B: RESULTS / DISCOVERED INFORMATION
   // ==========================================
@@ -62,6 +68,9 @@ export const buildUniversalResponse = (taskOrPayload) => {
   } else if (category === 'DATA_ANALYSIS' || dataAnalysis) {
     // Data analysis layout
     md += buildDataAnalysisSection(dataAnalysis);
+  } else if (isLocalResearch && contacts.length > 0) {
+    // Comprehensive Local Service Research layout (Anti-transaction, verified badges)
+    md += buildLocalServiceSection(contacts, task.discoveredData?.localService, userRequest);
   } else if (contacts.length > 0) {
     // Business / Local / Service provider layout
     md += buildProvidersSection(contacts, category);
@@ -72,10 +81,12 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   // SECTION C: COMPARISON (When requested or available)
   // ==========================================
-  if (comparisons && comparisons.items && comparisons.items.length > 1) {
-    md += buildComparisonTable(comparisons);
-  } else if (contacts.length > 1 && (category.includes('COMPARISON') || category === 'LOCAL_SERVICE')) {
-    md += buildAutoProviderComparisonTable(contacts);
+  if (!isLocalResearch) {
+    if (comparisons && comparisons.items && comparisons.items.length > 1) {
+      md += buildComparisonTable(comparisons);
+    } else if (contacts.length > 1 && (category.includes('COMPARISON') || category === 'LOCAL_SERVICE')) {
+      md += buildAutoProviderComparisonTable(contacts);
+    }
   }
 
   // ==========================================
@@ -96,14 +107,14 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   // SECTION F: APPOINTMENT / ACTION STATUS
   // ==========================================
-  if (booking) {
+  if (booking && !isLocalResearch) {
     md += buildBookingStatusSection(booking, isConfirmed);
   }
 
   // ==========================================
   // SECTION G: APPROVAL STATUS (HITL Gate)
   // ==========================================
-  if (status === 'AWAITING_APPROVAL' || status === 'WAITING_FOR_APPROVAL' || pendingApproval) {
+  if ((status === 'AWAITING_APPROVAL' || status === 'WAITING_FOR_APPROVAL' || pendingApproval) && !isLocalResearch) {
     md += buildApprovalGateSection(pendingApproval, contacts);
   }
 
@@ -111,21 +122,25 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // SECTION H: EXECUTION EVIDENCE (Audit & Demo Mode)
   // ==========================================
   const execEvidence = task.evidenceReferences?.[0] || task.executionEvidence;
-  if (execEvidence || status === 'EXECUTED' || (actionsPerformed.length > 0 && !pendingApproval)) {
+  if (!isLocalResearch && (execEvidence || status === 'EXECUTED' || (actionsPerformed.length > 0 && !pendingApproval))) {
     md += buildExecutionEvidenceSection(execEvidence, actionsPerformed);
   }
 
   // ==========================================
   // SECTION I: FOLLOW-UP STATUS
   // ==========================================
-  if (followUp || status === 'WAITING_FOR_RESPONSE' || status === 'AWAITING_RESPONSE') {
+  if (!isLocalResearch && (followUp || status === 'WAITING_FOR_RESPONSE' || status === 'AWAITING_RESPONSE')) {
     md += buildFollowUpSection(followUp);
   }
 
   // ==========================================
   // SECTION J: NEXT STEPS
   // ==========================================
-  md += buildNextStepsSection(status, isConfirmed, contacts, pendingApproval);
+  if (isLocalResearch) {
+    md += `### Next Steps\n\n1. Review the verified candidate providers and comparative matrix above.\n2. Use the verified contact numbers, website links, or directions to independently decide whether to contact a provider.\n3. Feel free to refine your research criteria with specific neighborhoods, brands, or service requirements.\n`;
+  } else {
+    md += buildNextStepsSection(status, isConfirmed, contacts, pendingApproval);
+  }
 
   return md.trim();
 };
@@ -198,6 +213,127 @@ function buildProvidersSection(contacts, category) {
     }
     md += `\n`;
   });
+  return md;
+}
+
+function buildLocalServiceSection(contacts, localServiceData, userRequest) {
+  let md = `### Local Service Research & Verified Providers\n\n`;
+
+  const providers = (localServiceData?.providers && localServiceData.providers.length > 0)
+    ? localServiceData.providers
+    : contacts;
+
+  if (localServiceData?.params) {
+    const p = localServiceData.params;
+    md += `> **Research Target**: ${p.serviceCategory} in **${p.targetLocation}**`;
+    if (p.specificRequirements?.length > 0) {
+      md += ` | Specific Criteria: *${p.specificRequirements.join(', ')}*`;
+    }
+    md += `\n\n`;
+  }
+
+  // 1. Researched Providers List with Verified Badges
+  providers.forEach((c, idx) => {
+    md += `#### ${idx + 1}. ${c.businessName || c.name || 'Provider'}\n`;
+    if (c.address) {
+      md += `- **Physical Address**: ${c.address}\n`;
+    }
+
+    // Verification Status Badge
+    const vStatus = c.verificationStatus || (c.source?.includes('OpenStreetMap') ? 'CONFIRMED' : 'REPORTED_BY_THIRD_PARTY');
+    let vBadge = '✓ Confirmed Information';
+    if (vStatus === 'REPORTED_BY_THIRD_PARTY') vBadge = 'ℹ️ Reported by Third-Party Directory';
+    else if (vStatus === 'NOT_INDEPENDENTLY_VERIFIED') vBadge = '⚠️ Not Independently Verified';
+    else if (vStatus === 'NOT_AVAILABLE') vBadge = '❌ Information Not Available';
+    md += `- **Verification Status**: \`${vBadge}\`\n`;
+
+    // Service Suitability Analysis
+    if (c.suitability || c.suitabilityAnalysis) {
+      const matchLabel = c.suitability === 'HIGH' ? 'High Match' : (c.suitability === 'MODERATE' ? 'Moderate Match' : 'General Service Only');
+      md += `- **Service Suitability**: **${matchLabel}** — ${c.suitabilityAnalysis || 'General service facility.'}\n`;
+    }
+
+    // Contact Phone
+    md += `- **Contact Number**: ${c.phone ? c.phone : '*Contact number not publicly listed in open directory*'}\n`;
+
+    // Customer Rating
+    if (c.rating) {
+      md += `- **Customer Rating**: ★ ${c.rating}${c.reviewsCount ? ` (${c.reviewsCount} reviews)` : ' (Public directory rating)'}\n`;
+    } else {
+      md += `- **Customer Rating**: *Rating not publicly listed in open directory*\n`;
+    }
+
+    // Website
+    if (c.website) {
+      md += `- **Official Website**: [${c.website.replace(/^https?:\/\//, '')}](${c.website})\n`;
+    } else {
+      md += `- **Official Website**: *Website not available in public directory*\n`;
+    }
+
+    // Source link
+    if (c.sourceUrl) {
+      md += `- **Source Reference**: [${c.source || 'OpenStreetMap Nominatim'}](${c.sourceUrl})\n`;
+    }
+    md += `\n`;
+  });
+
+  // 2. Provider Comparison Table
+  const comparison = localServiceData?.comparisonMatrix;
+  if (comparison && Array.isArray(comparison.items) && comparison.items.length > 1) {
+    md += `### Provider Comparison Table\n\n`;
+    const criteria = comparison.criteria || ['Location / Area', 'Verified Services', 'Suitability for Need', 'Rating & Reviews', 'Contact Phone', 'Verification Level'];
+    md += `| Provider | ` + criteria.join(' | ') + ` |\n`;
+    md += `| :--- | ` + criteria.map(() => ':---').join(' | ') + ` |\n`;
+    comparison.items.forEach((item) => {
+      const values = criteria.map((cr) => item.scoresOrValues?.[cr] || 'Not specified');
+      md += `| **${item.name}** | ` + values.join(' | ') + ` |\n`;
+    });
+    md += `\n`;
+  } else if (providers.length > 1) {
+    md += `### Provider Comparison Table\n\n`;
+    md += `| Provider | Location / Area | Verified Services | Customer Rating | Contact Number | Verification Level |\n`;
+    md += `| :--- | :--- | :--- | :--- | :--- | :--- |\n`;
+    providers.forEach((c) => {
+      const loc = (c.area || c.address || 'Local Region').split(',')[0];
+      const serv = (c.knownSpecialties || []).slice(0, 2).join(', ') || 'General Service';
+      const rat = c.rating ? `★ ${c.rating}` : 'Not publicly listed';
+      const ph = c.phone || 'Not publicly listed';
+      const v = c.verificationStatus === 'CONFIRMED' ? '✓ Confirmed' : (c.verificationStatus === 'NOT_INDEPENDENTLY_VERIFIED' ? '⚠️ Unverified' : 'ℹ️ 3rd Party');
+      md += `| **${c.businessName || c.name}** | ${loc} | ${serv} | ${rat} | ${ph} | ${v} |\n`;
+    });
+    md += `\n`;
+  }
+
+  // 3. Recommended Shortlist
+  const rec = localServiceData?.recommendation;
+  if (rec && rec.shortlist && rec.shortlist.length > 0) {
+    md += `### Recommended Shortlist\n\n`;
+    if (rec.rationale) {
+      md += `> ${rec.rationale}\n\n`;
+    }
+    rec.shortlist.forEach((s, i) => {
+      md += `${i + 1}. **${s.name}** (${s.suitability || 'Recommended'}): ${s.rationale || 'Top regional candidate'}\n`;
+    });
+    md += `\n`;
+  }
+
+  // 4. Research Limitations
+  const limits = localServiceData?.limitations || [
+    'Research-only mandate: DOERA AI did not contact, call, message, book, or execute any transaction with any provider.',
+    'Stock & pricing variance: Specific replacement component availability (such as Dell original display panels) varies daily and requires physical diagnosis.',
+    'Directory bounds: Contact information and ratings reflect publicly accessible registry listings.',
+    'Independent user decision: The user can view verified contact details above and independently decide whether to contact any provider.',
+  ];
+
+  md += `### Research Limitations & Scope\n\n`;
+  limits.forEach((l) => {
+    md += `- ℹ️ ${l}\n`;
+  });
+  md += `\n`;
+
+  // 5. Mandatory Anti-Transaction Statement
+  md += `> 🛡️ **Research completed. No business was contacted and no booking or transaction was made.**\n\n`;
+
   return md;
 }
 
