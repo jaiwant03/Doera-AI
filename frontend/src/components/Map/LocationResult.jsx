@@ -50,6 +50,23 @@ const LocationResult = ({ place, index, isSelected, onSelect }) => {
             {place.dataSource === 'DEMO DATA' ? 'DEMO DATA' : 'REAL SOURCE-BASED LOCATION'}
           </span>
 
+          {place.suitability && (
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                padding: '2px 6px',
+                borderRadius: '4px',
+                letterSpacing: '0.4px',
+                background: place.suitability === 'HIGH' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                color: place.suitability === 'HIGH' ? '#10B981' : '#F59E0B',
+                border: `1px solid ${place.suitability === 'HIGH' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+              }}
+            >
+              {place.suitability === 'HIGH' ? 'HIGH MATCH' : (place.suitability === 'MODERATE' ? 'MODERATE MATCH' : 'GENERAL SERVICE')}
+            </span>
+          )}
+
           {place.rating ? (
             <span style={{ color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
               <Star size={12} fill="#FBBF24" />
