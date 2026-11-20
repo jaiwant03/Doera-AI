@@ -185,7 +185,7 @@ class ImageProcessor {
   /**
    * Analyze layout zones: Header, Body, Sidebar, Footer
    */
-  async analyzeLayoutZones(sharpInstance, width, height, baseLuminance) {
+  async analyzeLayoutZones(imgBuffer, width, height, baseLuminance) {
     const zones = {
       hasHeaderBar: false,
       headerLuminance: null,
@@ -199,10 +199,10 @@ class ImageProcessor {
     try {
       // 1. Header Region (Top 10-12%)
       const headerH = Math.max(10, Math.round(height * 0.10));
-      const headerStats = await sharpInstance
-        .clone()
+      const headerBuf = await sharp(imgBuffer)
         .extract({ left: 0, top: 0, width, height: headerH })
-        .stats();
+        .toBuffer();
+      const headerStats = await sharp(headerBuf).stats();
 
       if (headerStats.channels && headerStats.channels.length >= 3) {
         const hLum = Math.round(
@@ -212,16 +212,16 @@ class ImageProcessor {
         );
         zones.headerLuminance = hLum;
         // Measurable variance in header brightness indicates a distinct top navigation / header bar
-        zones.hasHeaderBar = Math.abs(hLum - baseLuminance) >= 2;
+        zones.hasHeaderBar = Math.abs(hLum - baseLuminance) >= 4;
       }
 
       // 2. Sidebar Region (Left 20% on landscape images)
       if (width > height) {
         const sidebarW = Math.max(10, Math.round(width * 0.20));
-        const sidebarStats = await sharpInstance
-          .clone()
+        const sidebarBuf = await sharp(imgBuffer)
           .extract({ left: 0, top: 0, width: sidebarW, height })
-          .stats();
+          .toBuffer();
+        const sidebarStats = await sharp(sidebarBuf).stats();
 
         if (sidebarStats.channels && sidebarStats.channels.length >= 3) {
           const sLum = Math.round(
@@ -230,17 +230,17 @@ class ImageProcessor {
             0.114 * sidebarStats.channels[2].mean
           );
           zones.sidebarLuminance = sLum;
-          zones.hasSidebar = Math.abs(sLum - baseLuminance) > 20;
+          zones.hasSidebar = Math.abs(sLum - baseLuminance) >= 8;
         }
       }
 
       // 3. Footer Region (Bottom 12%)
       const footerH = Math.max(10, Math.round(height * 0.12));
       const footerTop = height - footerH;
-      const footerStats = await sharpInstance
-        .clone()
+      const footerBuf = await sharp(imgBuffer)
         .extract({ left: 0, top: footerTop, width, height: footerH })
-        .stats();
+        .toBuffer();
+      const footerStats = await sharp(footerBuf).stats();
 
       if (footerStats.channels && footerStats.channels.length >= 3) {
         const fLum = Math.round(
@@ -249,7 +249,7 @@ class ImageProcessor {
           0.114 * footerStats.channels[2].mean
         );
         zones.footerLuminance = fLum;
-        zones.hasFooterBar = Math.abs(fLum - baseLuminance) > 18;
+        zones.hasFooterBar = Math.abs(fLum - baseLuminance) >= 8;
       }
 
       if (zones.hasHeaderBar && zones.hasSidebar) {
