@@ -298,7 +298,18 @@ export const MissionControlPage = () => {
               type="button"
               onClick={fetchMissions}
               className="doera-tab-btn"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #361744' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'rgba(241, 45, 152, 0.14)',
+                border: '1px solid #F12D98',
+                color: '#FFFFFF',
+                fontWeight: 600,
+                padding: '7px 16px',
+                borderRadius: 8,
+                boxShadow: '0 0 12px rgba(241, 45, 152, 0.25)',
+              }}
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               Refresh

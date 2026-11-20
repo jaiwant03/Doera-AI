@@ -74,23 +74,42 @@
   margin-top: 4px;
 }
 
-/* Stats Row */
+/* Stats Row — Balanced 4 Columns */
 .doera-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
 
+@media (max-width: 1024px) {
+  .doera-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .doera-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .doera-stat-card {
-  background: #0D0714;
-  border: 1px solid #23112E;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 12px;
   padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+}
+
+.doera-stat-card:hover {
+  border-color: #F12D98;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(241, 45, 152, 0.2);
+  transform: translateY(-1px);
 }
 
 .doera-stat-number {
@@ -119,16 +138,16 @@
 
 .doera-tabs {
   display: flex;
-  gap: 8px;
-  background: #0B0610;
+  gap: 6px;
+  background: #08040C;
   padding: 4px;
   border-radius: 10px;
-  border: 1px solid #23112E;
+  border: 1px solid rgba(241, 45, 152, 0.3);
 }
 
 .doera-tab-btn {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: #A38FA8;
   padding: 8px 16px;
   font-size: 12.5px;
@@ -138,25 +157,33 @@
   transition: all 0.2s ease;
 }
 
+.doera-tab-btn:hover {
+  background: rgba(241, 45, 152, 0.1);
+  color: #FFFFFF;
+}
+
 .doera-tab-btn.active {
-  background: rgba(241, 45, 152, 0.15);
-  color: #F12D98;
-  border: 1px solid rgba(241, 45, 152, 0.3);
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
+  color: #FFFFFF;
+  border: 1px solid #F12D98;
+  box-shadow: 0 0 12px rgba(241, 45, 152, 0.4);
 }
 
 .doera-search-input {
-  background: #0D0714;
-  border: 1px solid #2B1238;
+  background: #08040C;
+  border: 1px solid rgba(241, 45, 152, 0.32);
   border-radius: 8px;
   padding: 8px 14px;
   color: #FFFFFF;
   font-size: 13px;
   width: 260px;
   outline: none;
+  transition: all 0.2s;
 }
 
 .doera-search-input:focus {
   border-color: #F12D98;
+  box-shadow: 0 0 10px rgba(241, 45, 152, 0.3);
 }
 
 /* Mission List */
@@ -167,16 +194,18 @@
 }
 
 .doera-mission-item {
-  background: #0B0610;
-  border: 1px solid #23112E;
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.35);
   border-radius: 14px;
   padding: 20px 24px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 }
 
 .doera-mission-item:hover {
-  border-color: rgba(241, 45, 152, 0.35);
+  border-color: #F12D98;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 18px rgba(241, 45, 152, 0.22);
+  transform: translateY(-1px);
 }
 
 .doera-mission-top {
@@ -196,7 +225,7 @@
 
 .doera-mission-meta {
   font-size: 12px;
-  color: #A38FA8;
+  color: #C8BDCC;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -262,14 +291,14 @@
 }
 
 .doera-dossier-modal {
-  background: #09040D;
-  border: 1px solid #361744;
+  background: #0C0612;
+  border: 1px solid rgba(241, 45, 152, 0.42);
   border-radius: 16px;
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(241, 45, 152, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(241, 45, 152, 0.2);
   padding: 28px;
 }
 

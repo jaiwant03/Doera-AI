@@ -5,8 +5,8 @@
 
 .doera-sidebar {
   width: 275px;
-  background-color: var(--bg-sidebar, #0B080D);
-  border-right: 1px solid var(--border-dark, #302535);
+  background-color: var(--bg-sidebar, #09050C);
+  border-right: 1px solid rgba(241, 45, 152, 0.22);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 18px;
-  border-bottom: 1px solid var(--border-dark, #302535);
+  border-bottom: 1px solid rgba(241, 45, 152, 0.2);
   flex-shrink: 0;
 }
 
@@ -119,21 +119,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: var(--bg-surface, #151018);
-  border: 1px solid var(--border-dark, #302535);
+  background: rgba(241, 45, 152, 0.12);
+  border: 1px solid #F12D98;
   border-radius: 12px;
   color: #FFFFFF;
   font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(241, 45, 152, 0.25);
   transition: all var(--transition-fast);
 }
 
 .doera-btn-new-task:hover {
-  background: rgba(255, 85, 189, 0.12);
-  border-color: var(--neon-pink, #FF55BD);
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
+  border-color: #F12D98;
   color: #FFFFFF;
-  box-shadow: 0 0 16px rgba(255, 85, 189, 0.3);
+  box-shadow: 0 0 20px rgba(241, 45, 152, 0.55);
   transform: translateY(-1px);
 }
 
@@ -168,16 +168,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-surface, #151018);
-  border: 1px solid var(--border-dark, #302535);
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.3);
   border-radius: 10px;
   padding: 7px 12px;
   transition: all var(--transition-fast);
 }
 
 .doera-search-input-box:focus-within {
-  border-color: var(--neon-pink, #FF55BD);
-  box-shadow: 0 0 12px rgba(255, 85, 189, 0.2);
+  border-color: #F12D98;
+  box-shadow: 0 0 12px rgba(241, 45, 152, 0.35);
 }
 
 .doera-search-icon {
