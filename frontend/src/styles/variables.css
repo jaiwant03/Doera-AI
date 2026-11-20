@@ -4,16 +4,16 @@
    ============================================================================== */
 :root {
   /* Surfaces & Canvas — Deep Luxury Black (Exact from Image 2) */
-  --bg-canvas: #080609;
-  --bg-sidebar: #0B080D;
-  --bg-surface: #151018;
-  --bg-surface-elevated: #1D1521;
-  --bg-composer: #17101B;
-  --bg-glass: rgba(21, 16, 24, 0.88);
-  --bg-glass-card: rgba(21, 16, 24, 0.94);
+  --bg-canvas: #08050B;
+  --bg-sidebar: #09050C;
+  --bg-surface: #0E0713;
+  --bg-surface-elevated: #150C1D;
+  --bg-composer: #0E0715;
+  --bg-glass: rgba(14, 7, 19, 0.92);
+  --bg-glass-card: rgba(14, 7, 19, 0.96);
   --bg-glass-subtle: rgba(255, 255, 255, 0.04);
-  --bg-hover: rgba(255, 85, 189, 0.08);
-  --bg-active: rgba(197, 58, 159, 0.16);
+  --bg-hover: rgba(241, 45, 152, 0.12);
+  --bg-active: rgba(241, 45, 152, 0.22);
 
   /* User Message Gradient (Exact from Image 2 Phone 2) */
   --user-msg-gradient: linear-gradient(135deg, #C53A9F 0%, #8B38CF 100%);
