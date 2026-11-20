@@ -120,6 +120,8 @@ const orchestratorNode = async (state) => {
   else if (plan.requiredAgents.includes('LocalService') || plan.requiredAgents.includes('Discovery')) nextAgent = 'LocalService';
   else if (plan.requiredAgents.includes('Location')) nextAgent = 'Location';
   else if (plan.requiredAgents.includes('Research')) nextAgent = 'Research';
+  else if (plan.requiredAgents.includes('Planning')) nextAgent = 'Planning';
+  else if (plan.requiredAgents.includes('Budget')) nextAgent = 'Budget';
   else if (plan.requiredAgents.includes('Comparison')) nextAgent = 'Comparison';
   else if (plan.requiredAgents.includes('Communication')) nextAgent = 'Communication';
 
