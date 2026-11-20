@@ -60,14 +60,8 @@ const ApprovalConfirmModal = ({ approval, isOpen, onClose, onConfirm }) => {
             </div>
             <div>
               <span style={{ color: '#8C7B94' }}>Target:</span>{' '}
-              <strong style={{ color: '#FFF' }}>{approval.target?.name || approval.target?.destination || 'Provider'}</strong>
+              <strong style={{ color: '#FFF' }}>{approval.target?.name || approval.target?.destination || 'Recipient / Endpoint'}</strong>
             </div>
-            {approval.estimatedCost > 0 && (
-              <div>
-                <span style={{ color: '#8C7B94' }}>Financial Commitment:</span>{' '}
-                <strong style={{ color: '#10B981' }}>{approval.currency} {approval.estimatedCost}</strong>
-              </div>
-            )}
             <div>
               <span style={{ color: '#8C7B94' }}>Risk Level:</span>{' '}
               <span style={{ color: approval.riskLevel === 'CRITICAL' ? '#EF4444' : '#FBBF24', fontWeight: 700 }}>

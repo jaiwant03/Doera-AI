@@ -99,6 +99,15 @@ class ExecutionAuthorizationService {
       throw new Error('SECURITY VIOLATION: Unauthorized execution attempt. You do not own this approval request.');
     }
 
+    // Prohibited actions check: Strict prohibition of fake bookings, reservations, payments, and messaging
+    const prohibitedActions = ['SEND_WHATSAPP', 'SEND_TELEGRAM', 'BOOK_APPOINTMENT', 'CONFIRM_BOOKING', 'EXECUTE_PAYMENT', 'RESERVE_TABLE'];
+    if (prohibitedActions.includes(approval.actionType)) {
+      const err = new Error(`Execution rejected: Action "${approval.actionType}" is permanently prohibited. DOERA AI operates as a research, intelligence and planning platform and does not perform unverified bookings, reservations, payments, or third-party messaging.`);
+      err.statusCode = 400;
+      err.code = 'PROHIBITED_ACTION';
+      throw err;
+    }
+
     // Idempotency & duplicate protection (TEST L)
     const dedupKey = approval.idempotencyKey || String(approval._id);
     if (this.executedApprovals.has(dedupKey) && approval.status === 'EXECUTED') {
