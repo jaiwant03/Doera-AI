@@ -147,7 +147,13 @@ const MessageItem = ({ message, activeTask }) => {
         return rawContent;
       }
 
-      if (rawContent && rawContent.length > 180 && !rawContent.startsWith('Understood. I am actively coordinating')) {
+      const isLocalResearch =
+        attachedTask.category === 'LOCATION_DISCOVERY' ||
+        attachedTask.category === 'LOCAL_SERVICE_RESEARCH' ||
+        attachedTask.category === 'LOCAL_SERVICE' ||
+        rawContent.includes('Research completed. No business was contacted');
+
+      if (isLocalResearch || (rawContent && rawContent.length > 180 && !rawContent.startsWith('Understood. I am actively coordinating'))) {
         return rawContent;
       }
 
