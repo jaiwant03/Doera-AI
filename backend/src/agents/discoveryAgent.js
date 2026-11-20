@@ -19,11 +19,18 @@ class DiscoveryAgent {
     const location = this.extractLocation(taskContext.userRequest);
 
     // Call real Places / OpenStreetMap / Web Directory adapter
-    const discovered = await placesAdapter.searchServices({
+    let discovered = await placesAdapter.searchServices({
       query,
       location,
       category: taskContext.category,
     });
+
+    if (!discovered || discovered.length === 0) {
+      const researchRes = await localServiceResearcher.researchLocalServices(taskContext).catch(() => null);
+      if (researchRes && Array.isArray(researchRes.providers) && researchRes.providers.length > 0) {
+        discovered = researchRes.providers;
+      }
+    }
 
     const completedAt = new Date();
 
