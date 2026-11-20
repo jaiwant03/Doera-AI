@@ -853,6 +853,7 @@ const workflow = new StateGraph(TaskStateAnnotation)
   .addNode('merging', mergingNode)
   .addNode('document', documentNode)
   .addNode('data_analysis', dataAnalysisNode)
+  .addNode('vision', visionNode)
   .addNode('comparison', comparisonNode)
   .addNode('approval_gate', approvalGateNode)
   .addNode('communication', communicationNode)
@@ -870,6 +871,7 @@ const workflow = new StateGraph(TaskStateAnnotation)
   .addConditionalEdges('orchestrator', (state) => {
     if (state.error) return 'recovery';
     const req = state.requiredAgents || [];
+    if (req.includes('Vision')) return 'vision';
     if (req.includes('Document')) return 'document';
     if (req.includes('DataAnalysis') && !req.includes('Research')) return 'data_analysis';
     if (req.includes('Location')) return 'location';
@@ -877,6 +879,14 @@ const workflow = new StateGraph(TaskStateAnnotation)
     if (req.includes('Comparison') && !state.comparisonMatrix) return 'comparison';
     if (req.includes('Communication') && !state.executionEvidence) return 'approval_gate';
     if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
+    return 'verification';
+  })
+
+  // Vision -> DataAnalysis or Research or Verification
+  .addConditionalEdges('vision', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('DataAnalysis')) return 'data_analysis';
+    if (req.includes('Research')) return 'research';
     return 'verification';
   })
 
