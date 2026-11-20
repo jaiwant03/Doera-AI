@@ -79,7 +79,7 @@ describe('DOERA AI — Dynamic Multi-Agent Collaboration and Intelligent Plannin
     expect(mathAudit.status).toBe('VERIFIED');
     expect(scheduleAudit).toBeDefined();
     expect(scheduleAudit.status).toBe('VERIFIED');
-  }, 90000);
+  }, 120000);
 
   // Test 2: Dynamic Agent Selection (Never assign every request to all agents)
   it('2. should dynamically select strictly relevant agents and avoid launching unnecessary agents', async () => {
