@@ -213,9 +213,9 @@ class SpreadsheetService {
     if (typeof val !== 'string' || !val.trim()) return null;
 
     const s = val.trim();
-    // Common date patterns: YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, YYYY/MM/DD, Month YYYY, etc.
-    const isDatePattern = /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(s) ||
-      /^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}/.test(s) ||
+    // Common date patterns: YYYY-MM, YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, YYYY/MM/DD, Month YYYY, etc.
+    const isDatePattern = /^\d{4}[-/.]\d{1,2}([-/.]\d{1,2})?$/.test(s) ||
+      /^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}$/.test(s) ||
       /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{4}/i.test(s) ||
       /^\d{4}\s+(q[1-4]|h[1-2])/i.test(s) ||
       /^(q[1-4])\s+\d{4}/i.test(s);
