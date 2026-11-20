@@ -128,7 +128,7 @@ class ImageProcessor {
     }
 
     // 6. Spatial Layout Zone Analysis
-    const layoutZones = await this.analyzeLayoutZones(sharpInstance, width, height, luminance);
+    const layoutZones = await this.analyzeLayoutZones(imgBuffer, width, height, luminance);
 
     // 7. OCR Text Extraction via Tesseract
     const ocrResult = await this.runOCR(imgBuffer, filename);
