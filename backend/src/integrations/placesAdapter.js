@@ -122,6 +122,12 @@ class PlacesAdapter {
         candidates.push(`electrical ${location}`, `electricals ${location}`, `hardware ${location}`);
       } else if (lower.includes('plumb')) {
         candidates.push(`plumbing ${location}`, `sanitary ${location}`);
+      } else if (lower.includes('laptop') || lower.includes('computer')) {
+        candidates.push(`computer shop ${location}`, `laptop service ${location}`, `electronics ${location}`);
+      } else if (lower.includes('print')) {
+        candidates.push(`printers ${location}`, `press ${location}`, `printing ${location}`);
+      } else if (lower.includes('school') || lower.includes('college') || lower.includes('institution')) {
+        candidates.push(`school ${location}`, `college ${location}`);
       } else if (lower.includes('repair')) {
         candidates.push(`service center ${location}`, `repair shop ${location}`);
       }
