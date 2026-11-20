@@ -249,54 +249,30 @@ const Settings = () => {
         {/* TAB 1: INTEGRATIONS */}
         {activeTab === 'integrations' && (
           <div className="doera-settings-card animate-fadeIn">
-            {/* Mode A / Mode B Status Banner */}
-            {user?.executionMode === 'REAL' && user?.authProvider === 'google' ? (
-              <div
-                style={{
-                  marginBottom: '20px',
-                  padding: '12px 16px',
-                  background: 'rgba(241, 45, 152, 0.12)',
-                  border: '1px solid rgba(241, 45, 152, 0.4)',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
-                <ShieldCheck size={20} color="#F12D98" style={{ flexShrink: 0 }} />
-                <div>
-                  <div style={{ color: '#FF55BD', fontSize: '12.5px', fontWeight: 700 }}>
-                    MODE A: GOOGLE AUTHENTICATED — REAL AUTOMATION ELIGIBLE
-                  </div>
-                  <div style={{ color: '#E2D9E5', fontSize: '11.5px', marginTop: '2px' }}>
-                    Authenticated as <strong>{user?.googleEmail || user?.email}</strong>. Outbound emails dispatch through your own authorized Gmail identity upon explicit human approval. No shared accounts.
-                  </div>
+            {/* Unified Platform Banner */}
+            <div
+              style={{
+                marginBottom: '20px',
+                padding: '12px 16px',
+                background: 'rgba(241, 45, 152, 0.08)',
+                border: '1px solid rgba(241, 45, 152, 0.3)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <ShieldCheck size={20} color="#F12D98" style={{ flexShrink: 0 }} />
+              <div>
+                <div style={{ color: '#FF55BD', fontSize: '12.5px', fontWeight: 700 }}>
+                  DOERA AI — UNIFIED AUTONOMOUS EXECUTION PLATFORM
+                </div>
+                <div style={{ color: '#E2D9E5', fontSize: '11.5px', marginTop: '2px' }}>
+                  All users operate with genuine AI intelligence: multi-format documents, vision, spreadsheet analytics, and multi-agent planning. Outbound email dispatch requires connecting a personal Gmail account via Google Sign-In.
                 </div>
               </div>
-            ) : (
-              <div
-                style={{
-                  marginBottom: '20px',
-                  padding: '12px 16px',
-                  background: 'rgba(8, 127, 140, 0.12)',
-                  border: '1px solid rgba(45, 212, 191, 0.35)',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
-                <ShieldCheck size={20} color="#2DD4BF" style={{ flexShrink: 0 }} />
-                <div>
-                  <div style={{ color: '#2DD4BF', fontSize: '12.5px', fontWeight: 700 }}>
-                    MODE B: HACKATHON DEMO MODE ACTIVE — SAFE SIMULATED PIPELINE
-                  </div>
-                  <div style={{ color: '#BBA9C0', fontSize: '11.5px', marginTop: '2px' }}>
-                    Manual registration and password accounts operate strictly in Demo Mode. All external actions (Gmail, WhatsApp, bookings, payments) are simulated with verifiable receipts. Sign in with Google to qualify for real automation.
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
+
             {/* Business Discovery */}
             <div className="doera-integration-row">
               <div className="doera-integration-left">
@@ -309,7 +285,7 @@ const Settings = () => {
                     <span className="doera-badge-status active">Active (Places / OSM Live)</span>
                   </div>
                   <p className="doera-integration-desc">
-                    Queries real local directories via Google Places or live OpenStreetMap Nominatim/Overpass.
+                    Queries real local directories via Google Places or live OpenStreetMap Nominatim/Overpass for comprehensive service intelligence.
                   </p>
                 </div>
               </div>
@@ -333,7 +309,7 @@ const Settings = () => {
                 </div>
                 <div className="doera-integration-info">
                   <div className="doera-integration-title-line">
-                    <h3 className="doera-integration-name">Gmail Automation (Per-User Integration)</h3>
+                    <h3 className="doera-integration-name">Gmail Integration (Personal OAuth2)</h3>
                     {user?.authProvider === 'google' ? (
                       integrations.gmail?.connected ? (
                         <span className="doera-badge-status success">
@@ -346,7 +322,7 @@ const Settings = () => {
                       )
                     ) : (
                       <span className="doera-badge-status pending">
-                        Demo Mode (Simulated Only)
+                        Drafting & Preview Only
                       </span>
                     )}
                   </div>
@@ -354,8 +330,8 @@ const Settings = () => {
                     {user?.authProvider === 'google'
                       ? integrations.gmail?.connected
                         ? `Live sender: ${integrations.gmail.email || user?.googleEmail}. Real emails dispatch through your verified account after explicit human approval.`
-                        : 'Connect your Gmail account to enable real outbound email sending. Each Google user uses their own verified Gmail account.'
-                      : 'Outbound emails are simulated with verified receipts. Sign in via Google OAuth to enable real-time Gmail automation.'}
+                        : 'Connect your personal Gmail account to enable real outbound email sending. Each Google user dispatches from their own address.'
+                      : 'Manual password accounts can create, edit, and preview email drafts. Live outbound email dispatch requires signing in with Google and connecting your personal Gmail account.'}
                   </p>
                 </div>
               </div>
@@ -389,64 +365,6 @@ const Settings = () => {
                     Sign In with Google
                   </button>
                 )}
-              </div>
-            </div>
-
-            {/* WhatsApp */}
-            <div className="doera-integration-row">
-              <div className="doera-integration-left">
-                <div className="doera-integration-icon-box whatsapp">
-                  <MessageSquare size={19} />
-                </div>
-                <div className="doera-integration-info">
-                  <div className="doera-integration-title-line">
-                    <h3 className="doera-integration-name">WhatsApp Business Cloud API</h3>
-                    <span className="doera-badge-status pending">Configuration Required</span>
-                  </div>
-                  <p className="doera-integration-desc">
-                    Meta Graph API v21.0 integration for real-time messaging with service contacts.
-                  </p>
-                </div>
-              </div>
-              <div className="doera-integration-right">
-                <button
-                  type="button"
-                  onClick={() => testIntegration('WhatsApp')}
-                  className="doera-btn-action-outline"
-                >
-                  Configure Token
-                </button>
-              </div>
-            </div>
-
-            {/* Google Calendar */}
-            <div className="doera-integration-row">
-              <div className="doera-integration-left">
-                <div className="doera-integration-icon-box calendar">
-                  <Calendar size={19} />
-                </div>
-                <div className="doera-integration-info">
-                  <div className="doera-integration-title-line">
-                    <h3 className="doera-integration-name">Google Calendar</h3>
-                    {integrations.calendar?.connected ? (
-                      <span className="doera-badge-status success">Connected ({integrations.calendar.email || 'OAuth'})</span>
-                    ) : (
-                      <span className="doera-badge-status pending">Configuration Required</span>
-                    )}
-                  </div>
-                  <p className="doera-integration-desc">
-                    Checks calendar availability and schedules confirmed appointments.
-                  </p>
-                </div>
-              </div>
-              <div className="doera-integration-right">
-                <button
-                  type="button"
-                  onClick={() => testIntegration('Calendar')}
-                  className="doera-btn-action-outline"
-                >
-                  {integrations.calendar?.connected ? 'Reconnect' : 'Connect Calendar'}
-                </button>
               </div>
             </div>
 
