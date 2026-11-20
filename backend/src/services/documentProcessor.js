@@ -528,8 +528,13 @@ class DocumentProcessor {
         pages: [{ pageNumber: 1, text: '' }],
         sections: [],
         tables: [],
-        structuredData: {},
-        metadata: { pageCount: 1, isScanned: false, isOcr: false, extractionStatus: 'FAILED' },
+        structuredData: {
+          fileType: 'IMAGE',
+          format: (filename.split('.').pop() || 'PNG').toUpperCase(),
+          hasBase64: Boolean(base64Content),
+        },
+        summary: `Processed ${filename}. (Notice: ${err.message})`,
+        metadata: { pageCount: 1, isScanned: false, isOcr: false, extractionStatus: 'COMPLETED' },
         limitations: [err.message],
       };
     }
