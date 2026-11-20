@@ -57,6 +57,8 @@ const TaskSchema = new mongoose.Schema(
         'APPOINTMENT_COORDINATION',
         'COMMUNICATION',
         'DOCUMENT_ANALYSIS',
+        'IMAGE_ANALYSIS',
+        'VISION_ANALYSIS',
         'TECHNICAL_ASSISTANCE',
         'DATA_ANALYSIS',
         'TASK_AUTOMATION',
