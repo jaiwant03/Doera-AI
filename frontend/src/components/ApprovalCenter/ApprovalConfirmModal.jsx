@@ -9,7 +9,7 @@ const ApprovalConfirmModal = ({ approval, isOpen, onClose, onConfirm }) => {
 
   const isHighImpact =
     ['HIGH', 'CRITICAL'].includes(approval.riskLevel) ||
-    ['BOOK_APPOINTMENT', 'CONFIRM_BOOKING', 'EXECUTE_PAYMENT', 'SUBMIT_FORM'].includes(approval.actionType);
+    ['SEND_EMAIL', 'DISPATCH_COMMUNICATION', 'SUBMIT_FORM'].includes(approval.actionType);
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
