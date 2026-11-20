@@ -66,12 +66,25 @@ export const GoogleSignInButton = ({ text = 'Continue with Google', onError }) =
   }, []);
 
   const handleClick = () => {
-    // Try triggering the rendered Google button if available, else redirect via OAuth2
-    if (hiddenBtnRef.current && hiddenBtnRef.current.querySelector('div[role=button]')) {
-      hiddenBtnRef.current.querySelector('div[role=button]').click();
-    } else {
-      initiateGoogleOAuth();
+    // 1. Try triggering the rendered Google button if available
+    const nativeBtn = hiddenBtnRef.current?.querySelector('div[role=button]');
+    if (nativeBtn) {
+      nativeBtn.click();
+      return;
     }
+
+    // 2. Try direct GIS prompt popup if available
+    if (window.google?.accounts?.id?.prompt) {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          initiateGoogleOAuth();
+        }
+      });
+      return;
+    }
+
+    // 3. Seamlessly redirect via standard Google OAuth flow
+    initiateGoogleOAuth();
   };
 
   return (
