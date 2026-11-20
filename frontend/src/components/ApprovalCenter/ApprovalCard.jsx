@@ -129,49 +129,6 @@ const ApprovalCard = ({
         </div>
       </div>
 
-      {/* Execution Mode Banner (Real vs Demo) */}
-      {approval.executionMode === 'REAL' ? (
-        <div
-          style={{
-            margin: '10px 0 6px 0',
-            padding: '6px 10px',
-            background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
-            borderRadius: 6,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#10B981',
-            letterSpacing: '0.2px',
-          }}
-        >
-          <CheckCircle2 size={13} color="#10B981" style={{ flexShrink: 0 }} />
-          <span>REAL AUTOMATION PIPELINE — OUTBOUND DISPATCH FROM {approval.senderEmail || 'AUTHORIZED GMAIL'}</span>
-        </div>
-      ) : (
-        <div
-          style={{
-            margin: '10px 0 6px 0',
-            padding: '6px 10px',
-            background: 'rgba(8, 127, 140, 0.12)',
-            border: '1px solid rgba(8, 127, 140, 0.35)',
-            borderRadius: 6,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#2DD4BF',
-            letterSpacing: '0.2px',
-          }}
-        >
-          <ShieldCheck size={13} color="#2DD4BF" style={{ flexShrink: 0 }} />
-          <span>SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED</span>
-        </div>
-      )}
-
       {/* Title & Purpose */}
       <div className="doera-card-body">
         <h3 className="doera-card-title">{actionTitle}</h3>
