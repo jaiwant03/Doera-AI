@@ -69,6 +69,14 @@ class ApprovalService {
       throw new Error('Missing required fields for approval request creation.');
     }
 
+    const prohibitedActions = ['SEND_WHATSAPP', 'SEND_TELEGRAM', 'BOOK_APPOINTMENT', 'CONFIRM_BOOKING', 'EXECUTE_PAYMENT', 'RESERVE_TABLE'];
+    if (prohibitedActions.includes(actionType)) {
+      const err = new Error(`Action "${actionType}" is permanently prohibited. DOERA AI is a research, intelligence and planning platform and does not perform unverified bookings, reservations, payments, or third-party messaging.`);
+      err.statusCode = 400;
+      err.code = 'PROHIBITED_ACTION';
+      throw err;
+    }
+
     // Default expiration is 24 hours from now
     const expirationDate = expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000);
     const key = idempotencyKey || `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
