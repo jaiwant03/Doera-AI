@@ -40,8 +40,8 @@ const UserSchema = new mongoose.Schema(
     },
     executionMode: {
       type: String,
-      enum: ['REAL', 'DEMO'],
-      default: 'DEMO',
+      enum: ['UNIFIED', 'REAL', 'DEMO'],
+      default: 'UNIFIED',
       index: true,
     },
     gmailIntegrationStatus: {

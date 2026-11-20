@@ -39,7 +39,7 @@ export const register = async (req, res, next) => {
       },
     });
 
-    const token = jwt.sign({ userId: user._id, role: user.role, executionMode: 'DEMO', authProvider: 'local' }, config.jwtSecret, {
+    const token = jwt.sign({ userId: user._id, role: user.role, executionMode: 'UNIFIED', authProvider: 'local' }, config.jwtSecret, {
       expiresIn: '7d',
     });
 
@@ -53,7 +53,7 @@ export const register = async (req, res, next) => {
         authProvider: 'local',
         googleSubjectId: null,
         googleEmail: null,
-        executionMode: 'DEMO',
+        executionMode: 'UNIFIED',
         gmailIntegrationStatus: 'not_connected',
         connectedGmailEmail: null,
         preferences: user.preferences,
@@ -98,11 +98,10 @@ export const login = async (req, res, next) => {
       status: 'connected',
     });
 
-    // Enforce server-side access mode:
-    // Only verified Google OAuth identities qualify for REAL mode;
-    // local password accounts always use DEMO mode.
+    // Unified AI Execution Mode:
+    // All authenticated users operate with full genuine AI capabilities.
     const isGoogleAuth = user.authProvider === 'google' && !!user.googleSubjectId;
-    const effectiveMode = isGoogleAuth ? (user.executionMode || 'REAL') : 'DEMO';
+    const effectiveMode = 'UNIFIED';
     const gmailStatus = gmailIntegration ? 'connected' : (user.gmailIntegrationStatus || 'not_connected');
 
     const token = jwt.sign(
@@ -188,7 +187,7 @@ export const getMe = async (req, res, next) => {
     });
 
     const isGoogleAuth = user.authProvider === 'google' && !!user.googleSubjectId;
-    const effectiveMode = isGoogleAuth ? (user.executionMode || 'REAL') : 'DEMO';
+    const effectiveMode = 'UNIFIED';
     const gmailStatus = gmailIntegration ? 'connected' : (user.gmailIntegrationStatus || 'not_connected');
 
     res.json({
