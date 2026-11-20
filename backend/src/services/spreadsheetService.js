@@ -99,7 +99,11 @@ class SpreadsheetService {
         const obj = {};
         headers.forEach((h) => {
           let val = row[h];
-          if (typeof val === 'string') val = val.trim();
+          if (val instanceof Date && !isNaN(val.getTime())) {
+            val = val.toISOString().split('T')[0];
+          } else if (typeof val === 'string') {
+            val = val.trim();
+          }
           obj[h] = val;
         });
         return obj;
