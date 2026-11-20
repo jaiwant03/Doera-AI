@@ -75,7 +75,7 @@ const logMissionEvent = async (state, eventType, agentName, action, details = {}
     step: details.step,
   });
 
-  if (state.taskId) {
+  if (state.taskId && mongoose.connection?.readyState === 1) {
     await TaskEvent.create({
       taskId: state.taskId,
       eventType,
