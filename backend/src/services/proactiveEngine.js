@@ -139,97 +139,6 @@ class ProactiveEngine {
         item.attemptCount += 1;
         const recipientTitle = item.recipientName || item.recipient || 'Provider';
 
-        // Safe Hackathon Demo Mode: Synthesize realistic provider reply
-        if (config.demoMode && item.status !== 'RESPONSE_RECEIVED') {
-          const simReply = await demoResponseService.generateSimulatedResponse({
-            providerName: recipientTitle,
-            recipient: item.recipient,
-            scenario: 'SUCCESS',
-          });
-
-          item.status = 'RESPONSE_RECEIVED';
-          item.lastResponse = simReply;
-          item.responseDetectedAt = now;
-          item.notes = `Simulated provider response received: "${simReply.responseMessage}"`;
-          item.history.push({
-            checkedAt: now,
-            outcome: 'RESPONSE_RECEIVED',
-            details: simReply,
-          });
-          await item.save();
-
-          await this.notifyUser({
-            userId: item.userId,
-            taskId: item.taskId,
-            title: `DOERA Response Tracker: Reply from ${recipientTitle}`,
-            message: `[SIMULATED REPLY] ${recipientTitle}: "${simReply.responseMessage}"`,
-            type: 'TASK_UPDATE',
-          });
-
-          // Sync with Task if present
-          if (item.taskId) {
-            try {
-              const task = await Task.findOne({
-                $or: [{ taskId: item.taskId }, { _id: String(item.taskId).match(/^[0-9a-fA-F]{24}$/) ? item.taskId : null }],
-              });
-              if (task) {
-                task.currentAction = `Simulated reply received from ${recipientTitle}. Verification complete.`;
-                task.status = 'COMPLETED';
-                task.progress = 100;
-                task.steps = (task.steps || []).map((s) => ({
-                  ...s,
-                  status: 'completed',
-                  details: s.details || 'Step completed successfully.',
-                  timestamp: new Date(),
-                }));
-                await task.save().catch(() => {});
-
-                // Send conversational update to chat if conversationId exists
-                if (task.conversationId) {
-                  const existingMsg = await Message.findOne({
-                    conversationId: task.conversationId,
-                    content: new RegExp(recipientTitle.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'),
-                    createdAt: { $gte: new Date(Date.now() - 300000) },
-                  });
-
-                  if (!existingMsg) {
-                    const replyMsg = `### Provider Response Received\n\n` +
-                      `**${recipientTitle}** has responded to our inquiry regarding: **"${task.userRequest}"**.\n\n` +
-                      `> *"${simReply.responseMessage}"*\n\n` +
-                      `#### Verified Consultation & Booking Parameters\n` +
-                      `- **Consultation Fee**: **${simReply.feeEstimate || '₹800'}**\n` +
-                      `- **Available Appointment Slots**: **${(simReply.availability || ['Tomorrow 10:30 AM']).join(', ')}**\n` +
-                      `- **Contact Channel**: ${simReply.channel || 'Email'} (${item.recipient || 'Direct Clinic Channel'})\n` +
-                      `- **Status**: Official Provider Verification Logged in DOERA Sandbox\n\n` +
-                      `All orchestration subtasks have completed successfully. Let me know if you would like me to lock in one of these appointment windows for you!`;
-
-                    const completionMessage = await Message.create({
-                      conversationId: task.conversationId,
-                      userId: task.userId,
-                      sender: 'assistant',
-                      content: replyMsg,
-                      taskId: task._id,
-                    });
-
-                    realtimeServer.sendToUser(item.userId, 'new_message', {
-                      message: {
-                        ...completionMessage.toObject(),
-                        task: task.toObject ? task.toObject() : task,
-                      },
-                      conversationId: task.conversationId,
-                    });
-                  }
-                }
-
-                realtimeServer.sendToUser(item.userId, 'task_update', { task });
-              }
-            } catch (_) {}
-          }
-
-          realtimeServer.sendToUser(item.userId, 'followup_updated', { followUp: item });
-          continue;
-        }
-
         if (item.attemptCount >= item.maximumAttempts) {
           item.status = 'STOPPED';
           item.notes = `Maximum outreach check limit reached (${item.maximumAttempts}/${item.maximumAttempts}). No response received.`;
@@ -243,6 +152,25 @@ class ProactiveEngine {
           await this.notifyUser({
             userId: item.userId,
             taskId: item.taskId,
+            title: `DOERA Outreach Tracker: No Reply Detected`,
+            message: `Outreach tracker reached maximum attempts for ${recipientTitle}. No external reply was detected.`,
+            type: 'TASK_UPDATE',
+          });
+
+          realtimeServer.sendToUser(item.userId, 'followup_updated', { followUp: item });
+          continue;
+        }
+
+        // Truthful telemetry: Log scheduled check attempt without fake simulation
+        item.history.push({
+          checkedAt: now,
+          outcome: `Scheduled status check attempt ${item.attemptCount}/${item.maximumAttempts}. Awaiting external reply from ${recipientTitle}.`,
+        });
+        item.nextCheckAt = new Date(now.getTime() + (item.checkIntervalHours || 24) * 3600000);
+        await item.save();
+
+        realtimeServer.sendToUser(item.userId, 'followup_updated', { followUp: item });
+      }
             title: `Follow-Up Completed: ${recipientTitle}`,
             message: `Outreach monitoring concluded for ${recipientTitle}. Maximum check attempts reached with no verified reply.`,
             type: 'TASK_COMPLETED',
