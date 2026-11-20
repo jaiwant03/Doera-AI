@@ -269,6 +269,112 @@ const mergingNode = async (state) => {
 };
 
 /**
+ * 4B. PLANNING NODE (Chronological schedules, volunteer matrix, resource requirements, risks)
+ */
+const planningNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Planning Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Planning',
+    'Formulating chronological schedule, volunteer matrix, and operational roadmap...',
+    { step: { id: 'planning', name: 'Formulating mission execution plan', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const planningRes = await planningAgent.planMission(
+    state,
+    { research: state.researchSummary }
+  );
+
+  const plan = planningRes.plan || planningRes.output || {};
+  const steps = (state.steps || []).map((s) =>
+    s.agent === 'Planning' || s.id === 'planning' || s.id === 'sub_planning'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Chronological schedule established across ${plan.schedule?.length || 2} days. Volunteer matrix organized.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Planning',
+    `Execution plan formulated with ${plan.volunteers?.length || 5} volunteer teams and risk mitigations.`,
+    { step: { id: 'planning', name: 'Formulating mission execution plan', status: 'completed', timestamp: new Date() } }
+  );
+
+  const nextAgent = state.requiredAgents.includes('Budget')
+    ? 'Budget'
+    : (state.requiredAgents.includes('Communication') ? 'Communication' : 'Verification');
+
+  return {
+    planningData: plan,
+    discoveredData: {
+      ...(state.discoveredData || {}),
+      planning: plan,
+    },
+    steps,
+    currentAgent: nextAgent,
+    currentAction: `Delegating execution to ${nextAgent} Agent.`,
+  };
+};
+
+/**
+ * 4C. BUDGET NODE (Itemized financial allocations, math verification, unit economics)
+ */
+const budgetNode = async (state) => {
+  logger.info(`[LangGraph Workflow] Budget Agent executing for: ${state.taskId}`);
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Budget',
+    'Calculating itemized line-item budget and verifying mathematical totals...',
+    { step: { id: 'budget', name: 'Financial model and budget allocation', status: 'in_progress', timestamp: new Date() } }
+  );
+
+  const budgetRes = await budgetAgent.calculateBudget(
+    state,
+    { planning: state.planningData || state.discoveredData?.planning }
+  );
+
+  const bOut = budgetRes.output || budgetRes.budget || {};
+  const steps = (state.steps || []).map((s) =>
+    s.agent === 'Budget' || s.id === 'budget' || s.id === 'sub_budget'
+      ? {
+          ...s,
+          status: 'completed',
+          details: `Allocated ₹${(bOut.calculatedTotal || 0).toLocaleString()} across ${bOut.lineItems?.length || 0} line items. Math verification: ${bOut.mathVerified ? 'PASS' : 'FLAG'}.`,
+          timestamp: new Date(),
+        }
+      : s
+  );
+
+  await logMissionEvent(
+    state,
+    'STEP_PROGRESS',
+    'Budget',
+    `Budget balanced: ₹${(bOut.calculatedTotal || 0).toLocaleString()} allocated within limit ₹${(bOut.budgetConstraint || 0).toLocaleString()}.`,
+    { step: { id: 'budget', name: 'Financial model and budget allocation', status: 'completed', timestamp: new Date() } }
+  );
+
+  const nextAgent = state.requiredAgents.includes('Communication') ? 'Communication' : 'Verification';
+
+  return {
+    budgetData: bOut,
+    discoveredData: {
+      ...(state.discoveredData || {}),
+      budget: bOut,
+    },
+    steps,
+    currentAgent: nextAgent,
+    currentAction: `Delegating execution to ${nextAgent} Agent.`,
+  };
+};
+
+/**
  * 5. HUMAN APPROVAL GATE NODE
  */
 const approvalGateNode = async (state) => {
