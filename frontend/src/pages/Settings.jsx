@@ -64,12 +64,6 @@ const Settings = () => {
 
   const handleActivatePlan = async (planKey) => {
     if ((subscription?.plan || 'free') === planKey) return;
-    
-    // For Pro and Max, open the customer details & payment details form
-    if (planKey === 'pro' || planKey === 'max') {
-      setCheckoutPlan(planKey);
-      return;
-    }
 
     if (activatingPlan) return;
     setActivatingPlan(planKey);
@@ -79,7 +73,6 @@ const Settings = () => {
       const res = await api.post('/subscription/upgrade', {
         plan: planKey,
         billingCycle: 'monthly',
-        isDemo: true,
       });
 
       const msg = res.data?.message || `Successfully activated DOERA ${planKey.toUpperCase()} tier!`;
@@ -103,6 +96,9 @@ const Settings = () => {
         setPlanErrorMessage(null);
       }, 5000);
     } finally {
+      setActivatingPlan(null);
+    }
+  };
       setActivatingPlan(null);
     }
   };
@@ -575,7 +571,7 @@ const Settings = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setCheckoutPlan(subscription?.plan === 'pro' ? 'max' : 'pro')}
+                  onClick={() => handleActivatePlan(subscription?.plan === 'pro' ? 'max' : 'pro')}
                   className="doera-btn-action-outline"
                   style={{ width: 'auto', padding: '7px 16px', color: '#FF55BD', borderColor: 'rgba(255, 85, 189, 0.4)' }}
                 >
@@ -594,7 +590,7 @@ const Settings = () => {
                 remaining={subscription?.remainingRequests}
                 resetsIn={subscription?.resetsIn}
                 resetAt={subscription?.resetAt}
-                onUpgradeClick={() => setCheckoutPlan(subscription?.plan === 'pro' ? 'max' : 'pro')}
+                onUpgradeClick={() => handleActivatePlan(subscription?.plan === 'pro' ? 'max' : 'pro')}
                 onDayRollover={() => fetchSubscription && fetchSubscription()}
               />
             </div>
