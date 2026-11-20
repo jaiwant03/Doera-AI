@@ -50,6 +50,15 @@ const Sidebar = ({ isOpen, onToggle, onClose }) => {
   const navigate = useNavigate();
   const menuRef = useRef(null);
 
+  // Handle Logout to Landing Page
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate('/', { replace: true });
+    }
+  };
+
   // Fetch pending approval count
   const updateApprovalCount = async () => {
     try {

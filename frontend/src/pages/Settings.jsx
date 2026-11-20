@@ -877,7 +877,7 @@ const Settings = () => {
               <span style={{ fontSize: 12, color: '#8C7B94' }}>Session authenticated via JWT credentials.</span>
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 className="doera-btn-logout"
               >
                 <LogOut size={14} />
