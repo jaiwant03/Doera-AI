@@ -136,6 +136,7 @@ class LLMService {
               { role: 'user', content: userPrompt },
             ],
             temperature,
+            max_tokens: 4096,
             response_format: jsonMode ? { type: 'json_object' } : undefined,
           });
 
@@ -152,6 +153,13 @@ class LLMService {
           return content;
         } catch (err) {
           logger.warn(`[LLM Service] Groq model ${modelName} completion failed: ${err.message}`);
+          if (jsonMode && err.error?.failed_generation) {
+            try {
+              const cleaned = err.error.failed_generation.replace(/,\s*([\]\}])/g, '$1');
+              const match = cleaned.match(/\{[\s\S]*\}/);
+              if (match) return JSON.parse(match[0]);
+            } catch {}
+          }
         }
       }
     }
