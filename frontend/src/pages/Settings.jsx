@@ -23,7 +23,6 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import UsageTracker from '../components/Sidebar/UsageTracker';
-import SubscriptionCheckout from '../components/Subscription/SubscriptionCheckout';
 import '../components/Subscription/UpgradeModal.css';
 import AmbientBackground from '../components/UI/AmbientBackground';
 
@@ -58,7 +57,6 @@ const Settings = () => {
   const [saveStatus, setSaveStatus] = useState(null);
   const [testingService, setTestingService] = useState(null);
   const [activatingPlan, setActivatingPlan] = useState(null);
-  const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [planSuccessMessage, setPlanSuccessMessage] = useState(null);
   const [planErrorMessage, setPlanErrorMessage] = useState(null);
 
@@ -785,7 +783,7 @@ const Settings = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => setCheckoutPlan('pro')}
+                      onClick={() => handleActivatePlan('pro')}
                       style={{
                         width: '100%',
                         padding: '11px 14px',
@@ -870,7 +868,7 @@ const Settings = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => setCheckoutPlan('max')}
+                      onClick={() => handleActivatePlan('max')}
                       style={{
                         width: '100%',
                         padding: '11px 14px',
@@ -946,7 +944,7 @@ const Settings = () => {
                 remaining={subscription?.remainingRequests}
                 resetsIn={subscription?.resetsIn}
                 resetAt={subscription?.resetAt}
-                onUpgradeClick={() => setCheckoutPlan(subscription?.plan === 'pro' ? 'max' : 'pro')}
+                onUpgradeClick={() => handleActivatePlan(subscription?.plan === 'pro' ? 'max' : 'pro')}
                 onDayRollover={() => fetchSubscription && fetchSubscription()}
               />
             </div>
@@ -961,37 +959,6 @@ const Settings = () => {
                 <LogOut size={14} />
                 <span>Log Out</span>
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Customer Details & Payment Details Modal Wizard */}
-        {checkoutPlan && (
-          <div 
-            className="doera-modal-backdrop" 
-            onClick={() => setCheckoutPlan(null)}
-            style={{ zIndex: 9999 }}
-          >
-            <div 
-              className="doera-upgrade-modal is-checkout animate-fadeIn" 
-              onClick={(e) => e.stopPropagation()}
-              style={{ margin: 'auto' }}
-            >
-              <SubscriptionCheckout
-                key={checkoutPlan}
-                plan={checkoutPlan}
-                billingCycle="monthly"
-                onBack={() => setCheckoutPlan(null)}
-                onClose={() => setCheckoutPlan(null)}
-                onSuccess={(newPlan, usage) => {
-                  setCheckoutPlan(null);
-                  setPlanSuccessMessage(`Welcome to DOERA ${newPlan.toUpperCase()}! Your daily allowance of ${newPlan === 'max' ? 500 : 300} requests is now active.`);
-                  if (fetchSubscription) {
-                    fetchSubscription(newPlan, usage);
-                  }
-                  setTimeout(() => setPlanSuccessMessage(null), 5000);
-                }}
-              />
             </div>
           </div>
         )}
