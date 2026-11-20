@@ -30,15 +30,22 @@ class UniversalIntentService {
 
     // 1. Rule-based heuristic signal detection
     const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
-    const hasCsvAttachment = hasAttachments && attachments.some(a => 
-      a.type === 'text/csv' || /\.(csv|tsv|xlsx?)$/i.test(a.name || '')
+    const hasSpreadsheetAttachment = hasAttachments && attachments.some(a => 
+      a.type === 'text/csv' || 
+      a.type === 'text/tab-separated-values' ||
+      a.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      a.type === 'application/vnd.ms-excel' ||
+      /\.(csv|tsv|xlsx|xls)$/i.test(a.name || '')
     );
     const hasImageAttachment = hasAttachments && attachments.some(a => 
       a.type?.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(a.name || '')
     );
 
-    const isDocAnalysis = hasAttachments || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
-    const isDataAnalysis = hasCsvAttachment || (/(analyze|trend|distribution|correlation|dataset|csv|metrics|statistics|table|data|chart)/i.test(lower) && (hasAttachments || /(dataset|dataframe|numbers|rows|columns)/i.test(lower)));
+    const isDataAnalysis = hasSpreadsheetAttachment || (
+      /(analyze|analysis|trend|distribution|correlation|dataset|csv|excel|spreadsheet|sheet|metrics|statistics|table|data|chart|expenses?|spending|sales|revenue|profit|cost|price|transactions?|columns?|rows?|top\s*\d+|lowest|highest|average|mean|sum|total|rank|growth|outliers?|anomalies)/i.test(lower) &&
+      (hasAttachments || /(dataset|dataframe|spreadsheet|numbers|rows|columns|expenses?|sales|table|chart)/i.test(lower))
+    );
+    const isDocAnalysis = (hasAttachments && !hasSpreadsheetAttachment) || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
     const isTravel = /(plan a trip|travel to|itinerary|route from|trip to|driving to|visit.*for \d+ days|flight|road trip)/i.test(lower);
     const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower);
     const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower);
