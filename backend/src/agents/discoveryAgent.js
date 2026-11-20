@@ -1,5 +1,6 @@
 import placesAdapter from '../integrations/placesAdapter.js';
 import browserAdapter from '../integrations/browserAdapter.js';
+import localServiceResearcher from '../services/localServiceResearcher.js';
 import { logger } from '../utils/logger.js';
 
 class DiscoveryAgent {
