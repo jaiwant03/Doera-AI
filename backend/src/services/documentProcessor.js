@@ -501,12 +501,14 @@ class DocumentProcessor {
         ],
         tables: [],
         structuredData: {
+          fileType: 'IMAGE',
           format: img.format,
+          hasBase64: Boolean(img.base64),
           dimensions: img.dimensions,
           visualMetrics: img.visualMetrics,
           layoutZones: img.layoutZones,
           detectedType: img.detectedType,
-          ocrConfidence: img.ocr.confidence,
+          ocrConfidence: img.ocr?.confidence || 0,
           isOcr: hasText,
         },
         metadata: {

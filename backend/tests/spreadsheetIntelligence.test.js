@@ -352,7 +352,7 @@ describe('DOERA AI — Spreadsheet Intelligence, Data Analysis & Dynamic Charts 
 
       const markdown = buildUniversalResponse(fakeTask);
 
-      expect(markdown).toContain('Spreadsheet Intelligence & Data Analysis');
+      expect(markdown).toContain('Data Analysis & Statistical Insights');
       expect(markdown).toContain('Dataset Architecture & Quality Audit');
       expect(markdown).toContain('Verified Computational Findings');
       expect(markdown).toContain('Interactive Visualization');

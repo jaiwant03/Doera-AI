@@ -497,7 +497,7 @@ function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
 }
 
 function buildDataAnalysisSection(analysis) {
-  let md = `### Spreadsheet Intelligence & Data Analysis\n\n`;
+  let md = `### Data Analysis & Statistical Insights\n\n`;
   if (analysis.datasetSummary) {
     md += `> ${analysis.datasetSummary}\n\n`;
   }
