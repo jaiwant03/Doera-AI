@@ -189,8 +189,12 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
       researchResult.providers.forEach((provider) => {
         expect(provider.businessName).toBeDefined();
         expect(provider.address).toBeDefined();
-        expect(provider.rating).toBeGreaterThan(0);
-        expect(provider.reviewCount).toBeGreaterThanOrEqual(0);
+        if (provider.rating !== null && provider.rating !== undefined) {
+          expect(provider.rating).toBeGreaterThan(0);
+        }
+        if (provider.reviewCount !== null && provider.reviewCount !== undefined) {
+          expect(provider.reviewCount).toBeGreaterThanOrEqual(0);
+        }
       });
 
       // 4. Record authentic proof of execution

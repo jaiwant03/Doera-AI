@@ -116,6 +116,13 @@ class VisionAgent {
   }
 
   /**
+   * Alias for analyzeImage
+   */
+  async analyzeVisualInput(taskContext, attachments = []) {
+    return this.analyzeImage(taskContext, attachments);
+  }
+
+  /**
    * Multi-Tier Visual Inference:
    * 1. Google Gemini Vision API (if geminiApiKey configured)
    * 2. OpenAI Vision API (if openaiApiKey configured)
