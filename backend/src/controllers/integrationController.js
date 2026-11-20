@@ -20,7 +20,7 @@ export const getIntegrations = async (req, res, next) => {
     });
 
     const isGoogleAuth = req.user.authProvider === 'google' && !!req.user.googleSubjectId;
-    const effectiveMode = isGoogleAuth ? (req.user.executionMode || 'REAL') : 'DEMO';
+    const effectiveMode = 'UNIFIED';
 
     res.json({
       authProvider: isGoogleAuth ? 'google' : 'local',
@@ -28,8 +28,6 @@ export const getIntegrations = async (req, res, next) => {
       isGoogleAuth,
       integrations: {
         gmail: integrationMap.gmail || { connected: false },
-        calendar: integrationMap.google_calendar || { connected: false },
-        whatsapp: { configured: !!config.whatsappAccessToken && !!config.whatsappPhoneNumberId },
         googlePlaces: { configured: !!config.googlePlacesApiKey },
         workflows: { engine: 'Native Node.js Autonomous Engine', status: 'active' },
         llm: { provider: config.llmProvider, model: 'llama-3.3-70b-versatile' },
@@ -120,7 +118,7 @@ export const getIntegrationStatus = async (req, res, next) => {
     });
 
     const isGoogleAuth = user.authProvider === 'google' && !!user.googleSubjectId;
-    const effectiveMode = isGoogleAuth ? (user.executionMode || 'REAL') : 'DEMO';
+    const effectiveMode = 'UNIFIED';
 
     res.json({
       userId: user._id,
@@ -161,32 +159,6 @@ export const connectGmail = async (req, res, next) => {
     );
 
     res.json({ success: true, integration: { provider: 'gmail', status: 'connected', email } });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const connectGoogleCalendar = async (req, res, next) => {
-  try {
-    const { email, refreshToken } = req.body;
-    if (!refreshToken) {
-      return res.status(400).json({ error: 'Refresh token is required.' });
-    }
-
-    const encryptedRefreshToken = encrypt(refreshToken);
-
-    const integration = await Integration.findOneAndUpdate(
-      { userId: req.user._id, provider: 'google_calendar' },
-      {
-        accountEmail: email,
-        encryptedRefreshToken,
-        status: 'connected',
-        lastVerifiedAt: new Date(),
-      },
-      { upsert: true, new: true }
-    );
-
-    res.json({ success: true, integration: { provider: 'google_calendar', status: 'connected', email } });
   } catch (error) {
     next(error);
   }
