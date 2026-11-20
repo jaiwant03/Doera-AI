@@ -444,13 +444,13 @@
 
 .doera-footer-nav-link:hover,
 .doera-footer-nav-link.active {
-  background: var(--bg-surface, #151018);
+  background: rgba(241, 45, 152, 0.12);
   color: #FFFFFF;
 }
 
 .doera-footer-nav-link:hover svg,
 .doera-footer-nav-link.active svg {
-  color: var(--neon-pink, #FF55BD);
+  color: #F12D98;
 }
 
 /* User Card */
@@ -459,8 +459,8 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: var(--bg-surface, #151018);
-  border: 1px solid var(--border-dark, #302535);
+  background: #0D0713;
+  border: 1px solid rgba(241, 45, 152, 0.32);
   border-radius: 12px;
 }
 
