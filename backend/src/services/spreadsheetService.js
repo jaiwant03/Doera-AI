@@ -40,10 +40,10 @@ class SpreadsheetService {
     let workbook;
     try {
       if (isCsv) {
-        // Read CSV/TSV without converting string dates
+        // Read CSV/TSV with raw preservation of exact strings
         workbook = XLSX.read(buffer, {
           type: 'buffer',
-          raw: false,
+          raw: true,
           codepage: 65001, // UTF-8
         });
       } else {
