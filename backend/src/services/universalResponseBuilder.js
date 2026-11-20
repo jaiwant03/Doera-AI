@@ -171,7 +171,8 @@ function getCategorySummary(category, userRequest, isConfirmed, status) {
     case 'COMMUNICATION':
       return `I have prepared the authorized communication dispatch for: **"${userRequest}"**.`;
     case 'LOCATION_DISCOVERY':
-      return `I have located and verified local providers meeting your criteria for: **"${userRequest}"**.`;
+    case 'LOCAL_SERVICE_RESEARCH':
+      return `I have completed verified research on local service providers matching your criteria for: **"${userRequest}"**.`;
     default:
       return `I have analyzed your objective and synthesized verified results for: **"${userRequest}"**.`;
   }
