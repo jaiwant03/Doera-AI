@@ -163,6 +163,10 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
     });
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   // =========================================================================
   // JOURNEY 1: LOCAL SERVICE RESEARCH
   // =========================================================================
@@ -661,6 +665,7 @@ describe('DOERA AI — Complete System Integration, End-to-End Testing & Quality
       );
       expect(userBResStatus).toBe(404);
       expect(userBResData.error).toContain('not found');
+      Task.findOne.mockRestore();
     });
   });
 
