@@ -1,12 +1,16 @@
 /* DOERA AI — Mission Control Dashboard (Luxury Black + Neon Pink) */
 
 .doera-mission-page {
+  position: relative;
+  z-index: 2;
   padding: 24px 36px 60px;
   max-width: 1300px;
+  width: 100%;
   margin: 0 auto;
   color: #EDE4EE;
   font-family: inherit;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 /* Top Navbar with Back to Chat */

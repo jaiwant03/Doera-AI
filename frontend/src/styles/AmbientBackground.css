@@ -11,7 +11,7 @@
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
-  background: #08050B;
+  background: transparent;
 }
 
 .doera-ambient-orb {
