@@ -98,7 +98,7 @@ const ChatPage = () => {
       />
 
       {/* Main Execution Workspace */}
-      <main className="doera-workspace">
+      <main className="doera-workspace" id="doera-chat-workspace">
         {/* Subtle Animated Ambient Glow Background ONLY for Main Workspace */}
         <AmbientBackground />
 
