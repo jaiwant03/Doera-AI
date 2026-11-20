@@ -403,7 +403,7 @@ export const handleGoogleCallback = async (req, res) => {
         googleSubjectId: profile.googleId,
         googleEmail: profile.email.toLowerCase(),
         authProvider: 'google',
-        executionMode: 'REAL',
+        executionMode: 'UNIFIED',
         gmailIntegrationStatus: 'not_connected',
         avatar: profile.avatar,
         subscription: {
@@ -411,13 +411,13 @@ export const handleGoogleCallback = async (req, res) => {
           status: 'active',
         },
       });
-      logger.info(`[Google Auth] Registered new user via Google OAuth: ${user.email} (executionMode: REAL)`);
+      logger.info(`[Google Auth] Registered new user via Google OAuth: ${user.email} (executionMode: UNIFIED)`);
     } else {
       user.googleId = profile.googleId;
       user.googleSubjectId = profile.googleId;
       user.googleEmail = profile.email.toLowerCase();
       user.authProvider = 'google';
-      user.executionMode = 'REAL';
+      user.executionMode = 'UNIFIED';
       if (!user.avatar && profile.avatar) user.avatar = profile.avatar;
 
       const existingGmail = await Integration.findOne({
@@ -430,7 +430,7 @@ export const handleGoogleCallback = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role, executionMode: 'REAL', authProvider: 'google' },
+      { userId: user._id, role: user.role, executionMode: 'UNIFIED', authProvider: 'google' },
       config.jwtSecret,
       { expiresIn: '7d' }
     );

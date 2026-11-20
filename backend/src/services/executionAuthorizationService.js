@@ -3,7 +3,6 @@ import User from '../models/User.js';
 import Integration from '../models/Integration.js';
 import Task from '../models/Task.js';
 import ExecutionEvidence from '../models/ExecutionEvidence.js';
-import demoExecutionService from './demo/DemoExecutionService.js';
 import emailAdapter from '../integrations/emailAdapter.js';
 import googleAuthService from './googleAuthService.js';
 import { decrypt } from '../utils/encryption.js';
@@ -14,9 +13,10 @@ import { buildTaskLookup } from '../utils/queryHelper.js';
  * DOERA AI — Execution Authorization & Multi-User Dispatch Service
  * 
  * CORE PRINCIPLE:
- * "Every Google-authenticated user operates through their own explicitly authorized integrations.
- * Every manually registered user gets a complete hackathon demo experience.
- * No user can access another user's accounts."
+ * "Unified AI Execution: All authenticated users have full access to genuine AI capabilities.
+ * Live email dispatch strictly requires personal Gmail OAuth2 authorization via Google Sign-In.
+ * Manual password accounts can create and preview email drafts, but cannot send live emails.
+ * Real-time bookings, appointments, reservations, payments, and messaging are permanently disabled."
  */
 class ExecutionAuthorizationService {
   constructor() {
@@ -31,7 +31,7 @@ class ExecutionAuthorizationService {
     if (!userId) {
       return {
         eligible: false,
-        mode: 'DEMO',
+        mode: 'UNIFIED',
         reason: 'Unauthenticated or missing user ID.',
       };
     }
@@ -40,32 +40,13 @@ class ExecutionAuthorizationService {
     if (!user) {
       return {
         eligible: false,
-        mode: 'DEMO',
+        mode: 'UNIFIED',
         reason: 'User account not found.',
       };
     }
 
-    // MODE B: Manual registration / local password login -> STRICT DEMO ONLY
-    if (user.authProvider !== 'google' || !user.googleSubjectId) {
-      return {
-        eligible: false,
-        mode: 'DEMO',
-        user,
-        reason: 'Manual registration and local password login users are restricted to Hackathon Demo Mode.',
-      };
-    }
+    const isGoogleAuth = user.authProvider === 'google' && !!user.googleSubjectId;
 
-    // Server-enforced check: even if user doc has executionMode, ensure it's verified Google
-    if (user.executionMode !== 'REAL') {
-      return {
-        eligible: false,
-        mode: 'DEMO',
-        user,
-        reason: 'User account is assigned to DEMO execution mode.',
-      };
-    }
-
-    // MODE A: Google-authenticated user qualifies for REAL execution
     // Check user's explicitly connected Gmail integration
     const gmailIntegration = await Integration.findOne({
       userId: user._id,
@@ -77,11 +58,13 @@ class ExecutionAuthorizationService {
 
     return {
       eligible: true,
-      mode: 'REAL',
+      mode: 'UNIFIED',
       user,
+      isGoogleAuth,
       gmailIntegration: hasValidGmail ? gmailIntegration : null,
       gmailConnected: hasValidGmail,
       gmailEmail: gmailIntegration?.accountEmail || gmailIntegration?.providerEmail || null,
+      canSendLiveEmail: isGoogleAuth && hasValidGmail,
     };
   }
 
@@ -100,7 +83,7 @@ class ExecutionAuthorizationService {
     }
 
     // Prohibited actions check: Strict prohibition of fake bookings, reservations, payments, and messaging
-    const prohibitedActions = ['SEND_WHATSAPP', 'SEND_TELEGRAM', 'BOOK_APPOINTMENT', 'CONFIRM_BOOKING', 'EXECUTE_PAYMENT', 'RESERVE_TABLE'];
+    const prohibitedActions = ['SEND_WHATSAPP', 'SEND_TELEGRAM', 'BOOK_APPOINTMENT', 'CONFIRM_BOOKING', 'EXECUTE_PAYMENT', 'RESERVE_TABLE', 'AUTOMATE_CALL', 'PURCHASE'];
     if (prohibitedActions.includes(approval.actionType)) {
       const err = new Error(`Execution rejected: Action "${approval.actionType}" is permanently prohibited. DOERA AI operates as a research, intelligence and planning platform and does not perform unverified bookings, reservations, payments, or third-party messaging.`);
       err.statusCode = 400;
@@ -123,31 +106,22 @@ class ExecutionAuthorizationService {
     // Evaluate user authorization eligibility
     const eligibility = await this.evaluateUserEligibility(userId);
 
-    // =========================================================================
-    // BRANCH 1: MODE B — MANUAL USER -> HACKATHON DEMO MODE SIMULATION ONLY
-    // =========================================================================
-    if (eligibility.mode === 'DEMO') {
-      logger.info(`[ExecutionAuth] 🛡️ User ${userId} is in HACKATHON DEMO MODE. Routing action "${approval.actionTitle}" to DemoExecutionService.`);
-      
-      const demoResult = await demoExecutionService.executeAction(approval, userId);
-      this.executedApprovals.add(dedupKey);
-
-      return {
-        ...demoResult,
-        executionMode: 'HACKATHON_DEMO_SIMULATION',
-        isSimulated: true,
-        simulationNotice: 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED.',
-      };
-    }
-
-    // =========================================================================
-    // BRANCH 2: MODE A — GOOGLE AUTHENTICATED USER -> REAL AUTOMATION PIPELINE
-    // =========================================================================
     const { actionType, actionPayload = {}, target = {} } = approval;
 
-    // Check action type: For this implementation, real execution applies to Email (Gmail)
+    // Outbound Email Action (Live Gmail OAuth2 Dispatch)
     if (actionType === 'SEND_EMAIL' || actionType === 'SEND_OUTREACH') {
-      // TEST D: Google user has not connected Gmail -> Block real sending, require connection
+      // Manual password users cannot dispatch real emails
+      if (!eligibility.isGoogleAuth) {
+        logger.warn(`[ExecutionAuth] Manual password user ${userId} attempted live email dispatch.`);
+        const err = new Error(
+          'Gmail connection required: Live email dispatch is only supported through personal Gmail accounts authorized via Google Sign-In. Manual password accounts can create, edit, and preview email drafts, but cannot dispatch live external emails. Please sign in with your Google account and connect Gmail in Settings to enable sending.'
+        );
+        err.statusCode = 403;
+        err.code = 'GMAIL_OAUTH_REQUIRED';
+        throw err;
+      }
+
+      // Google user has not connected Gmail -> Block real sending, require connection
       if (!eligibility.gmailConnected || !eligibility.gmailIntegration) {
         logger.warn(`[ExecutionAuth] User ${userId} attempted real email dispatch without connected Gmail integration.`);
         const err = new Error(
