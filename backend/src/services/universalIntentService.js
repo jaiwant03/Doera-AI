@@ -103,7 +103,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
       });
 
       if (parsed && parsed.primaryCategory) {
-        return this.normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment, hasImageAttachment);
+        return this.normalizeIntent(parsed, text, hasAttachments, hasSpreadsheetAttachment, hasImageAttachment);
       }
     } catch (err) {
       logger.warn(`[UniversalIntent] LLM classification notice, using deterministic classifier: ${err.message}`);
@@ -112,7 +112,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
     // 3. Robust Deterministic Fallback Classifier
     return this.deterministicClassify(text, {
       hasAttachments,
-      hasCsvAttachment,
+      hasSpreadsheetAttachment,
       hasImageAttachment,
       isDocAnalysis,
       isDataAnalysis,
@@ -130,7 +130,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
   /**
    * Normalizes LLM intent output with safety bounds and deterministic verification
    */
-  normalizeIntent(parsed, text, hasAttachments, hasCsvAttachment = false, hasImageAttachment = false) {
+  normalizeIntent(parsed, text, hasAttachments, hasSpreadsheetAttachment = false, hasImageAttachment = false) {
     const categories = Array.isArray(parsed.categories) && parsed.categories.length > 0
       ? parsed.categories
       : [parsed.primaryCategory || CATEGORIES.GENERAL_QUESTION];
@@ -138,13 +138,13 @@ User Personalized Context: ${memoryContext || 'None'}`;
     if (hasImageAttachment && !categories.includes(CATEGORIES.IMAGE_ANALYSIS)) {
       categories.unshift(CATEGORIES.IMAGE_ANALYSIS);
     }
-    if (hasCsvAttachment && !categories.includes(CATEGORIES.DATA_ANALYSIS)) {
+    if (hasSpreadsheetAttachment && !categories.includes(CATEGORIES.DATA_ANALYSIS)) {
       categories.unshift(CATEGORIES.DATA_ANALYSIS);
     }
 
     const primaryCategory = hasImageAttachment
       ? CATEGORIES.IMAGE_ANALYSIS
-      : (hasCsvAttachment 
+      : (hasSpreadsheetAttachment 
           ? CATEGORIES.DATA_ANALYSIS 
           : (parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION));
 
@@ -152,7 +152,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
     const requiredAgents = new Set(parsed.requiredAgents || ['Planner']);
     requiredAgents.add('Planner');
 
-    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON) || categories.includes(CATEGORIES.IMAGE_ANALYSIS))
+    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON) || categories.includes(CATEGORIES.IMAGE_ANALYSIS) || categories.includes(CATEGORIES.DATA_ANALYSIS))
       ? true
       : (parsed.isActionTask !== undefined
           ? Boolean(parsed.isActionTask)
@@ -178,12 +178,11 @@ User Personalized Context: ${memoryContext || 'None'}`;
       requiredAgents.add('Execution');
       requiredAgents.add('FollowUp');
     }
-    if ((categories.includes(CATEGORIES.DOCUMENT_ANALYSIS) || hasAttachments) && !hasImageAttachment) {
+    if ((categories.includes(CATEGORIES.DOCUMENT_ANALYSIS) || hasAttachments) && !hasImageAttachment && !hasSpreadsheetAttachment) {
       requiredAgents.add('Document');
     }
-    if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasCsvAttachment) {
+    if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasSpreadsheetAttachment) {
       requiredAgents.add('DataAnalysis');
-      requiredAgents.add('Document');
     }
 
     return {
@@ -214,10 +213,9 @@ User Personalized Context: ${memoryContext || 'None'}`;
       categories.push(CATEGORIES.IMAGE_ANALYSIS);
       requiredAgents.add('Vision');
       requiredAgents.add('Verification');
-    } else if (flags.hasCsvAttachment || flags.isDataAnalysis) {
+    } else if (flags.hasSpreadsheetAttachment || flags.isDataAnalysis) {
       categories.push(CATEGORIES.DATA_ANALYSIS);
       requiredAgents.add('DataAnalysis');
-      requiredAgents.add('Document');
       requiredAgents.add('Verification');
     } else if (flags.hasAttachments || flags.isDocAnalysis) {
       categories.push(CATEGORIES.DOCUMENT_ANALYSIS);
