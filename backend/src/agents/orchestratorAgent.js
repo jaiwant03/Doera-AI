@@ -18,7 +18,9 @@ class OrchestratorAgent {
 
     // 1. Analyze request through Universal Intent Understanding
     const intent = await universalIntentService.understandRequest(userRequest, attachments);
-    const requiredAgents = intent.requiredAgents || ['Planner', 'Research', 'Verification'];
+    const requiredAgents = (taskContext.requiredAgents && taskContext.requiredAgents.length > 0)
+      ? taskContext.requiredAgents
+      : (intent.requiredAgents || ['Planner', 'Research', 'Verification']);
 
     // 2. Formulate subtasks dynamically
     let subtasks = [];

@@ -7,7 +7,7 @@ import modelManager from './modelManager.js';
 class LLMService {
   constructor() {
     this.provider = config.llmProvider;
-    this.groqClient = config.groqApiKey ? new Groq({ apiKey: config.groqApiKey }) : null;
+    this.groqClient = config.groqApiKey ? new Groq({ apiKey: config.groqApiKey, timeout: 5000 }) : null;
     this.openaiApiKey = config.openaiApiKey;
     this.openaiBaseUrl = config.openaiBaseUrl || 'https://api.openai.com/v1';
   }
