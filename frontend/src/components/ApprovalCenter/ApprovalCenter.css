@@ -734,8 +734,8 @@
 .doera-empty-approvals {
   text-align: center;
   padding: 60px 20px;
-  background: #0F0716;
-  border: 1px dashed #281432;
+  background: #0D0713;
+  border: 1px dashed rgba(241, 45, 152, 0.42);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
