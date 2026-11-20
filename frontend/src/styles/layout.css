@@ -24,8 +24,7 @@
   height: 100%;
   overflow: hidden;
   position: relative;
-  background-color: #08050B;
-  background: radial-gradient(ellipse 95% 70% at 50% 18%, rgba(241, 45, 152, 0.16) 0%, rgba(142, 29, 114, 0.11) 32%, rgba(22, 8, 24, 0.7) 65%, #08050B 100%);
+  background-color: var(--bg-canvas, #080609);
   z-index: 1;
 }
 
@@ -53,7 +52,6 @@
   z-index: 1;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  background: radial-gradient(ellipse 85% 55% at 50% 20%, rgba(241, 45, 152, 0.12) 0%, rgba(142, 29, 114, 0.06) 45%, transparent 75%);
 }
 
 /* Chat Scroll Wrapper for Live Conversations */
