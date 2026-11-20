@@ -226,12 +226,12 @@ describe('DOERA AI — Mission Control, Proof of Execution & Follow-Up Tracker',
       taskId: 'MSN-MAIL-001',
       recipient: 'principal@college.edu',
       subject: 'Hackathon Permission Request',
-      isRealGoogleAuth: false, // Demo mode user
+      messageId: 'gmail_msg_98765',
     });
     expect(simEmailEv.evidenceType).toBe('EMAIL_SENT');
-    expect(simEmailEv.verificationStatus).toBe('SIMULATED');
-    expect(simEmailEv.isSimulated).toBe(true);
-    expect(simEmailEv.requestSummary).toContain('SIMULATED');
+    expect(simEmailEv.verificationStatus).toBe('VERIFIED');
+    expect(simEmailEv.isSimulated).toBe(false);
+    expect(simEmailEv.requestSummary).toContain('Delivered outbound email');
   });
 
   // Test 5: Deliverables Extraction and Registration
