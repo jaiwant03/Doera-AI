@@ -263,17 +263,14 @@ class ExecutionAuthorizationService {
       };
     }
 
-    // For WhatsApp, Telegram, payments, and other channels without per-user enterprise auth:
-    // Route safely to DemoExecutionService with explicit simulation label
-    logger.info(`[ExecutionAuth] Action "${actionType}" does not have personal credentials connected. Routing to DemoExecutionService with simulation disclaimer.`);
-    const simulatedResult = await demoExecutionService.executeAction(approval, userId);
-    this.executedApprovals.add(dedupKey);
-
-    return {
-      ...simulatedResult,
-      isSimulated: true,
-      simulationNotice: 'SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED.',
-    };
+    // Any other action type is unsupported in the unified platform
+    logger.warn(`[ExecutionAuth] Action "${actionType}" is unsupported.`);
+    const err = new Error(
+      `Unsupported action: Action "${actionType}" is not supported. DOERA AI operates as a unified research, intelligence, analysis, and planning platform.`
+    );
+    err.statusCode = 400;
+    err.code = 'UNSUPPORTED_ACTION';
+    throw err;
   }
 }
 
