@@ -9,6 +9,7 @@ import quotationAgent from '../agents/quotationAgent.js';
 import comparisonAgent from '../agents/comparisonAgent.js';
 import documentAgent from '../agents/documentAgent.js';
 import dataAnalysisAgent from '../agents/dataAnalysisAgent.js';
+import visionAgent from '../agents/visionAgent.js';
 import schedulingAgent from '../agents/schedulingAgent.js';
 import verificationAgent from '../agents/verificationAgent.js';
 import followUpAgent from '../agents/followUpAgent.js';
@@ -106,7 +107,8 @@ const orchestratorNode = async (state) => {
   );
 
   let nextAgent = 'Verification';
-  if (plan.requiredAgents.includes('Document')) nextAgent = 'Document';
+  if (plan.requiredAgents.includes('Vision')) nextAgent = 'Vision';
+  else if (plan.requiredAgents.includes('Document')) nextAgent = 'Document';
   else if (plan.requiredAgents.includes('DataAnalysis')) nextAgent = 'DataAnalysis';
   else if (plan.requiredAgents.includes('Location')) nextAgent = 'Location';
   else if (plan.requiredAgents.includes('Research')) nextAgent = 'Research';
