@@ -1075,6 +1075,8 @@ const workflow = new StateGraph(TaskStateAnnotation)
   .addNode('location', locationNode)
   .addNode('research', researchNode)
   .addNode('merging', mergingNode)
+  .addNode('planning', planningNode)
+  .addNode('budget', budgetNode)
   .addNode('document', documentNode)
   .addNode('data_analysis', dataAnalysisNode)
   .addNode('vision', visionNode)
@@ -1101,6 +1103,8 @@ const workflow = new StateGraph(TaskStateAnnotation)
     if (req.includes('LocalService') || req.includes('Discovery')) return 'local_service';
     if (req.includes('Location')) return 'location';
     if (req.includes('Research')) return 'research';
+    if (req.includes('Planning')) return 'planning';
+    if (req.includes('Budget')) return 'budget';
     if (req.includes('Comparison') && !state.comparisonMatrix) return 'comparison';
     if (req.includes('Communication') && !state.executionEvidence) return 'approval_gate';
     if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
@@ -1139,12 +1143,29 @@ const workflow = new StateGraph(TaskStateAnnotation)
   // Research -> Merging
   .addEdge('research', 'merging')
 
-  // Merging -> Comparison or Approval Gate or Verification
+  // Merging -> Planning or Comparison or Approval Gate or Verification
   .addConditionalEdges('merging', (state) => {
     const req = state.requiredAgents || [];
+    if (req.includes('Planning') && !state.planningData) return 'planning';
+    if (req.includes('Budget') && !state.budgetData) return 'budget';
     if (req.includes('Comparison') && !state.comparisonMatrix) return 'comparison';
     if (req.includes('Communication') && !state.executionEvidence) return 'approval_gate';
     if (req.includes('Scheduling') && !state.bookingDetails) return 'scheduling';
+    return 'verification';
+  })
+
+  // Planning -> Budget or Communication or Verification
+  .addConditionalEdges('planning', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('Budget') && !state.budgetData) return 'budget';
+    if (req.includes('Communication') && (!state.communicationDrafts || state.communicationDrafts.length === 0)) return 'communication';
+    return 'verification';
+  })
+
+  // Budget -> Communication or Verification
+  .addConditionalEdges('budget', (state) => {
+    const req = state.requiredAgents || [];
+    if (req.includes('Communication') && (!state.communicationDrafts || state.communicationDrafts.length === 0)) return 'communication';
     return 'verification';
   })
 
@@ -1165,8 +1186,15 @@ const workflow = new StateGraph(TaskStateAnnotation)
     return 'communication';
   })
 
-  // Communication -> Execution
-  .addEdge('communication', 'execution')
+  // Communication -> Execution or Verification (Mission planning does not execute external dispatches)
+  .addConditionalEdges('communication', (state) => {
+    const isMissionPlanning =
+      state.category === 'MISSION_PLANNING' ||
+      state.requiredAgents.includes('Planning') ||
+      Boolean(state.planningData || state.budgetData);
+    if (isMissionPlanning) return 'verification';
+    return 'execution';
+  })
 
   // Execution -> Quotation or Scheduling or Verification (strictly forward-only DAG)
   .addConditionalEdges('execution', (state) => {
