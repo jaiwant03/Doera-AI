@@ -884,6 +884,7 @@ ${memoryContext}`;
     }
 
     const finalLocationData = aiMessage.locationData || task?.locationData || null;
+    const finalChartConfig = aiMessage.chartConfig || task?.chartConfig || null;
 
     res.status(200).json({
       conversation,
@@ -892,9 +893,11 @@ ${memoryContext}`;
         ...aiMessage.toObject(),
         task: task ? task.toObject() : null,
         locationData: finalLocationData,
+        chartConfig: finalChartConfig,
       },
       task,
       locationData: finalLocationData,
+      chartConfig: finalChartConfig,
       usage: {
         plan: quota.plan,
         dailyLimit: quota.dailyLimit,
