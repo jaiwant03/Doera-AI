@@ -264,6 +264,7 @@ function buildVisionSection(images, comparison, userRequest) {
     md += `### Image Analysis: ${img.filename}\n\n`;
 
     // Visual Asset Profile Table
+    md += `#### Visual Asset Profile\n\n`;
     md += `| Visual Attribute | Verified Telemetry |\n`;
     md += `| :--- | :--- |\n`;
     md += `| **Classified Asset Type** | \`${img.detectedType || 'IMAGE'}\` |\n`;

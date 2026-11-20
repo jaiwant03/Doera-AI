@@ -304,30 +304,30 @@ class ImageProcessor {
   classifyVisualType({ ocrText = '', width, height, aspectRatio, layoutZones, theme, isMonochrome }) {
     const textLower = ocrText.toLowerCase();
 
-    // 1. Chart / Graph Signals
+    // 1. Website UI Signals (Headers, Navbars, Buttons, Pricing, Login, Dashboard)
+    const websiteKeywords = /(home|login|sign in|sign up|dashboard|pricing|about us|contact us|navigation|navbar|search\.\.\.|menu|footer|copyright|terms of service|blog|products)/i;
+    if (websiteKeywords.test(textLower) || (layoutZones.hasHeaderBar && (aspectRatio > 1.2 || width >= 1024))) {
+      return 'WEBSITE_UI';
+    }
+
+    // 2. Mobile / Desktop Application Screenshot
+    const appKeywords = /(settings|profile|inbox|notifications|messages|account|mission control|approval center|task|agent|filter|save changes|cancel|confirm)/i;
+    if (appKeywords.test(textLower) || layoutZones.hasSidebar || aspectRatio < 0.75) {
+      return 'APP_SCREENSHOT';
+    }
+
+    // 3. Chart / Graph Signals
     const chartKeywords = /(chart|graph|trend|revenue|growth|sales|axis|legend|q1|q2|q3|q4|percentage|%|usd|inr|\$\d+|\d+k|\d+m|bar chart|line chart|pie chart)/i;
     const hasNumbersAndAxes = (textLower.match(/\d+%/g) || []).length >= 2 || (textLower.match(/\b(202\d|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/g) || []).length >= 2;
     if (chartKeywords.test(textLower) && hasNumbersAndAxes) {
       return 'CHART_GRAPH';
     }
 
-    // 2. Diagram / Flowchart Signals
+    // 4. Diagram / Flowchart Signals
     const diagramKeywords = /(flowchart|workflow|architecture|dataflow|pipeline|step \d+|input|output|database|server|client|api|gateway|lambda|docker|kubernetes|node|arrow|start|end)/i;
     const hasDirectionalFlow = /-->|->|<-|==>|process|decision|stage/i.test(textLower);
     if (diagramKeywords.test(textLower) || hasDirectionalFlow) {
       return 'DIAGRAM_FLOWCHART';
-    }
-
-    // 3. Website UI Signals
-    const websiteKeywords = /(home|login|sign in|sign up|dashboard|pricing|about us|contact us|navigation|navbar|search\.\.\.|menu|footer|copyright|terms of service|blog|products)/i;
-    if (websiteKeywords.test(textLower) || (layoutZones.hasHeaderBar && (aspectRatio > 1.2 || width >= 1024))) {
-      return 'WEBSITE_UI';
-    }
-
-    // 4. Mobile / Desktop Application Screenshot
-    const appKeywords = /(settings|profile|inbox|notifications|messages|account|mission control|approval center|task|agent|filter|save changes|cancel|confirm)/i;
-    if (appKeywords.test(textLower) || layoutZones.hasSidebar || aspectRatio < 0.75) {
-      return 'APP_SCREENSHOT';
     }
 
     // 5. Document / Table Photographed as Image

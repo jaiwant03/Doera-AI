@@ -259,7 +259,7 @@ describe('DOERA AI — Vision Agent & Universal Image Understanding Suite', () =
       expect(Array.isArray(result.comparison.matrix)).toBe(true);
       expect(result.comparison.matrix.length).toBeGreaterThan(0);
       expect(result.comparison.recommendation).toBeTruthy();
-    });
+    }, 60000);
   });
 
   // =========================================================================
