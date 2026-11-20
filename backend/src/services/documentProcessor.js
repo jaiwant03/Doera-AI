@@ -531,7 +531,7 @@ class DocumentProcessor {
         structuredData: {
           fileType: 'IMAGE',
           format: (filename.split('.').pop() || 'PNG').toUpperCase(),
-          hasBase64: Boolean(base64Content),
+          hasBase64: Boolean(buffer),
         },
         summary: `Processed ${filename}. (Notice: ${err.message})`,
         metadata: { pageCount: 1, isScanned: false, isOcr: false, extractionStatus: 'COMPLETED' },

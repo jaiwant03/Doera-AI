@@ -516,6 +516,19 @@ function buildDataAnalysisSection(analysis) {
     md += `| **Duplicate Records** | ${s.totalDuplicateRows} | ${s.totalDuplicateRows === 0 ? 'Unique record set' : 'Identified & accounted for'} |\n\n`;
   }
 
+  // 1.5 Tabular Data Preview
+  if (analysis.sampleRows && analysis.sampleRows.length > 0) {
+    const totalRowsCount = analysis.spreadsheetSummary?.totalRows || analysis.sampleRows.length;
+    md += `#### Tabular Data Preview (${totalRowsCount} total rows)\n\n`;
+    const headers = Object.keys(analysis.sampleRows[0]);
+    md += `| ${headers.join(' | ')} |\n`;
+    md += `| ${headers.map(() => ':---').join(' | ')} |\n`;
+    analysis.sampleRows.slice(0, 5).forEach((row) => {
+      md += `| ${headers.map((h) => (row[h] !== undefined && row[h] !== null ? String(row[h]) : '-')).join(' | ')} |\n`;
+    });
+    md += `\n`;
+  }
+
   // 2. Verified Deterministic Calculations Table
   if (analysis.calculation && analysis.calculation.items && analysis.calculation.items.length > 0) {
     const calc = analysis.calculation;
