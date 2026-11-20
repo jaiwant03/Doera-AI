@@ -349,7 +349,7 @@ export const streamMessage = async (req, res) => {
           onEvent: async (evt) => {
             await AgentExecution.create({
               taskId: task._id,
-              agentName: ['Orchestrator', 'Discovery', 'Communication', 'Quotation', 'Comparison', 'Document', 'DataAnalysis', 'Vision', 'Scheduling', 'Verification', 'Recovery'].includes(evt.currentAgent)
+              agentName: ['Orchestrator', 'Supervisor', 'Planner', 'Planning', 'Budget', 'Research', 'Discovery', 'Location', 'LocalService', 'Communication', 'Quotation', 'Comparison', 'Document', 'DataAnalysis', 'Vision', 'Scheduling', 'Verification', 'FollowUp', 'Recovery'].includes(evt.currentAgent)
                 ? evt.currentAgent
                 : 'Orchestrator',
               agentType: 'autonomous',
@@ -789,7 +789,7 @@ export const sendMessage = async (req, res, next) => {
           onEvent: async (evt) => {
             await AgentExecution.create({
               taskId: task._id,
-              agentName: ['Orchestrator', 'Discovery', 'Communication', 'Quotation', 'Comparison', 'Document', 'DataAnalysis', 'Vision', 'Scheduling', 'Verification', 'Recovery'].includes(evt.currentAgent)
+              agentName: ['Orchestrator', 'Supervisor', 'Planner', 'Planning', 'Budget', 'Research', 'Discovery', 'Location', 'LocalService', 'Communication', 'Quotation', 'Comparison', 'Document', 'DataAnalysis', 'Vision', 'Scheduling', 'Verification', 'FollowUp', 'Recovery'].includes(evt.currentAgent)
                 ? evt.currentAgent
                 : 'Orchestrator',
               agentType: 'autonomous',
