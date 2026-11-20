@@ -146,6 +146,104 @@ Address: "${primaryContact.address || 'Local'}"`;
       completedAt,
     };
   }
+
+  /**
+   * Generates mission-specific communication drafts (e.g. hackathon proposals, sponsor outreach, participant announcements)
+   * incorporating upstream Planning and Budget findings.
+   */
+  async prepareMissionCommunications(taskContext, upstreamData = {}) {
+    const startedAt = new Date();
+    const userRequest = taskContext.userRequest || '';
+    logger.info(`[Communication Agent] Generating mission communication suite for: "${userRequest}"`);
+
+    const planning = upstreamData.planning || taskContext.discoveredData?.planning || null;
+    const budget = upstreamData.budget || taskContext.discoveredData?.budget || null;
+
+    const scale = planning?.scale || { participants: 100, duration: '2 Days' };
+    const totalBudget = budget?.totalBudget ? `₹${budget.totalBudget.toLocaleString()}` : '₹50,000';
+
+    const systemPrompt = `You are DOERA AI's Specialized Communication Agent.
+Create 3 complete, polished, ready-to-use communication documents for the user's mission:
+1. Institutional Permission Letter (To Dean / Principal / HOD requesting venue, Wi-Fi, and lab access).
+2. Corporate Sponsorship & Mentor Invitation Pitch (Inviting tech companies for mentorship, API credits, or prizes).
+3. Participant Announcement & Onboarding Email (Sent to registered hackers with schedule, rules, and prep instructions).
+
+Incorporate authentic event context:
+- Scale: ${scale.participants || 100} participants, ${scale.duration || '2 Days'}
+- Budget Target: ${totalBudget}
+
+Output JSON ONLY:
+{
+  "drafts": [
+    {
+      "type": "INSTITUTIONAL_APPROVAL",
+      "recipient": "College Principal / Dean of Academic Affairs",
+      "subject": "Formal Request: Permission to Host Two-Day Campus Hackathon (${scale.participants} Participants)",
+      "content": "Formal letter body..."
+    },
+    {
+      "type": "SPONSOR_OUTREACH",
+      "recipient": "Prospective Technology Sponsors & Mentors",
+      "subject": "Partnership Opportunity: College Hackathon Innovation Challenge",
+      "content": "Compelling partnership proposal..."
+    },
+    {
+      "type": "PARTICIPANT_ANNOUNCEMENT",
+      "recipient": "Accepted Hackathon Participants",
+      "subject": "You're In! Welcome to the 2-Day College Hackathon — Essential Guide & Schedule",
+      "content": "Welcoming guide with time blocks..."
+    }
+  ]
+}`;
+
+    let commData = null;
+    try {
+      commData = await llmService.generate({
+        systemPrompt,
+        userPrompt: `Mission: "${userRequest}"\nPlanning Data: ${JSON.stringify(planning?.schedule ? { schedule: planning.schedule.slice(0, 2) } : {})}\nBudget: ${totalBudget}`,
+        jsonMode: true,
+        temperature: 0.2,
+      });
+    } catch (err) {
+      logger.warn('[Communication Agent] LLM generation notice, using deterministic templates:', err.message);
+    }
+
+    if (!commData || !Array.isArray(commData.drafts) || commData.drafts.length === 0) {
+      commData = {
+        drafts: [
+          {
+            type: 'INSTITUTIONAL_APPROVAL',
+            recipient: 'The Principal / Dean of Student Affairs',
+            subject: `Request for Permission to Host 2-Day College Hackathon (${scale.participants} Participants)`,
+            content: `Respected Principal / Dean,\n\nWe respectfully request permission to organize a two-day technical hackathon on campus for ${scale.participants} students with a structured operational budget of ${totalBudget}.\n\nWe require auditorium access, high-speed Wi-Fi connectivity, and overnight lab supervision. A dedicated student volunteer team has been assigned to oversee safety, logistics, and cleaning.\n\nThank you for your continued encouragement of student technical innovation.\n\nSincerely,\nStudent Organizing Committee`,
+          },
+          {
+            type: 'SPONSOR_OUTREACH',
+            recipient: 'Prospective Technology Partners & Mentors',
+            subject: 'Sponsorship & Mentorship Invitation: Campus Hackathon',
+            content: `Dear Technology Partner,\n\nWe invite your organization to partner with us for our upcoming 2-Day College Hackathon, bringing together ${scale.participants} talented student developers.\n\nWe welcome in-kind software licenses, API access credits, or mentorship participation to help guide the next generation of engineers. In return, we offer prominent brand placement and direct recruitment access to top performers.\n\nWarm regards,\nCorporate Relations Team`,
+          },
+          {
+            type: 'PARTICIPANT_ANNOUNCEMENT',
+            recipient: 'Accepted Hackathon Participants',
+            subject: 'Welcome to the 2-Day College Hackathon — Essential Guide & Next Steps',
+            content: `Hello Hackers!\n\nCongratulations on your selection for our 2-day hackathon. Please arrive at the Campus Auditorium at 08:30 AM on Day 1 for registration and kit collection. Problem statements and judging rubrics will be released during the opening keynote.\n\nEnsure you bring your student ID card, laptops, chargers, and enthusiasm. Meals and refreshments will be provided.\n\nHappy Hacking!\nOrganizing Team`,
+          },
+        ],
+      };
+    }
+
+    const completedAt = new Date();
+
+    return {
+      agentName: this.name,
+      status: 'completed',
+      output: commData,
+      drafts: commData.drafts,
+      startedAt,
+      completedAt,
+    };
+  }
 }
 
 export const communicationAgent = new CommunicationAgent();
