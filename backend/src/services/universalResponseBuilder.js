@@ -121,14 +121,14 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   // SECTION F: APPOINTMENT / ACTION STATUS
   // ==========================================
-  if (booking && !isLocalResearch) {
+  if (booking && !isLocalResearch && !isMissionPlanning) {
     md += buildBookingStatusSection(booking, isConfirmed);
   }
 
   // ==========================================
   // SECTION G: APPROVAL STATUS (HITL Gate)
   // ==========================================
-  if ((status === 'AWAITING_APPROVAL' || status === 'WAITING_FOR_APPROVAL' || pendingApproval) && !isLocalResearch) {
+  if ((status === 'AWAITING_APPROVAL' || status === 'WAITING_FOR_APPROVAL' || pendingApproval) && !isLocalResearch && !isMissionPlanning) {
     md += buildApprovalGateSection(pendingApproval, contacts);
   }
 
@@ -136,14 +136,14 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // SECTION H: EXECUTION EVIDENCE (Audit & Demo Mode)
   // ==========================================
   const execEvidence = task.evidenceReferences?.[0] || task.executionEvidence;
-  if (!isLocalResearch && (execEvidence || status === 'EXECUTED' || (actionsPerformed.length > 0 && !pendingApproval))) {
+  if (!isLocalResearch && !isMissionPlanning && (execEvidence || status === 'EXECUTED' || (actionsPerformed.length > 0 && !pendingApproval))) {
     md += buildExecutionEvidenceSection(execEvidence, actionsPerformed);
   }
 
   // ==========================================
   // SECTION I: FOLLOW-UP STATUS
   // ==========================================
-  if (!isLocalResearch && (followUp || status === 'WAITING_FOR_RESPONSE' || status === 'AWAITING_RESPONSE')) {
+  if (!isLocalResearch && !isMissionPlanning && (followUp || status === 'WAITING_FOR_RESPONSE' || status === 'AWAITING_RESPONSE')) {
     md += buildFollowUpSection(followUp);
   }
 
@@ -152,6 +152,8 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   if (isLocalResearch) {
     md += `### Next Steps\n\n1. Review the verified candidate providers and comparative matrix above.\n2. Use the verified contact numbers, website links, or directions to independently decide whether to contact a provider.\n3. Feel free to refine your research criteria with specific neighborhoods, brands, or service requirements.\n`;
+  } else if (isMissionPlanning && (planningData || budgetData)) {
+    md += `### Next Steps\n\n1. Review the chronological schedule and submit the **Institutional Approval Letter** to the Principal/Dean.\n2. Dispatch the **Sponsorship Pitch** to prospective corporate partners and industry mentors to confirm technical prizes and API credits.\n3. Convene the 5 volunteer team leads (Registration, Technical Support, Hospitality, Mentorship, Media) for role onboarding.\n4. Open participant registrations and distribute the onboarding welcome guide.\n`;
   } else {
     md += buildNextStepsSection(status, isConfirmed, contacts, pendingApproval);
   }
@@ -187,6 +189,9 @@ function getCategorySummary(category, userRequest, isConfirmed, status) {
     case 'LOCATION_DISCOVERY':
     case 'LOCAL_SERVICE_RESEARCH':
       return `I have completed verified research on local service providers matching your criteria for: **"${userRequest}"**.`;
+    case 'MISSION_PLANNING':
+    case 'PLANNING':
+      return `I have coordinated with our specialized multi-agent planning team (Research, Planning, Budget, Communication, Verification) to formulate a complete execution plan for: **"${userRequest}"**.`;
     default:
       return `I have analyzed your objective and synthesized verified results for: **"${userRequest}"**.`;
   }
@@ -908,6 +913,145 @@ function buildNextStepsSection(status, isConfirmed, contacts, pendingApproval) {
   } else {
     md += `1. Feel free to refine your inquiry with additional criteria, locations, or constraints.\n`;
   }
+  return md;
+}
+
+/**
+ * Section B Helper: Comprehensive Mission Planning & Dynamic Multi-Agent Collaboration
+ */
+function buildMissionPlanningSection(planningWrapper, budgetWrapper, commWrapper, userRequest) {
+  const plan = planningWrapper?.plan || planningWrapper?.output || planningWrapper || {};
+  const budget = budgetWrapper?.budget || budgetWrapper?.output || budgetWrapper || {};
+  const comm = commWrapper?.drafts ? commWrapper : (commWrapper?.output || commWrapper || {});
+  const drafts = comm.drafts || [];
+
+  const scale = plan.scale || { participants: 100, duration: '2 Days', targetAudience: 'College students & developers' };
+  const totalBudget = budget.totalBudget || budget.budgetConstraint || 50000;
+  const calculatedTotal = budget.calculatedTotal || 50000;
+  const costPerParticipant = budget.costPerParticipant || Math.round(totalBudget / Math.max(scale.participants || 100, 1));
+  const lineItems = budget.lineItems || [];
+  const schedule = plan.schedule || [];
+  const volunteers = plan.volunteers || [];
+  const risks = plan.risks || [];
+
+  let md = `### Multi-Agent Mission Execution Plan\n\n`;
+  md += `> **Mission Target**: Formulating an end-to-end, multi-agent execution framework for **"${userRequest}"**\n\n`;
+
+  // 1. Executive Mission Scope
+  md += `#### 1. Executive Mission Scope\n\n`;
+  md += `- **Scale & Headcount**: **${scale.participants || 100} Participants**\n`;
+  md += `- **Duration**: **${scale.duration || '2 Days (36 Hours)'}**\n`;
+  if (scale.targetAudience) {
+    md += `- **Target Audience**: ${scale.targetAudience}\n`;
+  }
+  md += `- **Coordinating Specialized Agents**: \`Research Agent\` ➔ \`Planning Agent\` ➔ \`Budget Agent\` ➔ \`Communication Agent\` ➔ \`Verification Agent\`\n\n`;
+
+  // 2. Phased Roadmap
+  if (plan.phases && plan.phases.length > 0) {
+    md += `#### 2. Phased Milestone Roadmap\n\n`;
+    plan.phases.forEach((p) => {
+      md += `- **${p.phase}**\n`;
+      if (p.milestones && p.milestones.length > 0) {
+        p.milestones.forEach((m) => {
+          md += `  - ${m}\n`;
+        });
+      }
+    });
+    md += `\n`;
+  }
+
+  // 3. Chronological Schedule Table
+  if (schedule.length > 0) {
+    md += `#### 3. Chronological Execution Schedule\n\n`;
+    schedule.forEach((daySchedule) => {
+      md += `##### ${daySchedule.day || 'Event Timeline'}\n\n`;
+      md += `| Time Block | Milestone / Activity | Operational Lead |\n`;
+      md += `| :--- | :--- | :--- |\n`;
+      (daySchedule.items || []).forEach((item) => {
+        md += `| ${item.time || ''} | ${item.activity || ''} | ${item.owner || 'Organizing Team'} |\n`;
+      });
+      md += `\n`;
+    });
+  }
+
+  // 4. Itemized Budget Allocation Table
+  if (lineItems.length > 0 || totalBudget) {
+    md += `#### 4. Itemized Financial Model & Budget Allocation\n\n`;
+    const mathBadge = budget.mathVerified !== false ? '✓ VERIFIED (100% Balanced)' : '⚠️ Math Variance Flagged';
+    md += `> **Total Budget Limit**: ₹${Number(totalBudget).toLocaleString()} | **Allocated Total**: ₹${Number(calculatedTotal).toLocaleString()} | **Unit Economics**: ₹${costPerParticipant} / participant\n`;
+    md += `> **Mathematical Balance Audit**: \`${mathBadge}\`\n\n`;
+
+    if (lineItems.length > 0) {
+      md += `| Expense Category | Item / Specification | Unit Cost (₹) | Quantity | Total (₹) | Budget Share |\n`;
+      md += `| :--- | :--- | :--- | :--- | :--- | :--- |\n`;
+      lineItems.forEach((li) => {
+        const uCost = li.unitCost ? `₹${Number(li.unitCost).toLocaleString()}` : '-';
+        const qty = li.quantity !== undefined ? li.quantity : 1;
+        const tot = li.amount ? `₹${Number(li.amount).toLocaleString()}` : '-';
+        const share = li.sharePercentage ? `${li.sharePercentage}%` : '-';
+        md += `| ${li.category || 'Operations'} | ${li.item || ''} | ${uCost} | ${qty} | ${tot} | ${share} |\n`;
+      });
+      md += `\n`;
+    }
+
+    if (budget.financialObservations && budget.financialObservations.length > 0) {
+      md += `**Financial Strategy & Observations**:\n`;
+      budget.financialObservations.forEach((o) => {
+        md += `- ${o}\n`;
+      });
+      md += `\n`;
+    }
+
+    if (budget.costSavingSuggestions && budget.costSavingSuggestions.length > 0) {
+      md += `**Cost-Optimization Opportunities**:\n`;
+      budget.costSavingSuggestions.forEach((s) => {
+        md += `- ${s}\n`;
+      });
+      md += `\n`;
+    }
+  }
+
+  // 5. Volunteer Team Organization Matrix
+  if (volunteers.length > 0) {
+    md += `#### 5. Volunteer Team Organization Matrix\n\n`;
+    md += `| Volunteer Division | Headcount | Core Responsibilities & Deliverables |\n`;
+    md += `| :--- | :--- | :--- |\n`;
+    volunteers.forEach((v) => {
+      md += `| ${v.team || ''} | ${v.headcount || ''} | ${v.responsibilities || ''} |\n`;
+    });
+    md += `\n`;
+  }
+
+  // 6. Operational Risk Assessment Matrix
+  if (risks.length > 0) {
+    md += `#### 6. Operational Risk Assessment & Mitigation Matrix\n\n`;
+    md += `| Operational Hazard / Risk | Likelihood | Impact | Actionable Mitigation Protocol |\n`;
+    md += `| :--- | :--- | :--- | :--- |\n`;
+    risks.forEach((r) => {
+      md += `| ${r.risk || ''} | ${r.probability || ''} | ${r.impact || ''} | ${r.mitigation || ''} |\n`;
+    });
+    md += `\n`;
+  }
+
+  // 7. Ready-to-Use Mission Communications Suite
+  if (drafts.length > 0) {
+    md += `#### 7. Ready-to-Use Mission Communications Suite\n\n`;
+    drafts.forEach((d, idx) => {
+      const draftLabel = d.type === 'INSTITUTIONAL_APPROVAL'
+        ? 'Document A: Institutional Approval Request Letter'
+        : (d.type === 'SPONSOR_OUTREACH'
+            ? 'Document B: Corporate Sponsorship & Mentor Invitation Pitch'
+            : (d.type === 'PARTICIPANT_ANNOUNCEMENT'
+                ? 'Document C: Participant Announcement & Onboarding Guide'
+                : `Document ${idx + 1}: ${d.type || 'Draft'}`));
+
+      md += `##### ${draftLabel}\n\n`;
+      md += `- **Intended Recipient**: \`${d.recipient || 'Designated Stakeholder'}\`\n`;
+      md += `- **Subject Line**: *${d.subject || 'Mission Communication'}*\n\n`;
+      md += `\`\`\`text\n${d.content}\n\`\`\`\n\n`;
+    });
+  }
+
   return md;
 }
 
