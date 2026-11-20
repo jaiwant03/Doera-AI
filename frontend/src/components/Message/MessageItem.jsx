@@ -100,6 +100,29 @@ const MessageItem = ({ message, activeTask }) => {
     return null;
   }, [message.locationData, attachedTask]);
 
+  // Compute active spreadsheet chart configuration
+  const activeChartConfig = useMemo(() => {
+    if (message.chartConfig && typeof message.chartConfig === 'object') {
+      return message.chartConfig;
+    }
+    if (attachedTask?.chartConfig && typeof attachedTask.chartConfig === 'object') {
+      return attachedTask.chartConfig;
+    }
+    if (attachedTask?.discoveredData?.dataAnalysis?.chartConfig) {
+      return attachedTask.discoveredData.dataAnalysis.chartConfig;
+    }
+    // Check if message content contains embedded ```json:doera-chart block
+    if (typeof message.content === 'string' && message.content.includes('```json:doera-chart')) {
+      try {
+        const match = message.content.match(/```json:doera-chart\s*([\s\S]*?)\s*```/);
+        if (match && match[1]) {
+          return JSON.parse(match[1]);
+        }
+      } catch (_) {}
+    }
+    return null;
+  }, [message.chartConfig, message.content, attachedTask]);
+
   const formatTime = (dateStr) => {
     try {
       if (!dateStr) return '';
@@ -114,12 +137,18 @@ const MessageItem = ({ message, activeTask }) => {
   // Build natural conversational response text for task outcomes safely
   const getDisplayContent = () => {
     try {
-      if (!attachedTask || !['COMPLETED', 'PARTIALLY_COMPLETED'].includes(attachedTask.status)) {
-        return message.content || '';
+      let rawContent = message.content || '';
+      // Strip ```json:doera-chart block when rendered via dynamic interactive component
+      if (activeChartConfig && rawContent.includes('```json:doera-chart')) {
+        rawContent = rawContent.replace(/```json:doera-chart\s*[\s\S]*?\s*```/g, '').trim();
       }
 
-      if (message.content && message.content.length > 180 && !message.content.startsWith('Understood. I am actively coordinating')) {
-        return message.content;
+      if (!attachedTask || !['COMPLETED', 'PARTIALLY_COMPLETED'].includes(attachedTask.status)) {
+        return rawContent;
+      }
+
+      if (rawContent && rawContent.length > 180 && !rawContent.startsWith('Understood. I am actively coordinating')) {
+        return rawContent;
       }
 
       const outcome = attachedTask.outcome || {};
