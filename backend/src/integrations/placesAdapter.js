@@ -212,7 +212,10 @@ class PlacesAdapter {
   async searchLiveWebDirectory(query, location, category) {
     try {
       logger.info(`[Places Adapter] Performing live web directory lookup for: "${query} ${location}"`);
-      const searchQuery = `${query} ${location} clinic hospital service official`;
+      const isMedical = /clinic|hospital|doctor|cardiolog|dermatolog/i.test(`${query} ${category}`);
+      const searchQuery = isMedical
+        ? `${query} ${location} clinic hospital official`
+        : `${query} ${location} service official`;
       const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
 
       const res = await axios.get(url, {
