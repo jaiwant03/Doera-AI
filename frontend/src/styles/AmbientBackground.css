@@ -11,7 +11,7 @@
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
-  background-color: var(--bg-canvas, #080609);
+  background: radial-gradient(ellipse 85% 65% at 50% 25%, rgba(255, 155, 205, 0.14) 0%, rgba(241, 45, 152, 0.09) 35%, rgba(14, 8, 18, 0.96) 75%, #08050B 100%);
 }
 
 .doera-ambient-orb {
@@ -34,7 +34,7 @@
   animation: doeraAtmosphereA 22s ease-in-out infinite alternate;
 }
 
-/* Top-Right Neon Pink Ambient Flare */
+/* Top-Right Light Pink Ambient Flare */
 .orb-green {
   top: -10%;
   right: 5%;
@@ -42,7 +42,7 @@
   height: 45vw;
   max-width: 580px;
   max-height: 580px;
-  background: radial-gradient(circle, rgba(255, 85, 189, 0.18) 0%, rgba(255, 85, 189, 0.04) 50%, transparent 75%);
+  background: radial-gradient(circle, rgba(255, 145, 198, 0.22) 0%, rgba(241, 45, 152, 0.08) 50%, transparent 75%);
   animation: doeraAtmosphereB 25s ease-in-out infinite alternate;
 }
 
@@ -54,16 +54,16 @@
   height: 55vw;
   max-width: 700px;
   max-height: 700px;
-  background: radial-gradient(circle, rgba(156, 82, 232, 0.22) 0%, rgba(156, 82, 232, 0.05) 55%, transparent 80%);
+  background: radial-gradient(circle, rgba(156, 82, 232, 0.18) 0%, rgba(156, 82, 232, 0.04) 55%, transparent 80%);
   animation: doeraAtmosphereC 24s ease-in-out infinite alternate;
 }
 
-/* Moving soft ambient sheen */
+/* Moving soft light pink ambient sheen */
 .doera-ambient-waves {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255, 85, 189, 0.08) 0%, transparent 80%);
-  opacity: 0.9;
+  background: radial-gradient(ellipse 75% 45% at 50% 12%, rgba(255, 160, 205, 0.12) 0%, transparent 80%);
+  opacity: 0.95;
 }
 
 /* Atmospheric Ambient Drifts */
