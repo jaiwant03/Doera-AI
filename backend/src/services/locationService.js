@@ -130,8 +130,8 @@ class LocationService {
       if (feat) {
         const props = feat.properties || {};
         const cityName = props.city || props.district || props.county || props.state || null;
-        const areaName = props.name || props.street || cityName || 'Current Location';
-        const displayName = [props.name, props.street, props.district, props.city, props.state, props.country]
+        const areaName = props.district || props.suburb || props.street || cityName || 'Current Location';
+        const displayName = [props.street, props.district, props.city, props.state, props.country]
           .filter(Boolean)
           .filter((v, i, a) => a.indexOf(v) === i)
           .join(', ');
