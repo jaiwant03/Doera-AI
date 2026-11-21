@@ -43,6 +43,7 @@ class DocumentAgent {
           mimeType: file.type || 'text/plain',
           rawText: file.content || file.text || '',
           base64Content: file.base64 || null,
+          buffer: file.buffer || null,
           size: file.size || 0,
         });
 

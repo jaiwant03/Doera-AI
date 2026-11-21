@@ -20,9 +20,22 @@ class DocumentProcessor {
   /**
    * Main entry point to extract and structure knowledge from any supported file
    */
-  async processContent({ filename = 'document.txt', mimeType = 'text/plain', rawText = '', base64Content = null, size = 0 }) {
+  async processContent({
+    filename = 'document.txt',
+    mimeType = 'text/plain',
+    rawText = '',
+    base64Content = null,
+    buffer: inputBuffer = null,
+    size = 0,
+  }) {
     const ext = (filename.split('.').pop() || '').toLowerCase();
-    const effectiveSize = size || (base64Content ? Math.round((base64Content.length * 3) / 4) : Buffer.byteLength(rawText || '', 'utf8'));
+    const effectiveSize =
+      size ||
+      (inputBuffer
+        ? inputBuffer.length
+        : base64Content
+        ? Math.round((base64Content.length * 3) / 4)
+        : Buffer.byteLength(rawText || '', 'utf8'));
 
     // 1. Validation
     if (effectiveSize > MAX_FILE_SIZE) {
@@ -39,14 +52,14 @@ class DocumentProcessor {
     }
 
     // 2. Obtain binary buffer
-    let buffer = null;
-    if (base64Content) {
+    let buffer = inputBuffer || null;
+    if (!buffer && base64Content) {
       try {
         buffer = Buffer.from(base64Content, 'base64');
       } catch (err) {
         logger.warn(`[Document Processor] Base64 decode failed for ${filename}: ${err.message}`);
       }
-    } else if (rawText) {
+    } else if (!buffer && rawText) {
       buffer = Buffer.from(rawText, 'utf8');
     }
 
