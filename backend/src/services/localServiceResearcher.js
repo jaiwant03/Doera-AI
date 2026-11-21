@@ -824,7 +824,6 @@ class LocalServiceResearcher {
       retrievedAt: new Date().toISOString(),
     };
   }
-  }
 
   /**
    * Parse Nominatim JSON record into clean provider object with Haversine distance
