@@ -16,6 +16,7 @@ import locationService from '../services/locationService.js';
 import extractAndRegisterDeliverables from '../services/deliverableExtractor.js';
 import conversationContextEngine from '../services/conversationContextEngine.js';
 import fileStorageService from '../services/fileStorageService.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Geocodes missing contact coordinates and creates structured locationData for interactive maps
