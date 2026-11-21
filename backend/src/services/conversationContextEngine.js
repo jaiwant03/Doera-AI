@@ -199,7 +199,7 @@ class ConversationContextEngine {
     activeCategory,
     rawMessages,
   }) {
-    if (rawMessages.length === 0) {
+    if (rawMessages.length === 0 && !lastPlan && !lastChartConfig && !lastCalculation && !lastDraft && !lastResearchResults) {
       return {
         isFollowUp: false,
         followUpType: 'NEW_CONVERSATION',
