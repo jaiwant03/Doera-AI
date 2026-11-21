@@ -162,8 +162,8 @@ class DocumentAgent {
    */
   classifyDocumentIntent(userRequest = '') {
     const lower = (userRequest || '').toLowerCase().trim();
-    if (/(architecture|system architecture|components?|weakness|weaknesses|improvements?|recommendations?|proposal|design|stack|technical design|system workflow)/i.test(lower)) {
-      return 'ARCHITECTURE_ANALYSIS';
+    if (/(compare|comparison|difference between|vs\b|versus|which (document|proposal) is better)/i.test(lower)) {
+      return 'COMPARISON';
     }
     const slideMatch = lower.match(/(?:explain|what is on|show me|details of|describe|about)\s+(?:slide|page)\s*(\d+)/i);
     if (slideMatch) {
@@ -175,11 +175,17 @@ class DocumentAgent {
     if (/(technical requirements?|requirements?|specs?|specifications?|prerequisites?|deliverables?)/i.test(lower)) {
       return 'REQUIREMENTS_EXTRACTION';
     }
-    if (/^(summarize|summary|overview|give me a summary|brief|tldr|abstract|what is this (doc|document|pdf|proposal|ppt|file) about)/i.test(lower) || /summarize this/i.test(lower)) {
+    if (/^(summarize|summary|overview|give me a summary|brief|tldr|abstract|what is this (doc|document|pdf|proposal|ppt|file) about)/i.test(lower) || /^summarize this/i.test(lower)) {
       return 'SUMMARIZATION';
     }
-    if (/(compare|comparison|difference between|vs\b|versus|which (document|proposal) is better)/i.test(lower)) {
-      return 'COMPARISON';
+    if (/(database|data model|database design|schema|data storage|entities|tables|storage design)/i.test(lower)) {
+      return 'DATABASE_ANALYSIS';
+    }
+    if (/(recommend improvements?|recommended improvements?|suggest improvements?|what improvements)/i.test(lower) && !/(architecture|weakness)/i.test(lower)) {
+      return 'IMPROVEMENTS_ANALYSIS';
+    }
+    if (/(architecture|system architecture|components?|weakness|weaknesses|improvements?|recommendations?|proposal|design|stack|technical design|system workflow)/i.test(lower)) {
+      return 'ARCHITECTURE_ANALYSIS';
     }
     if (lower.length > 0 && !/^(analyze|process|read|check)\s+(this|the|my)?\s*(file|document|doc|pdf|ppt|presentation)$/i.test(lower)) {
       return 'SPECIFIC_QUESTION';
@@ -231,22 +237,53 @@ Output structured JSON:
   },
   "identifiedWeaknesses": [
     {
-      "issue": "Specific weakness or bottleneck",
-      "whyItMatters": "Technical impact, reliability risk, or scalability bottleneck",
+      "title": "Short descriptive title",
+      "issue": "Specific weakness, single point of failure, or bottleneck",
+      "impact": "Why this matters to reliability, latency, or scalability",
+      "priority": "High | Medium | Low",
       "citation": "[Slide X] or [Page Y]"
     }
   ],
   "recommendations": [
     {
-      "title": "Clear actionable improvement title",
-      "what": "What should be improved",
-      "why": "Why the improvement is necessary based on the weakness",
-      "how": "Practical, step-by-step implementation approach",
-      "benefits": "Expected performance, reliability, or security benefits"
+      "title": "Short title",
+      "suggestedImprovement": "What specific component or pattern should be changed",
+      "implementation": "Step-by-step practical implementation approach",
+      "expectedBenefit": "Expected measurable improvement or operational benefit"
     }
   ],
-  "overallAssessment": "Concise executive assessment of the proposal and its architecture.",
+  "overallAssessment": "Concise executive assessment covering current architecture quality, main strengths, critical improvement areas, and readiness.",
   "missingInformation": ["Mention any components not found in document"]
+}`;
+    } else if (requestIntent === 'DATABASE_ANALYSIS') {
+      intentInstructions = `The user wants a focused analysis of the database design, data models, and storage workflow.
+Output structured JSON:
+{
+  "requestIntent": "DATABASE_ANALYSIS",
+  "databaseAnalysis": {
+    "overview": "Overview of the primary database engine, caching, and storage mechanisms used",
+    "dataOrganization": "How data entities, schemas, tables, and collections are structured",
+    "relationshipsAndWorkflow": "Data access patterns, foreign key relationships, and query workflows",
+    "potentialImprovements": ["Targeted optimization 1", "Targeted optimization 2"]
+  }
+}`;
+    } else if (requestIntent === 'IMPROVEMENTS_ANALYSIS') {
+      intentInstructions = `The user wants targeted technical improvement recommendations for this project.
+Output structured JSON:
+{
+  "requestIntent": "IMPROVEMENTS_ANALYSIS",
+  "improvementsAnalysis": {
+    "context": "Brief context of identified technical challenges and operational bottlenecks",
+    "recommendations": [
+      {
+        "title": "Recommendation title",
+        "suggestedImprovement": "What should be changed",
+        "implementation": "How it can be implemented",
+        "expectedBenefit": "Expected performance, reliability, or security benefit"
+      }
+    ],
+    "strategicImpact": "Overall expected benefits and production readiness improvements"
+  }
 }`;
     } else if (requestIntent === 'SUMMARIZATION') {
       intentInstructions = `The user wants a concise, grounded document summary.
@@ -458,13 +495,19 @@ ${textSnippet}`;
 
       const weaknesses = [
         {
+          title: 'Single Point of Failure at API Gateway',
           issue: 'API Gateway Single Point of Failure (SPOF)',
+          impact: 'If the primary API gateway instance experiences outage or traffic spikes without horizontal auto-scaling, all downstream microservices become unreachable.',
           whyItMatters: 'If the primary API gateway instance experiences outage or traffic spikes without horizontal auto-scaling, all downstream microservices become unreachable.',
+          priority: 'High',
           citation: arch.citations[0] || '[Slide 2]',
         },
         {
+          title: 'Synchronous Inter-Service Coupling',
           issue: 'Synchronous Inter-Service Coupling',
+          impact: 'Tight HTTP REST coupling across internal services increases latency and causes cascading failures if any single dependency slows down.',
           whyItMatters: 'Tight HTTP REST coupling across internal services increases latency and causes cascading failures if any single dependency slows down.',
+          priority: 'Medium',
           citation: arch.citations[1] || '[Slide 3]',
         },
       ];
@@ -472,16 +515,20 @@ ${textSnippet}`;
       const recommendations = [
         {
           title: 'Implement Multi-Region API Gateway with Anycast Load Balancing',
+          suggestedImprovement: 'Deploy redundant gateway instances across availability zones with automatic health checking and failover.',
           what: 'Deploy redundant gateway instances across availability zones with automatic health checking and failover.',
-          why: 'Eliminates single point of failure and guarantees uninterrupted request ingestion.',
+          implementation: 'Deploy Envoy or NGINX ingress with Kubernetes Horizontal Pod Autoscaler (HPA).',
           how: 'Deploy Envoy or NGINX ingress with Kubernetes Horizontal Pod Autoscaler (HPA).',
+          expectedBenefit: '99.99% availability, zero-downtime rolling upgrades, and resilient traffic surge handling.',
           benefits: '99.99% availability, zero-downtime rolling upgrades, and resilient traffic surge handling.',
         },
         {
           title: 'Adopt Asynchronous Event-Driven Messaging with Dead-Letter Queues',
+          suggestedImprovement: 'Decouple non-blocking operations using message brokers (e.g., Apache Kafka or RabbitMQ) with persistent dead-letter queues.',
           what: 'Decouple non-blocking operations using message brokers (e.g., Apache Kafka or RabbitMQ) with persistent dead-letter queues.',
-          why: 'Prevents cascading service timeouts and guarantees that transient worker failures do not drop requests.',
+          implementation: 'Route transactional events through message topics with retry backoff and DLQ alerting.',
           how: 'Route transactional events through message topics with retry backoff and DLQ alerting.',
+          expectedBenefit: 'Sub-50ms gateway latency, fault tolerance, and guaranteed eventual consistency.',
           benefits: 'Sub-50ms gateway latency, fault tolerance, and guaranteed eventual consistency.',
         },
       ];
@@ -494,6 +541,46 @@ ${textSnippet}`;
         recommendations,
         overallAssessment: `The proposal establishes a solid architectural foundation with defined service tiers. Implementing redundant gateway clustering and asynchronous message queues will elevate system resilience to production-ready standards.`,
         missingInformation: [],
+      };
+    }
+
+    if (requestIntent === 'DATABASE_ANALYSIS') {
+      const dbMatch = findWithCitation(['database', 'postgresql', 'postgres', 'mongodb', 'mysql', 'redis', 'dynamodb', 'elasticsearch', 'storage', 'schema', 'tables', 'data']);
+      return {
+        requestIntent,
+        databaseAnalysis: {
+          overview: dbMatch ? `The persistence tier utilizes ${dbMatch.match.replace(/\[[^\]]+\]/g, '').trim()} to handle structured application records.` : `The application persistence model defines relational and document data storage structures.`,
+          dataOrganization: `Data entities are organized into normalized tables and collections for user accounts, transaction ledgers, and operational event logs.`,
+          relationshipsAndWorkflow: `Foreign key mappings and indexed query patterns manage transactional data flow between the API service tier and persistent storage.`,
+          potentialImprovements: [
+            'Introduce read-replica pools and Redis caching for frequently accessed read-heavy queries.',
+            'Implement automated schema migration tooling with database connection pooling and deadlock detection.',
+          ],
+        },
+      };
+    }
+
+    if (requestIntent === 'IMPROVEMENTS_ANALYSIS') {
+      return {
+        requestIntent,
+        improvementsAnalysis: {
+          context: 'Analysis of current architectural patterns indicates opportunities to optimize service decoupling, resilience, and API latency.',
+          recommendations: [
+            {
+              title: 'Implement Multi-Region API Gateway with Anycast Load Balancing',
+              suggestedImprovement: 'Deploy redundant gateway instances across availability zones with automatic health checking and failover.',
+              implementation: 'Deploy Envoy or NGINX ingress with Kubernetes Horizontal Pod Autoscaler (HPA) and distributed rate limiting.',
+              expectedBenefit: 'Guaranteed 99.99% availability, zero-downtime rolling upgrades, and resilient traffic surge handling.',
+            },
+            {
+              title: 'Adopt Asynchronous Event-Driven Messaging with Dead-Letter Queues',
+              suggestedImprovement: 'Decouple non-blocking inter-service operations using message brokers with persistent dead-letter queues.',
+              implementation: 'Route transactional events through Apache Kafka or RabbitMQ topics with exponential retry backoff and DLQ alerting.',
+              expectedBenefit: 'Fault isolation, eliminated cascading timeouts, and guaranteed eventual consistency.',
+            },
+          ],
+          strategicImpact: 'Applying these improvements establishes a horizontally scalable, production-grade foundation with sub-50ms gateway latency and automated disaster recovery.',
+        },
       };
     }
 
