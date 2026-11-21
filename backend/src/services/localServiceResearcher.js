@@ -150,9 +150,37 @@ class LocalServiceResearcher {
 
     const completedAt = new Date();
 
-    // Section 6 Diagnostic Logging
+    if (conversationId && searchState !== 'SEARCH_FAILED' && evaluatedProviders.length > 0) {
+      this.conversationResultsCache.set(conversationId, {
+        conversationId,
+        missionId: taskContext.taskId || taskContext.missionId || requestId,
+        originalQuery: userRequest,
+        serviceCategory: params.serviceCategory,
+        categoryTitle: params.categoryTitle,
+        searchLocation: params.targetLocation,
+        locationSource: params.locationSource,
+        searchRadius: params.radiusKm,
+        center: params.center,
+        providers: evaluatedProviders,
+        recommendation,
+        locationData,
+        searchCompletionStatus: searchState,
+        lastFocusedBusiness: evaluatedProviders[0] || null,
+        updatedAt: completedAt,
+      });
+    }
+
+    // Section 10 Diagnostic Logging
     logger.info(`[Local Service Researcher] Diagnostics:`, {
       requestId,
+      conversationId,
+      previousMissionId: null,
+      executionType: 'NEW_LOCAL_SEARCH',
+      detectedIntent: 'NEW_SEARCH',
+      followUpReferenceResolution: null,
+      previousBusinessResultsCount: 0,
+      newProviderApiCallMade: true,
+      apiCallReason: 'User initiated a new business search or requested a different category/location',
       originalQuery: userRequest,
       parsedCategory: params.serviceCategory,
       requestedCount: params.targetCount,
@@ -166,6 +194,7 @@ class LocalServiceResearcher {
       filteredResultsCount: evaluatedProviders.length,
       normalizedResultsCount: evaluatedProviders.length,
       finalApiStatus: searchState,
+      finalResponseStatus: searchState,
     });
 
     return {
