@@ -685,6 +685,7 @@ class LocalServiceResearcher {
                 city: targetCity || 'Coimbatore',
                 location: vp.location,
                 distanceKmNum: dist,
+                distanceKm: dist !== null ? `${dist} km` : null,
                 distance: dist !== null ? `${dist} km away` : 'Within search area',
                 rating: null,
                 reviewCount: 0,

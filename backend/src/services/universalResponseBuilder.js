@@ -364,8 +364,9 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
     if (c.address) {
       md += `   - **Address**: ${c.address}\n`;
     }
-    if (c.distanceKm) {
-      md += `   - **Distance**: ${c.distanceKm}\n`;
+    const distVal = c.distanceKm || c.distance;
+    if (distVal) {
+      md += `   - **Distance**: ${distVal}\n`;
     }
     const ratingStr = c.rating
       ? `★ ${c.rating}${c.reviewsCount ? ` (${c.reviewsCount} reviews)` : ''}`
