@@ -298,6 +298,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
       requiredAgents.add('Verification');
     } else if (flags.hasAttachments || flags.isDocAnalysis) {
       categories.push(CATEGORIES.DOCUMENT_ANALYSIS);
+      requiredAgents.delete('Planner');
       requiredAgents.add('Document');
       requiredAgents.add('Verification');
     }
