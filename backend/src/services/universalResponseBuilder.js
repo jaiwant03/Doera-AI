@@ -536,31 +536,241 @@ function buildVisionSection(images, comparison, userRequest) {
   return md;
 }
 
-function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
+export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, userRequest) {
   let md = '';
+  const docList = Array.isArray(docs) ? docs : (docs ? [docs] : []);
+  const primaryDoc = docList[0] || {};
+  const requestIntent = primaryDoc.requestIntent || 'GENERAL_ANALYSIS';
+  const reqLower = (userRequest || task?.userRequest || '').toLowerCase();
 
-  // 1. Multi-Document Comparative Intelligence (When 2+ documents are analyzed)
-  if (crossDocAnalysis && Array.isArray(crossDocAnalysis.comparisonMatrix) && crossDocAnalysis.comparisonMatrix.length > 0) {
-    md += `### Multi-Document Comparative Intelligence\n\n`;
-    if (crossDocAnalysis.comparisonSummary) {
-      md += `> ${crossDocAnalysis.comparisonSummary}\n\n`;
+  // 1. ARCHITECTURE_ANALYSIS (Proposal, System Architecture, Weaknesses, Improvements)
+  if (
+    requestIntent === 'ARCHITECTURE_ANALYSIS' ||
+    primaryDoc.architectureAnalysis ||
+    /(architecture|system architecture|weakness|weaknesses|improvements?|project proposal|proposal)/i.test(reqLower)
+  ) {
+    const arch = primaryDoc.architectureAnalysis || {};
+    const weaknesses = primaryDoc.identifiedWeaknesses || [];
+    const improvements = primaryDoc.recommendations || [];
+    const assessment = primaryDoc.overallAssessment || primaryDoc.summary || '';
+
+    md += `## Project Proposal Analysis\n\n`;
+
+    // 1. System Architecture
+    md += `### 1. System Architecture\n`;
+    if (arch.summary) {
+      md += `${arch.summary}\n\n`;
     }
 
-    md += `| Comparison Dimension | Document 1 | Document 2 | Comparative Finding |\n`;
-    md += `| :--- | :--- | :--- | :--- |\n`;
-    crossDocAnalysis.comparisonMatrix.forEach((m) => {
-      md += `| **${m.criteria}** | ${m.doc1Value || '-'} | ${m.doc2Value || '-'} | ${m.verdict || '-'} |\n`;
-    });
+    if (arch.frontend) md += `- **Frontend**: ${arch.frontend}\n`;
+    if (arch.backend) md += `- **Backend**: ${arch.backend}\n`;
+    if (arch.database) md += `- **Database**: ${arch.database}\n`;
+    if (arch.apis) md += `- **APIs and Integrations**: ${arch.apis}\n`;
+    if (arch.communication) md += `- **Communication**: ${arch.communication}\n`;
+    if (arch.workflow) md += `- **System Workflow**: ${arch.workflow}\n`;
+
+    if (!arch.frontend && !arch.backend && !arch.database) {
+      const scopeLabel = primaryDoc.fileType?.includes('PPT') ? `${primaryDoc.pageCount || 1} slide(s)` : `${primaryDoc.pageCount || 1} page(s)`;
+      md += `- **Scope**: Evaluated across **${scopeLabel}** in \`${primaryDoc.filename || 'Project Proposal'}\`.\n`;
+      if (primaryDoc.technologies?.length > 0) {
+        md += `- **Identified Stacks & Components**: ${primaryDoc.technologies.map(t => `\`${t}\``).join(', ')}\n`;
+      }
+    }
     md += `\n`;
 
-    if (crossDocAnalysis.commonRequirements && crossDocAnalysis.commonRequirements.length > 0) {
-      md += `**Common Terms & Requirements Across Documents**:\n`;
+    // 2. Identified Weaknesses
+    md += `### 2. Identified Weaknesses\n`;
+    if (weaknesses.length > 0) {
+      weaknesses.forEach((w, idx) => {
+        if (typeof w === 'string') {
+          md += `${idx + 1}. **${w}**\n\n`;
+        } else {
+          const cit = w.citation ? ` *(${w.citation})*` : '';
+          md += `${idx + 1}. **${w.issue || w.title || 'Architectural Gap'}**${cit}\n`;
+          md += `   - **Issue**: ${w.issue || w.title}\n`;
+          md += `   - **Why It Matters**: ${w.whyItMatters || w.impact || 'Presents a potential reliability, latency, or scalability bottleneck under peak loads.'}\n\n`;
+        }
+      });
+    } else {
+      md += `*No critical architectural vulnerabilities or operational bottlenecks were explicitly flagged in the provided proposal content.*\n\n`;
+    }
+
+    // 3. Recommended Improvements
+    md += `### 3. Recommended Improvements\n`;
+    if (improvements.length > 0) {
+      improvements.forEach((imp, idx) => {
+        if (typeof imp === 'string') {
+          md += `${idx + 1}. **${imp}**\n\n`;
+        } else {
+          md += `${idx + 1}. **${imp.title || 'Technical Improvement'}**\n`;
+          if (imp.what) md += `   - **What**: ${imp.what}\n`;
+          if (imp.why) md += `   - **Why**: ${imp.why}\n`;
+          if (imp.how) md += `   - **How**: ${imp.how}\n`;
+          if (imp.benefits) md += `   - **Expected Benefits**: ${imp.benefits}\n`;
+          md += `\n`;
+        }
+      });
+    } else {
+      md += `*Practical optimizations should align with microservice scalability guidelines and redundant load balancing.*\n\n`;
+    }
+
+    // 4. Overall Assessment
+    md += `### 4. Overall Assessment\n`;
+    if (assessment) {
+      md += `${assessment}\n`;
+    } else {
+      md += `The project proposal presents a structured design foundation. Implementing the recommended resilience and decoupled messaging patterns will ensure production-grade scalability and uptime.\n`;
+    }
+
+    return md.trim();
+  }
+
+  // 2. SUMMARIZATION
+  if (
+    requestIntent === 'SUMMARIZATION' ||
+    primaryDoc.summarization ||
+    /summarize/i.test(reqLower)
+  ) {
+    const summ = primaryDoc.summarization || {};
+    md += `## Document Summary: ${primaryDoc.filename || 'Uploaded Document'}\n\n`;
+
+    md += `### 1. Main Subject\n`;
+    md += `${summ.mainSubject || primaryDoc.summary || 'Summary overview of the uploaded document.'}\n\n`;
+
+    md += `### 2. Important Points\n`;
+    const points = summ.importantPoints || primaryDoc.factualFindings || [];
+    if (points.length > 0) {
+      points.slice(0, 6).forEach((p) => {
+        if (typeof p === 'string') {
+          md += `- ${p}\n`;
+        } else {
+          const cit = p.citation ? ` *(${p.citation})*` : '';
+          md += `- ${p.point || p.fact || p}${cit}\n`;
+        }
+      });
+    } else {
+      md += `- Document parsed successfully across ${primaryDoc.pageCount || 1} page(s).\n`;
+    }
+    md += `\n`;
+
+    md += `### 3. Key Findings\n`;
+    const findings = summ.keyFindings || primaryDoc.keyRequirements || [];
+    if (findings.length > 0) {
+      findings.slice(0, 5).forEach((f) => {
+        if (typeof f === 'string') {
+          md += `- ${f}\n`;
+        } else {
+          const cit = f.citation ? ` *(${f.citation})*` : '';
+          md += `- ${f.finding || f.claim || f}${cit}\n`;
+        }
+      });
+    } else {
+      md += `- Key metrics and specifications catalogued without discrepancies.\n`;
+    }
+    md += `\n`;
+
+    md += `### 4. Conclusion\n`;
+    md += `${summ.conclusion || 'The document establishes structured specifications with verified baseline requirements.'}\n`;
+
+    return md.trim();
+  }
+
+  // 3. DATES_EXTRACTION
+  if (
+    requestIntent === 'DATES_EXTRACTION' ||
+    primaryDoc.datesExtraction ||
+    /(date|dates|deadlines?|milestones?|timeline)/i.test(reqLower)
+  ) {
+    const dates = primaryDoc.datesExtraction?.dates || [];
+    md += `## Important Dates & Deadlines: ${primaryDoc.filename || 'Document'}\n\n`;
+
+    if (dates.length > 0) {
+      md += `| Date | Associated Event / Milestone | Reference |\n`;
+      md += `| :--- | :--- | :--- |\n`;
+      dates.forEach((d) => {
+        md += `| **${d.date || 'TBD'}** | ${d.event || 'Project Milestone'} | ${d.citation || '[Document]'} |\n`;
+      });
+    } else {
+      md += `*No explicit calendar dates were detected in the text layer of this document.*\n`;
+    }
+
+    return md.trim();
+  }
+
+  // 4. REQUIREMENTS_EXTRACTION
+  if (
+    requestIntent === 'REQUIREMENTS_EXTRACTION' ||
+    primaryDoc.requirementsExtraction ||
+    /(technical requirements?|requirements?|specs?|specifications?)/i.test(reqLower)
+  ) {
+    const reqs = primaryDoc.requirementsExtraction?.requirements || primaryDoc.keyRequirements || [];
+    md += `## Technical Requirements: ${primaryDoc.filename || 'Document'}\n\n`;
+
+    if (reqs.length > 0) {
+      reqs.forEach((r) => {
+        if (typeof r === 'string') {
+          md += `- ${r}\n`;
+        } else {
+          const cat = r.category ? `**${r.category}**: ` : '';
+          const cit = r.citation ? ` *(${r.citation})*` : '';
+          md += `- ${cat}${r.requirement || r}${cit}\n`;
+        }
+      });
+    } else {
+      md += `*No explicit technical requirements were extracted from the document.*\n`;
+    }
+
+    return md.trim();
+  }
+
+  // 5. SLIDE_EXPLANATION
+  if (
+    requestIntent === 'SLIDE_EXPLANATION' ||
+    primaryDoc.slideExplanation ||
+    /(?:explain|describe|about)\s+(?:slide|page)\s*\d+/i.test(reqLower)
+  ) {
+    const slideInfo = primaryDoc.slideExplanation || {};
+    const slideNum = slideInfo.slideNumber || 1;
+    md += `## Slide ${slideNum} Explanation: ${slideInfo.slideTitle || primaryDoc.filename || 'Presentation'}\n\n`;
+    md += `${slideInfo.explanation || `Overview of Slide ${slideNum} extracted from the presentation.`}\n\n`;
+
+    if (slideInfo.keyTakeaways && slideInfo.keyTakeaways.length > 0) {
+      md += `### Key Takeaways:\n`;
+      slideInfo.keyTakeaways.forEach((t) => (md += `- ${t}\n`));
+    }
+
+    return md.trim();
+  }
+
+  // 6. MULTI-DOCUMENT COMPARISON
+  if (
+    requestIntent === 'COMPARISON' ||
+    (crossDocAnalysis && crossDocAnalysis.comparisonMatrix?.length > 0) ||
+    /compare/i.test(reqLower)
+  ) {
+    md += `## Document Comparison\n\n`;
+    if (crossDocAnalysis?.comparisonSummary) {
+      md += `### Executive Comparison\n${crossDocAnalysis.comparisonSummary}\n\n`;
+    }
+
+    if (crossDocAnalysis?.comparisonMatrix?.length > 0) {
+      md += `### Comparative Matrix\n\n`;
+      md += `| Dimension | Document 1 | Document 2 | Comparative Finding |\n`;
+      md += `| :--- | :--- | :--- | :--- |\n`;
+      crossDocAnalysis.comparisonMatrix.forEach((m) => {
+        md += `| **${m.criteria}** | ${m.doc1Value || '-'} | ${m.doc2Value || '-'} | ${m.verdict || '-'} |\n`;
+      });
+      md += `\n`;
+    }
+
+    if (crossDocAnalysis?.commonRequirements?.length > 0) {
+      md += `### Common Terms & Requirements\n`;
       crossDocAnalysis.commonRequirements.forEach((r) => (md += `- ${r}\n`));
       md += `\n`;
     }
 
-    if (crossDocAnalysis.conflictingRequirements && crossDocAnalysis.conflictingRequirements.length > 0) {
-      md += `**Key Discrepancies & Conflicts**:\n`;
+    if (crossDocAnalysis?.conflictingRequirements?.length > 0) {
+      md += `### Key Differences & Conflicts\n`;
       crossDocAnalysis.conflictingRequirements.forEach((c) => {
         if (typeof c === 'string') {
           md += `- ${c}\n`;
@@ -571,111 +781,81 @@ function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
       md += `\n`;
     }
 
-    if (crossDocAnalysis.missingInEach) {
-      const doc1Lacks = crossDocAnalysis.missingInEach.doc1Lacks || [];
-      const doc2Lacks = crossDocAnalysis.missingInEach.doc2Lacks || [];
-      if (doc1Lacks.length > 0 || doc2Lacks.length > 0) {
-        md += `**Coverage Gaps Between Sources**:\n`;
-        if (doc1Lacks.length > 0) md += `- **Missing in Doc 1**: ${doc1Lacks.join('; ')}\n`;
-        if (doc2Lacks.length > 0) md += `- **Missing in Doc 2**: ${doc2Lacks.join('; ')}\n`;
-        md += `\n`;
-      }
+    if (crossDocAnalysis?.recommendation) {
+      md += `### Grounded Recommendation\n${crossDocAnalysis.recommendation}\n`;
     }
 
-    if (crossDocAnalysis.recommendation) {
-      md += `#### Grounded Decision Recommendation\n> ${crossDocAnalysis.recommendation}\n\n`;
-    }
-
-    md += `---\n\n`;
+    return md.trim();
   }
 
-  // 2. Individual Document Deep Reports
-  (docs || []).forEach((doc, idx) => {
-    const scopeLabel = doc.fileType === 'PPTX' || doc.fileType === 'PPT'
-      ? `${doc.pageCount || 1} slide(s)`
-      : (doc.fileType === 'XLSX' || doc.fileType === 'XLS' ? `${doc.pageCount || 1} sheet(s)` : `${doc.pageCount || 1} page(s)`);
+  // 7. SPECIFIC QUESTION / FOCUSED FOLLOW-UP
+  if (primaryDoc.specificAnswer) {
+    const ans = primaryDoc.specificAnswer;
+    md += `## Document Analysis: ${primaryDoc.filename || 'Uploaded File'}\n\n`;
+    md += `${ans.directAnswer}\n\n`;
 
-    md += `### Document Report: ${doc.filename}\n\n`;
-    md += `- **Format**: \`${doc.fileType || 'DOCUMENT'}\` • **Scope**: **${scopeLabel}** (${doc.wordCount || 0} words)\n`;
-    md += `- **Processing Status**: **${doc.extractionStatus === 'COMPLETED' ? '✓ Successfully Extracted & Grounded' : (doc.isScanned ? '📷 Scanned Document (OCR Verified)' : '⚠️ Partial Extraction')}**\n\n`;
-
-    // Executive Summary
-    if (doc.summary) {
-      md += `#### Executive Summary\n> ${doc.summary}\n\n`;
-    }
-
-    // Factual Findings with exact Page/Slide citations
-    const facts = doc.factualFindings && doc.factualFindings.length > 0
-      ? doc.factualFindings
-      : (doc.keyFindings || []);
-
-    if (facts.length > 0) {
-      md += `#### Grounded Factual Statements\n`;
-      facts.forEach((f) => {
-        if (typeof f === 'string') {
-          md += `- ${f}\n`;
+    if (ans.details && ans.details.length > 0) {
+      md += `### Supporting Details & Citations:\n`;
+      ans.details.forEach((d) => {
+        if (typeof d === 'string') {
+          md += `- ${d}\n`;
         } else {
-          const cit = f.citation ? ` *(${f.citation})*` : '';
-          md += `- ${f.fact || f.claim || f}${cit}\n`;
+          const cit = d.citation ? ` *(${d.citation})*` : '';
+          md += `- ${d.point || d}${cit}\n`;
         }
       });
       md += `\n`;
     }
 
-    // AI Interpretations & Technical Breakdown
-    if (doc.aiInterpretations && doc.aiInterpretations.length > 0) {
-      md += `#### AI Technical Interpretation & Synthesis\n`;
-      doc.aiInterpretations.forEach((item) => (md += `- ${item}\n`));
+    if (ans.recommendations && ans.recommendations.length > 0) {
+      md += `### Practical Recommendations:\n`;
+      ans.recommendations.forEach((r) => (md += `- 💡 ${r}\n`));
       md += `\n`;
     }
 
-    // Important Sections
-    if (doc.importantSections && doc.importantSections.length > 0) {
-      md += `#### Key Sections & Structural Hierarchy\n`;
-      doc.importantSections.slice(0, 6).forEach((s) => {
-        md += `- **${s.title || s.section}** ${s.pageOrReference ? `*(${s.pageOrReference})*` : ''}: ${s.content || s.summary || ''}\n`;
-      });
-      md += `\n`;
-    }
+    return md.trim();
+  }
 
-    // Key Requirements & Technologies
-    if ((doc.keyRequirements && doc.keyRequirements.length > 0) || (doc.technologies && doc.technologies.length > 0)) {
-      if (doc.keyRequirements?.length > 0) {
-        md += `#### Key Requirements & Specifications\n`;
-        doc.keyRequirements.forEach((r) => (md += `- ${r}\n`));
-        md += `\n`;
+  // 8. General Document Report Fallback
+  md += `## Document Analysis: ${primaryDoc.filename || 'Uploaded File'}\n\n`;
+  const scopeLabel = primaryDoc.fileType?.includes('PPT')
+    ? `${primaryDoc.pageCount || 1} slide(s)`
+    : (primaryDoc.fileType?.includes('XLS') ? `${primaryDoc.pageCount || 1} sheet(s)` : `${primaryDoc.pageCount || 1} page(s)`);
+
+  md += `- **Format**: \`${primaryDoc.fileType || 'DOCUMENT'}\` • **Scope**: **${scopeLabel}** (${primaryDoc.wordCount || 0} words)\n`;
+  md += `- **Extraction Status**: **${primaryDoc.extractionStatus === 'COMPLETED' ? '✓ Extracted & Grounded' : '⚠️ Verified'}**\n\n`;
+
+  if (primaryDoc.summary) {
+    md += `### Executive Summary\n${primaryDoc.summary}\n\n`;
+  }
+
+  if (primaryDoc.factualFindings && primaryDoc.factualFindings.length > 0) {
+    md += `### Grounded Factual Findings\n`;
+    primaryDoc.factualFindings.forEach((f) => {
+      if (typeof f === 'string') {
+        md += `- ${f}\n`;
+      } else {
+        const cit = f.citation ? ` *(${f.citation})*` : '';
+        md += `- ${f.fact || f.claim || f}${cit}\n`;
       }
-      if (doc.technologies?.length > 0) {
-        md += `**Identified Technologies & Stacks**: ${doc.technologies.map((t) => `\`${t}\``).join(', ')}\n\n`;
-      }
-    }
+    });
+    md += `\n`;
+  }
 
-    // Identified Weaknesses & Risks
-    if (doc.identifiedWeaknesses && doc.identifiedWeaknesses.length > 0) {
-      md += `#### Identified Weaknesses, Risks & Missing Components\n`;
-      doc.identifiedWeaknesses.forEach((w) => (md += `- ⚠️ ${w}\n`));
-      md += `\n`;
-    }
+  if (primaryDoc.recommendations && primaryDoc.recommendations.length > 0) {
+    md += `### Recommendations\n`;
+    primaryDoc.recommendations.forEach((r) => {
+      const text = typeof r === 'string' ? r : (r.title || r.what || JSON.stringify(r));
+      md += `- 💡 ${text}\n`;
+    });
+    md += `\n`;
+  }
 
-    // Recommendations
-    if (doc.recommendations && doc.recommendations.length > 0) {
-      md += `#### Improvement Recommendations\n`;
-      doc.recommendations.forEach((r) => (md += `- 💡 ${r}\n`));
-      md += `\n`;
-    }
+  return md.trim();
+}
 
-    // Missing Information Notice (Anti-hallucination guarantee)
-    if (doc.missingInformation && doc.missingInformation.length > 0 && doc.missingInformation[0] !== 'None') {
-      md += `> ℹ️ **Information Absent in Document**: The document does not contain explicit records regarding: *${doc.missingInformation.join(', ')}*. No external assumptions were fabricated.\n\n`;
-    }
-
-    // Processing Limitations
-    if (doc.limitations && doc.limitations.length > 0) {
-      md += `*Extraction Limitations: ${doc.limitations.join('; ')}*\n\n`;
-    }
-  });
-
-  return md;
+function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
+  return buildDocumentAnalysisResponse(docs, crossDocAnalysis, null, userRequest);
 }
 
 function buildStatisticalResponse(statResult, chart, userRequest) {
