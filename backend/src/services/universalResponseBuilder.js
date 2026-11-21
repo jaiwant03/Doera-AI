@@ -998,7 +998,7 @@ function buildSingleMathResponse({
       md += 'Substitute the actual calculated values:\n\n';
       md += `\\[\n\\bar{x} = \\frac{${formatRaw(totalSum, 2)}}{${validCountFormatted}}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\bar{x} = ${formatMathCurrency(mean)}}\n\\]\n`;
+      md += `\\[\n\\boxed{\\bar{x} = ${formatCurrency(mean)}}\n\\]\n`;
       break;
     }
 
@@ -1017,7 +1017,7 @@ function buildSingleMathResponse({
         md += `For $N = ${validCountFormatted}$ (odd), the median is the observation at rank ${mid.toLocaleString()}:\n\n\\[\n\\text{Median} = x_{(${mid.toLocaleString()})}\n\\]\n\n`;
       }
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{Median} = ${formatMathCurrency(median)}}\n\\]\n`;
+      md += `\\[\n\\boxed{\\text{Median} = ${formatCurrency(median)}}\n\\]\n`;
       break;
     }
 
@@ -1029,10 +1029,9 @@ function buildSingleMathResponse({
       md += 'Calculation:\n\n';
       if (mode?.hasMode) {
         const modeVal = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatCurrency(m)).join(', ') : formatCurrency(mode.modeValue);
-        const modeValMath = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatMathCurrency(m)).join(', ') : formatMathCurrency(mode.modeValue);
         md += `The value **${modeVal}** occurs with the highest frequency (**${mode.frequency.toLocaleString()}** times).\n\n`;
         md += '**Final Answer:**\n\n';
-        md += `\\[\n\\boxed{\\text{Mode} = ${modeValMath} \\quad (\\text{Frequency: } ${mode.frequency.toLocaleString()})}\n\\]\n`;
+        md += `\\[\n\\boxed{\\text{Mode} = ${modeVal} \\quad (\\text{Frequency: } ${mode.frequency.toLocaleString()})}\n\\]\n`;
       } else {
         md += `All observations in **${targetColumn}** appear uniquely without repetition.\n\n`;
         md += '**Final Answer:**\n\n';
@@ -1096,7 +1095,7 @@ function buildSingleMathResponse({
         md += 'Substitute the actual calculated values:\n\n';
         md += `\\[\n\\sigma = \\sqrt{\\frac{${formatRaw(sumSq, 2)}}{${validCountFormatted}}} = \\sqrt{${formatRaw(popVar, 4)}}\n\\]\n\n`;
         md += '**Final Answer:**\n\n';
-        md += `\\[\n\\boxed{\\sigma = ${formatMathCurrency(popSD)}}\n\\]\n\n`;
+        md += `\\[\n\\boxed{\\sigma = ${formatCurrency(popSD)}}\n\\]\n\n`;
       }
 
       if (!isPopOnly) {
@@ -1106,7 +1105,7 @@ function buildSingleMathResponse({
         md += 'Substitute the actual calculated values:\n\n';
         md += `\\[\ns = \\sqrt{\\frac{${formatRaw(sumSq, 2)}}{${dofFormatted}}} = \\sqrt{${formatRaw(sampleVar, 4)}}\n\\]\n\n`;
         md += '**Final Answer:**\n\n';
-        md += `\\[\n\\boxed{s = ${formatMathCurrency(sampleSD)}}\n\\]\n\n`;
+        md += `\\[\n\\boxed{s = ${formatCurrency(sampleSD)}}\n\\]\n\n`;
       }
 
       if (!isPopOnly && !isSampleOnly) {
