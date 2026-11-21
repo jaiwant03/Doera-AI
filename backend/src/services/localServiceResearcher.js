@@ -1150,7 +1150,7 @@ class LocalServiceResearcher {
 
     // MAP_REQUEST: User specifically asks for map view / geographic representation
     if (
-      /(?:(?:show|display|view|render|put)\s+(?:all\s+)?(?:these|the|those|\d+)?\s*(?:locations?|places?|centres?|centers?|theatres?|cinemas?|shops?|spots?)?\s*(?:on\s+(?:the\s+)?map|on\s+map)|where\s+(?:are\s+)?(?:these|those|all\s+(?:the|these))\s+(?:businesses|centres|locations)\s+located|map\s+(?:the\s+)?(?:closest|all|\d+|these|those)|can\s+you\s+show\s+(?:those|these)\s+locations\s+on\s+the\s+map|show\s+(?:those\s+|these\s+)?locations\s+on\s+map)/i.test(lower)
+      /(?:(?:show|display|view|render|put)\s+(?:me\s+)?(?:all\s+)?(?:these|the|those|\d+|one|two|three|four|five)?\s*(?:locations?|places?|centres?|centers?|theatres?|cinemas?|shops?|spots?|results?)?\s*(?:on\s+(?:the\s+)?map|on\s+map)|(?:show|display|view)\s+(?:the\s+)?map|where\s+(?:are\s+)?(?:these|those|all\s+(?:the|these))\s+(?:businesses|centres|locations)\s+located|map\s+(?:the\s+)?(?:closest|all|\d+|these|those)|can\s+you\s+show\s+(?:those|these|the|all)?\s*locations\s+on\s+(?:the\s+)?map|show\s+(?:those\s+|these\s+)?locations\s+on\s+map)/i.test(lower)
     ) {
       return 'MAP_REQUEST';
     }
