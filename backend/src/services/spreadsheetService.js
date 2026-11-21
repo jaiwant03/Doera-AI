@@ -523,6 +523,8 @@ class SpreadsheetService {
       queryLower,
       columnSchema,
       sheetName: targetSheet.name,
+      parsedSpreadsheet,
+      targetSheet,
     });
 
     // Intelligent Chart Generation
@@ -589,7 +591,13 @@ class SpreadsheetService {
     queryLower,
     columnSchema,
     sheetName,
+    parsedSpreadsheet,
+    targetSheet,
   }) {
+    // Detect currency from available metrics
+    const sampleMetricVals = metricCol ? rows.slice(0, 100).map((r) => r[metricCol]).filter(Boolean) : [];
+    const currency = this.detectCurrency(sampleMetricVals);
+
     // 1. OUTLIERS / ANOMALIES
     if (operation === 'OUTLIERS' && metricCol) {
       const validRows = rows
@@ -609,13 +617,16 @@ class SpreadsheetService {
         targetColumns: [metricCol, dimensionCol],
         formula: `|Value - Mean| > 1.8 * Standard Deviation (Mean: ${mean.toFixed(2)}, StDev: ${stdev.toFixed(2)})`,
         outlierCount: outliers.length,
+        totalRowsAnalyzed: rows.length,
+        totalTransactions: rows.length,
+        currency,
         outliers: outliers.slice(0, 10).map((o) => ({
           row: o._origIdx,
           entity: o[dimensionCol] || `Row #${o._origIdx}`,
           metricValue: o._val,
           zScore: Number(((o._val - mean) / (stdev || 1)).toFixed(2)),
         })),
-        summary: `Detected ${outliers.length} anomalous transactions exceeding the statistical threshold in column "${metricCol}".`,
+        summary: `Detected ${outliers.length} anomalous transactions exceeding the statistical threshold in column "${metricCol}". Analyzed ${rows.length} rows.`,
         items: outliers.map((o) => ({
           label: String(o[dimensionCol] || `Row #${o._origIdx}`),
           value: o._val,
@@ -641,10 +652,12 @@ class SpreadsheetService {
         operation: 'Data Quality & Missing Values Audit',
         targetColumns: headers,
         missingReport,
+        totalRowsAnalyzed: rows.length,
+        totalTransactions: rows.length,
         totalMissingCells: missingReport.reduce((acc, m) => acc + m.missingCount, 0),
         summary: missingReport.length === 0
-          ? 'Zero missing values detected. All columns maintain 100% data completeness.'
-          : `Identified missing values across ${missingReport.length} columns in sheet "${sheetName}".`,
+          ? `Zero missing values detected across ${rows.length} rows. 100% data completeness.`
+          : `Identified missing values across ${missingReport.length} columns in sheet "${sheetName}". Analyzed ${rows.length} rows.`,
         items: missingReport.map((m) => ({
           label: m.column,
           value: m.missingCount,
@@ -652,14 +665,64 @@ class SpreadsheetService {
       };
     }
 
-    // 3. GROUP BY CATEGORY & SUM / TOP N / BOTTOM N / PERCENTAGE
-    if (dimensionCol && metricCol) {
+    // Resolve Category Mapping across sheets
+    const { mapping: categoryMap, hasMapping } = this.resolveCategoryMapping(
+      parsedSpreadsheet,
+      targetSheet,
+      dimensionCol
+    );
+
+    // Check if category values are numeric codes (e.g. 1, 2, 3, 4, 10)
+    let isNumericCategoryCodes = false;
+    const sampleVals = rows.slice(0, 100).map((r) => r[dimensionCol]).filter((v) => v !== null && v !== undefined && v !== '');
+    if (sampleVals.length > 0) {
+      const numericCount = sampleVals.filter((v) => /^\d+$/.test(String(v).trim())).length;
+      if (numericCount / sampleVals.length >= 0.75) {
+        isNumericCategoryCodes = true;
+      }
+    }
+
+    // Check if user is asking for monthly trends or date comparison
+    const isMonthlyQuery = /(month|monthly|over time|timeline|trend)/i.test(queryLower);
+    const dateCol = (Array.isArray(dateCols) && dateCols.length > 0)
+      ? dateCols[0]
+      : headers.find((h) => columnSchema[h]?.type === 'date' || /(date|month|period|time)/i.test(h));
+    const shouldAggregateByMonth = (operation === 'TREND' || isMonthlyQuery) && Boolean(dateCol);
+
+    // 3. GROUP BY CATEGORY OR MONTH (With or without metric column)
+    if (dimensionCol || shouldAggregateByMonth) {
+      const activeDimension = shouldAggregateByMonth ? dateCol : dimensionCol;
       const groupMap = {};
       let totalSum = 0;
+      let totalCount = 0;
+      const isCountBased = !metricCol;
 
       rows.forEach((row) => {
-        const key = String(row[dimensionCol] || 'Unassigned').trim();
-        const val = this.parseNumeric(row[metricCol]) || 0;
+        let rawKey = row[activeDimension];
+        let key;
+
+        if (shouldAggregateByMonth) {
+          const dt = this.parseDate(rawKey);
+          if (dt) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            key = `${months[dt.getMonth()]} ${dt.getFullYear()}`;
+          } else {
+            key = String(rawKey || 'Unknown Period').trim();
+          }
+        } else {
+          key = rawKey !== null && rawKey !== undefined && String(rawKey).trim() !== ''
+            ? String(rawKey).trim()
+            : 'Unassigned';
+
+          if (hasMapping && categoryMap[key]) {
+            key = categoryMap[key];
+          } else if (isNumericCategoryCodes && /^\d+$/.test(key)) {
+            key = `Category ${key}`;
+          }
+        }
+
+        const val = isCountBased ? 1 : (this.parseNumeric(row[metricCol]) || 0);
+
         if (!groupMap[key]) {
           groupMap[key] = { label: key, sum: 0, count: 0, values: [] };
         }
@@ -667,6 +730,7 @@ class SpreadsheetService {
         groupMap[key].count += 1;
         groupMap[key].values.push(val);
         totalSum += val;
+        totalCount += 1;
       });
 
       let items = Object.values(groupMap).map((g) => ({
@@ -677,9 +741,8 @@ class SpreadsheetService {
         percentage: totalSum > 0 ? Number(((g.sum / totalSum) * 100).toFixed(1)) : 0,
       }));
 
-      // Sort order based on operation
-      const isDateDim = columnSchema[dimensionCol]?.type === 'date' || /(date|month|year|quarter|period)/i.test(dimensionCol);
-      if (operation === 'TREND' || (isDateDim && operation !== 'TOP_N' && operation !== 'BOTTOM_N')) {
+      // Sort order
+      if (shouldAggregateByMonth) {
         items.sort((a, b) => {
           const da = new Date(a.label);
           const db = new Date(b.label);
@@ -700,20 +763,36 @@ class SpreadsheetService {
 
       const highest = items[0] || null;
       const lowest = items[items.length - 1] || null;
-      const overallAvg = totalSum / (rows.length || 1);
+      const overallAvg = isCountBased
+        ? Number((totalCount / (items.length || 1)).toFixed(1))
+        : Number((totalSum / (rows.length || 1)).toFixed(2));
+
+      const categoryCodesWithoutMapping = !hasMapping && isNumericCategoryCodes && !shouldAggregateByMonth;
 
       return {
-        operation: operation === 'TOP_N'
-          ? `Top ${topN} ${dimensionCol} Rankings`
-          : (operation === 'BOTTOM_N' ? `Lowest ${topN} ${dimensionCol} Categories` : `Aggregated ${metricCol} by ${dimensionCol}`),
-        targetColumns: [dimensionCol, metricCol],
-        formula: `SUM(${metricCol}) GROUP BY ${dimensionCol}`,
+        operation: shouldAggregateByMonth
+          ? 'Monthly Expense Progression'
+          : (operation === 'TOP_N'
+              ? `Top ${topN} ${activeDimension} Rankings`
+              : (operation === 'BOTTOM_N' ? `Lowest ${topN} ${activeDimension} Categories` : `Aggregated ${metricCol || 'Records'} by ${activeDimension}`)),
+        targetColumns: [activeDimension, metricCol || 'Count'],
+        formula: isCountBased
+          ? `COUNT(*) GROUP BY ${activeDimension}`
+          : `SUM(${metricCol}) GROUP BY ${activeDimension}`,
         totalSum: Number(totalSum.toFixed(2)),
-        overallAverage: Number(overallAvg.toFixed(2)),
+        totalRowsAnalyzed: rows.length,
+        totalTransactions: rows.length,
+        overallAverage: overallAvg,
         highest,
         lowest,
         items,
-        summary: `Calculated total ${metricCol} across ${Object.keys(groupMap).length} unique ${dimensionCol} segments. Total: ${totalSum.toLocaleString()}. Top: "${highest?.label}" (${highest?.value.toLocaleString()} / ${highest?.percentage}%).`,
+        isCountBased,
+        currency: isCountBased ? '' : currency,
+        categoryCodesWithoutMapping,
+        mappingSheetName: hasMapping ? (parsedSpreadsheet.sheets.find(s => s !== targetSheet)?.name || 'Mapping') : null,
+        summary: shouldAggregateByMonth
+          ? `Calculated monthly totals across ${items.length} periods for ${rows.length} transactions. Peak: "${highest?.label}" (${currency}${highest?.value.toLocaleString()}).`
+          : `Calculated total ${metricCol || 'records'} across ${items.length} unique segments. Total: ${isCountBased ? totalSum.toLocaleString() + ' records' : currency + totalSum.toLocaleString()}. Peak: "${highest?.label}" (${isCountBased ? highest?.value.toLocaleString() + ' records' : currency + highest?.value.toLocaleString()} / ${highest?.percentage}%). Analyzed ${rows.length} rows.`,
       };
     }
 
@@ -729,15 +808,18 @@ class SpreadsheetService {
         targetColumns: [metricCol],
         formula: `SUM(${metricCol}) over ${values.length} records`,
         totalSum: Number(total.toFixed(2)),
+        totalRowsAnalyzed: rows.length,
+        totalTransactions: rows.length,
         overallAverage: Number(avg.toFixed(2)),
         min: sorted[0] || 0,
         max: sorted[sorted.length - 1] || 0,
         count: values.length,
+        currency,
         items: rows.slice(0, 10).map((r, i) => ({
           label: String(r[dimensionCol] || `Row #${i + 1}`),
           value: this.parseNumeric(r[metricCol]) || 0,
         })),
-        summary: `Total ${metricCol}: ${total.toLocaleString()} across ${values.length} valid rows. Average: ${avg.toFixed(2)}.`,
+        summary: `Total ${metricCol}: ${currency}${total.toLocaleString()} across ${values.length} valid rows. Average: ${currency}${avg.toFixed(2)}.`,
       };
     }
 
@@ -747,6 +829,9 @@ class SpreadsheetService {
       targetColumns: headers.slice(0, 4),
       formula: `COUNT(*)`,
       totalRows: rows.length,
+      totalRowsAnalyzed: rows.length,
+      totalTransactions: rows.length,
+      currency: '',
       items: headers.slice(0, 6).map((h) => ({
         label: h,
         value: rows.filter((r) => r[h] !== null && r[h] !== '').length,
@@ -799,7 +884,7 @@ class SpreadsheetService {
 
     // Intelligent Chart Selection if unspecified
     if (!chartType) {
-      const isDateDim = columnSchema[dimensionCol]?.type === 'date' || /(month|date|year|quarter|period)/i.test(dimensionCol);
+      const isDateDim = columnSchema[dimensionCol]?.type === 'date' || /(month|date|year|quarter|period)/i.test(dimensionCol) || calcResult.operation?.includes('Monthly');
       if (isDateDim) {
         chartType = 'line';
       } else if (calcResult.operation?.includes('Percentage') || (dataItems.length <= 6 && queryLower.includes('percentage'))) {
@@ -821,10 +906,11 @@ class SpreadsheetService {
     }));
 
     // Series Definition
+    const isCountBased = calcResult.isCountBased;
     const series = [
       {
         key: 'value',
-        name: metricCol ? `${metricCol}` : 'Metric Value',
+        name: isCountBased ? 'Records' : (metricCol ? `${metricCol}` : 'Metric Value'),
         color: this.PALETTE[0],
       },
     ];
@@ -835,11 +921,13 @@ class SpreadsheetService {
       availableChartTypes.push('scatter');
     }
 
-    const title = metricCol && dimensionCol
-      ? `${metricCol} by ${dimensionCol}`
-      : `${calcResult.operation || 'Data Visualization'}`;
+    const title = calcResult.operation?.includes('Monthly')
+      ? 'Monthly Expense Progression'
+      : (metricCol && dimensionCol
+          ? `${metricCol} by ${dimensionCol}`
+          : `${calcResult.operation || 'Data Visualization'}`);
 
-    const description = calcResult.summary || `Rendered ${chartData.length} data points from sheet "${targetSheet.name}".`;
+    const description = `Interactive chart comparing totals across ${chartData.length} categories (${(calcResult.totalRowsAnalyzed || rows.length).toLocaleString()} rows analyzed).`;
 
     return {
       chartType,
@@ -847,11 +935,11 @@ class SpreadsheetService {
       description,
       xAxis: {
         key: chartType === 'horizontal_bar' ? 'value' : 'name',
-        label: chartType === 'horizontal_bar' ? (metricCol || 'Value') : (dimensionCol || 'Category'),
+        label: chartType === 'horizontal_bar' ? (isCountBased ? 'Records' : (metricCol || 'Value')) : (dimensionCol || 'Category'),
       },
       yAxis: {
         key: chartType === 'horizontal_bar' ? 'name' : 'value',
-        label: chartType === 'horizontal_bar' ? (dimensionCol || 'Category') : (metricCol || 'Total Amount'),
+        label: chartType === 'horizontal_bar' ? (dimensionCol || 'Category') : (isCountBased ? 'Record Count' : (metricCol || 'Total Amount')),
       },
       series,
       data: chartData,

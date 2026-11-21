@@ -31,15 +31,20 @@ class DataAnalysisAgent {
     if (spreadsheetAttachment) {
       try {
         let buffer = null;
-        if (spreadsheetAttachment.buffer) {
+        if (spreadsheetAttachment.buffer && Buffer.isBuffer(spreadsheetAttachment.buffer)) {
           buffer = spreadsheetAttachment.buffer;
         } else if (spreadsheetAttachment.base64) {
           buffer = Buffer.from(spreadsheetAttachment.base64, 'base64');
+        } else if (typeof spreadsheetAttachment.dataUrl === 'string' && spreadsheetAttachment.dataUrl.includes(',')) {
+          const b64 = spreadsheetAttachment.dataUrl.split(',')[1];
+          if (b64) buffer = Buffer.from(b64, 'base64');
         } else if (typeof spreadsheetAttachment.url === 'string' && spreadsheetAttachment.url.startsWith('data:')) {
           const b64 = spreadsheetAttachment.url.split(',')[1];
           if (b64) buffer = Buffer.from(b64, 'base64');
         } else if (spreadsheetAttachment.content) {
-          buffer = Buffer.from(spreadsheetAttachment.content, 'utf8');
+          buffer = Buffer.from(spreadsheetAttachment.content, typeof spreadsheetAttachment.content === 'string' ? 'utf8' : undefined);
+        } else if (spreadsheetAttachment.text) {
+          buffer = Buffer.from(spreadsheetAttachment.text, 'utf8');
         }
 
         if (buffer) {
@@ -131,8 +136,10 @@ class DataAnalysisAgent {
     const systemPrompt = `You are DOERA's Senior Data Analysis & Business Intelligence Agent.
 You are evaluating verified mathematical calculations from the user's uploaded spreadsheet.
 CRITICAL RULES:
+- The total rows analyzed is EXACTLY ${rowCount}. Never state or imply that only a preview or sample rows were evaluated. The entire dataset of ${rowCount} rows was processed deterministically.
 - Never fabricate raw numbers or conflict with the provided calculations.
 - Use the exact calculated totals, averages, percentages, rankings, and outliers provided below.
+- If category codes (e.g. Category 1, Category 2) are used without a mapping table, do not invent names (e.g. Food, Travel).
 - Provide strategic, actionable business interpretations based on the verified facts.
 
 Output pure JSON:
