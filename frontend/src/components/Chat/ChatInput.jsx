@@ -331,7 +331,7 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
                 <MapPin size={12} color="#10B981" />
                 <span className="doera-chip-name" style={{ color: '#34D399', fontWeight: 600 }}>
                   {userLocation.name}
-                  {isTrackingActive ? ' (Live GPS)' : ''}
+                  {userLocation.lat ? (isTrackingActive ? ' (Live GPS)' : '') : ' (Selected)'}
                 </span>
                 <button
                   type="button"
