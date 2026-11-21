@@ -231,7 +231,7 @@ class LocalServiceResearcher {
     } else if (/mobile|phone|smartphone|iphone|android|cell\s*phone/i.test(lower)) {
       serviceCategory = 'Mobile Phone Service Centres';
       categoryTitle = 'Mobile Phone Service Centres';
-      searchTerms = ['mobile phone repair', 'mobile service center', 'phone repair', 'mobile repair', 'electronics repair'];
+      searchTerms = ['mobile repair', 'mobile service', 'phone repair', 'mobiles', 'electronics repair'];
     } else if (/electrician|electrical/i.test(lower)) {
       serviceCategory = 'Electricians';
       categoryTitle = 'Electricians';
