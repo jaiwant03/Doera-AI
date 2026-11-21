@@ -662,6 +662,135 @@ function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
   return md;
 }
 
+function buildDataAnalysisResponse(analysis, task, userRequest) {
+  const calc = analysis?.calculation || null;
+  const chart = task?.chartConfig || analysis?.chartConfig || null;
+  const summary = analysis?.spreadsheetSummary || {};
+  const queryLower = (userRequest || '').toLowerCase();
+
+  const totalRows = calc?.totalRowsAnalyzed || summary.totalRows || analysis?.rowCount || 0;
+  const totalAmount = calc?.totalSum !== undefined ? calc.totalSum : (chart?.summaryStats?.total || 0);
+  const highest = calc?.highest || (chart?.data && chart.data.length > 0 ? chart.data[0] : null);
+  const lowest = calc?.lowest || (chart?.data && chart.data.length > 0 ? chart.data[chart.data.length - 1] : null);
+  const currency = calc?.currency || '$';
+  const isCountBased = Boolean(calc?.isCountBased);
+  const categoryCodesWithoutMapping = Boolean(calc?.categoryCodesWithoutMapping);
+
+  const formatVal = (v) => {
+    if (v === null || v === undefined) return '-';
+    const num = Number(v);
+    if (isNaN(num)) return String(v);
+    return isCountBased
+      ? `${num.toLocaleString()} records`
+      : `${currency}${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  };
+
+  const isHighestQuery = /(highest|top\s*(spending|category|expense)|maximum|most\s*spent)/i.test(queryLower) && !/bar\s*chart|pie\s*chart|visualize/i.test(queryLower);
+  const isChartOnlyQuery = /(create\s*(a\s*)?(bar|line|pie|doughnut|donut|area)?\s*chart|show\s*(me\s*)?(a\s*)?chart|plot\s*expenses|visualize\s*(this)?)/i.test(queryLower);
+  const isMonthlyQuery = /(monthly|month\s*by\s*month|compare\s*monthly|over\s*time|timeline|trend)/i.test(queryLower);
+  const isReduceExpensesQuery = /(reduce|save\s*money|cut\s*costs|optimize\s*spending|cost\s*reduction|lower\s*expenses)/i.test(queryLower);
+
+  let md = '';
+
+  // 1. HEADER & NATURAL LANGUAGE SUMMARY
+  if (isHighestQuery && highest) {
+    md += `### Highest Spending Category\n\n`;
+    md += `The highest spending category is **${highest.label}** with total spending of **${formatVal(highest.value)}**, accounting for **${highest.percentage ?? 0}%** of total recorded ${isCountBased ? 'transactions' : 'expenses'}.\n\n`;
+  } else if (isMonthlyQuery) {
+    md += `### Monthly Expense Comparison\n\n`;
+    md += `I analyzed your expense spreadsheet by month to calculate spending totals and evaluate trends across the recorded timeline.\n\n`;
+  } else if (isReduceExpensesQuery) {
+    md += `### Spreadsheet Analysis Completed\n\n`;
+    md += `I analyzed your entire dataset across all **${totalRows.toLocaleString()}** transactions to assess spending distribution and identify data-grounded cost reduction opportunities.\n\n`;
+  } else if (isChartOnlyQuery) {
+    md += `### Spreadsheet Analysis Completed\n\n`;
+    md += `I analyzed your spreadsheet and generated an interactive visualization comparing totals across all categories.\n\n`;
+  } else {
+    md += `### Spreadsheet Analysis Completed\n\n`;
+    md += `I analyzed your ${isCountBased ? 'dataset' : 'expense spreadsheet'} and calculated ${isCountBased ? 'record counts' : 'spending totals'} across the available categories. The highest ${isCountBased ? 'frequency' : 'spending'} category is identified below.\n\n`;
+  }
+
+  // 2. KEY INSIGHTS
+  md += `### Key Insights\n\n`;
+  if (isMonthlyQuery) {
+    md += `- **Total Expenses Analyzed**: ${formatVal(totalAmount)}\n`;
+    if (highest) md += `- **Peak Spending Month**: **${highest.label}** (${formatVal(highest.value)}, ${highest.percentage}% of total)\n`;
+    if (lowest && lowest.label !== highest?.label) md += `- **Lowest Spending Month**: **${lowest.label}** (${formatVal(lowest.value)}, ${lowest.percentage}% of total)\n`;
+    if (calc?.overallAverage !== undefined) md += `- **Average Monthly Spending**: ${formatVal(calc.overallAverage)}\n`;
+    md += `- **Number of Transactions Analyzed**: **${totalRows.toLocaleString()}** records\n\n`;
+  } else if (isReduceExpensesQuery) {
+    md += `- **Total Expenses**: ${formatVal(totalAmount)}\n`;
+    if (highest) md += `- **Highest Spending Category**: **${highest.label}** (${formatVal(highest.value)}, ${highest.percentage}% of total)\n`;
+    const items = calc?.items || chart?.data || [];
+    if (items.length > 1) {
+      const top2Sum = (items[0]?.value || 0) + (items[1]?.value || 0);
+      const top2Pct = totalAmount > 0 ? Number(((top2Sum / totalAmount) * 100).toFixed(1)) : 0;
+      md += `- **Top Spending Concentration**: The top 2 categories (${items[0]?.label} and ${items[1]?.label}) account for **${top2Pct}%** of total spending\n`;
+    }
+    md += `- **Number of Transactions Analyzed**: **${totalRows.toLocaleString()}** records\n\n`;
+  } else {
+    md += `- **Total ${isCountBased ? 'Records' : 'Expenses'}**: ${formatVal(totalAmount)}\n`;
+    if (highest) {
+      md += `- **Highest ${isCountBased ? 'Category' : 'Spending Category'}**: **${highest.label}**\n`;
+      md += `- **Highest Category ${isCountBased ? 'Count' : 'Spending'}**: ${formatVal(highest.value)}\n`;
+      md += `- **Percentage of Total ${isCountBased ? 'Records' : 'Spending'}**: **${highest.percentage ?? 0}%**\n`;
+    }
+    md += `- **Number of Transactions Analyzed**: **${totalRows.toLocaleString()}** records\n\n`;
+  }
+
+  // Note for Category Codes without Mapping
+  if (categoryCodesWithoutMapping) {
+    md += `> **Note**: Category descriptions are unavailable in the uploaded data. Category codes (e.g. Category 1, Category 2) are displayed as Category Code IDs without fabricated names.\n\n`;
+  }
+
+  // 3. CHART EXPLANATION & INTERACTIVE CHART
+  if (chart && Array.isArray(chart.data) && chart.data.length > 0) {
+    md += `### Chart Explanation\n\n`;
+    if (isMonthlyQuery) {
+      md += `The interactive chart compares spending progression across months. Switch between Line and Bar views or hover over a point to inspect monthly totals.\n\n`;
+    } else {
+      md += `The interactive bar chart compares total ${isCountBased ? 'records' : 'expenses'} across all categories. Select a chart type or hover over a bar to explore the values.\n\n`;
+    }
+
+    // Embed json:doera-chart code block for frontend MessageItem / SpreadsheetChart
+    md += `\`\`\`json:doera-chart\n${JSON.stringify(chart, null, 2)}\n\`\`\`\n\n`;
+  }
+
+  // 4. ADDITIONAL INSIGHTS (Only when meaningful patterns exist)
+  if (isReduceExpensesQuery && highest) {
+    const items = calc?.items || chart?.data || [];
+    const second = items[1] || null;
+    md += `### Grounded Cost Optimization Recommendations\n\n`;
+    const target10Pct = typeof highest.value === 'number' ? formatVal(highest.value * 0.1) : '';
+    const target15Pct = typeof highest.value === 'number' ? formatVal(highest.value * 0.15) : '';
+    md += `1. **Target ${highest.label} Expenses**: As your largest spending driver at ${formatVal(highest.value)} (${highest.percentage}% of total expenses), setting a 10–15% efficiency target in this category yields immediate savings of ${target10Pct} to ${target15Pct}.\n`;
+    if (second) {
+      md += `2. **Cap Secondary Discretionary Spending in ${second.label}**: Establish predefined monthly allocation caps on ${second.label} (${formatVal(second.value)}) to protect core budget.\n`;
+    }
+    md += `3. **Audit High-Value Transactions**: Periodically review large transaction items within ${highest.label} to eliminate non-essential expenses.\n`;
+  } else if (!isChartOnlyQuery && !isHighestQuery) {
+    const meaningfulInsights = [];
+    if (lowest && lowest.label !== highest?.label) {
+      meaningfulInsights.push(`- **Lowest Spending Category**: **${lowest.label}** with ${formatVal(lowest.value)} (${lowest.percentage}% of total).`);
+    }
+    if (calc?.overallAverage && !isCountBased) {
+      meaningfulInsights.push(`- **Average Transaction Amount**: ${currency}${calc.overallAverage.toLocaleString()} per transaction.`);
+    }
+    if (calc?.outliers && calc.outliers.length > 0) {
+      meaningfulInsights.push(`- **Unusual Spending Patterns**: Identified ${calc.outliers.length} anomalous transactions exceeding the typical statistical distribution threshold.`);
+    }
+    if (calc?.mappingSheetName) {
+      meaningfulInsights.push(`- **Category Mapping Source**: Category names were mapped from the \`${calc.mappingSheetName}\` worksheet.`);
+    }
+
+    if (meaningfulInsights.length > 0) {
+      md += `### Additional Insights\n\n${meaningfulInsights.join('\n')}\n`;
+    }
+  }
+
+  return md.trim();
+}
+
 function buildDataAnalysisSection(analysis) {
   let md = `### Data Analysis & Statistical Insights\n\n`;
   if (analysis.datasetSummary) {

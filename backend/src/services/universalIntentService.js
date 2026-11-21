@@ -203,6 +203,21 @@ User Personalized Context: ${memoryContext || 'None'}`;
     }
     if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasSpreadsheetAttachment) {
       requiredAgents.add('DataAnalysis');
+      // Strictly enforce pure data analytics workflow unless user explicitly asks for external outreach or booking
+      const lowerText = text.toLowerCase();
+      const hasExplicitOutreach = /send\s+email|email\s+this|dispatch\s+to|reach\s+out/i.test(lowerText);
+      const hasExplicitBooking = /book\s+an?\s+appointment|reserve\s+slot/i.test(lowerText);
+      if (!hasExplicitOutreach && !hasExplicitBooking) {
+        requiredAgents.delete('Communication');
+        requiredAgents.delete('Execution');
+        requiredAgents.delete('Scheduling');
+        requiredAgents.delete('FollowUp');
+        requiredAgents.delete('LocalService');
+        requiredAgents.delete('Location');
+        requiredAgents.delete('Discovery');
+        requiredAgents.delete('Quotation');
+        parsed.requestedExternalActions = [];
+      }
     }
     if (categories.includes(CATEGORIES.MISSION_PLANNING) || /(organize|plan|host|conduct|execution\s*plan|complete\s*plan).*(hackathon|event|symposium|conference)/i.test(text)) {
       requiredAgents.add('Research');
