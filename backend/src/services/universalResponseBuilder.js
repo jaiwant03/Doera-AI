@@ -277,7 +277,10 @@ function buildProvidersSection(contacts, category) {
  * - Strictly zero Evidence & Verification Dimensions contamination
  */
 export function buildLocalServiceResearchResponse(task, userRequest) {
-  const localServiceData = task.discoveredData?.localService || {};
+  const localServiceData = task.discoveredData?.localService || task.output || {};
+  if ((localServiceData.isFollowUp || task.isFollowUp) && (localServiceData.followUpAnswer || task.followUpAnswer)) {
+    return localServiceData.followUpAnswer || task.followUpAnswer;
+  }
   const providers = (Array.isArray(localServiceData.providers) && localServiceData.providers.length > 0)
     ? localServiceData.providers
     : (Array.isArray(task.externalContacts) && task.externalContacts.length > 0 ? task.externalContacts : []);

@@ -61,6 +61,7 @@ const TaskStateAnnotation = Annotation.Root({
   planningData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   budgetData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   lastDocumentAnalysis: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  lastResearchResults: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   communicationDrafts: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
   error: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   userIntegration: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
@@ -137,6 +138,29 @@ const orchestratorNode = async (state) => {
       bookingDetails: null,
       pendingApproval: null,
       externalContacts: [],
+      status: 'RUNNING',
+    };
+  }
+
+  // Pure local service research follow-up short-circuit: Direct to LocalService and Verification
+  if (
+    state.followUpType === 'LOCAL_RESEARCH_FOLLOW_UP' ||
+    state.followUpType === 'LOCAL_RESEARCH_CONTINUATION'
+  ) {
+    logger.info(`[LangGraph Workflow] Local Service Follow-Up routing directly to LocalService Agent for: ${state.taskId}`);
+    const activeReq = ['LocalService', 'Verification'];
+    const steps = [
+      { id: 'local_service', name: 'Evaluating previous research results for follow-up inquiry', agent: 'LocalService', status: 'pending', timestamp: new Date() },
+      { id: 'verify', name: 'Auditing response against verified conversation memory', agent: 'Verification', status: 'pending', timestamp: new Date() },
+    ];
+    return {
+      category: 'LOCATION_DISCOVERY',
+      requiredAgents: activeReq,
+      subtasks: steps,
+      steps,
+      intentAnalysis: state.intentAnalysis || { primaryCategory: 'LOCATION_DISCOVERY' },
+      currentAgent: 'LocalService',
+      currentAction: 'Answering follow-up question using verified conversation memory...',
       status: 'RUNNING',
     };
   }
