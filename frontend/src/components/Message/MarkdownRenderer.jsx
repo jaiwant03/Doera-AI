@@ -7,10 +7,23 @@ import rehypeRaw from 'rehype-raw';
 import { Copy, Check, Download } from 'lucide-react';
 
 /**
+ * Cleans a LaTeX formula body, ensuring unescaped currency symbols ($) are escaped as (\$)
+ * so KaTeX does not fail with parse errors.
+ */
+function cleanMathBlock(formula) {
+  if (!formula || typeof formula !== 'string') return '';
+  let clean = formula.replace(/\\n/g, '\n').trim();
+  // Escape unescaped dollar signs inside math mode so KaTeX parses without error
+  clean = clean.replace(/(^|[^\\])\$/g, (m, p1) => (p1 || '') + '\\$');
+  return clean;
+}
+
+/**
  * Normalizes mathematical delimiters so KaTeX renders inline and block formulas seamlessly.
  * - Converts \[ ... \] to block math $$ ... $$
  * - Converts \( ... \) to inline math $ ... $
  * - Resolves double-escaped backslashes in LaTeX macros
+ * - Safely escapes unescaped currency symbols ($) inside math blocks
  */
 function normalizeMathDelimiters(text) {
   if (!text || typeof text !== 'string') return text;
@@ -18,19 +31,23 @@ function normalizeMathDelimiters(text) {
   // 1. Resolve double-escaped backslashes for common LaTeX commands
   let normalized = text.replace(/\\\\(frac|sum|sigma|mu|bar|sqrt|text|boxed|times|le|ge|alpha|beta|theta|cdot|approx|left|right|quad)/g, '\\$1');
 
-  // 2. Convert LaTeX block math \[ ... \] to \n\n$$\n...\n$$\n\n
-  normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
-    let cleanFormula = formula.replace(/\\n/g, '\n').trim();
-    cleanFormula = cleanFormula.replace(/(^|[^\\])\$/g, '$1\\$');
-    return `\n\n$$\n${cleanFormula}\n$$\n\n`;
+  // 2. Normalize existing $$ ... $$ blocks to escape unescaped $ inside
+  normalized = normalized.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+    return `\n\n$$\n${cleanMathBlock(formula)}\n$$\n\n`;
   });
 
-  // 3. Convert LaTeX inline math \( ... \) to $ ... $
-  normalized = normalized.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
-    let cleanFormula = formula.replace(/\\n/g, ' ').trim();
-    cleanFormula = cleanFormula.replace(/(^|[^\\])\$/g, '$1\\$');
-    return `$${cleanFormula}$`;
+  // 3. Convert LaTeX block math \[ ... \] to \n\n$$\n...\n$$\n\n
+  normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
+    return `\n\n$$\n${cleanMathBlock(formula)}\n$$\n\n`;
   });
+
+  // 4. Convert LaTeX inline math \( ... \) to $ ... $
+  normalized = normalized.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
+    return `$${cleanMathBlock(formula).replace(/\n+/g, ' ')}$`;
+  });
+
+  // 5. Clean excessive blank lines around math blocks
+  normalized = normalized.replace(/\n{3,}/g, '\n\n');
 
   return normalized;
 }
