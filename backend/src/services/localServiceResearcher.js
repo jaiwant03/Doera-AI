@@ -1125,6 +1125,129 @@ class LocalServiceResearcher {
   }
 
   /**
+   * Dynamically classify the current user query into a designated Local Service response type (Section 2)
+   */
+  classifyLocalServiceQuery(userRequest, lastResearchResults = null) {
+    if (!userRequest || typeof userRequest !== 'string') return 'NEW_LOCAL_SEARCH';
+    const lower = userRequest.toLowerCase().trim();
+
+    // Check if user requests a new search explicitly
+    if (
+      /^(?:find|search|look for|locate)\s+(?:\d+|more|other|another|new)\s+/i.test(lower) ||
+      /\b(?:find|search\s+for|show\s+me)\s+(?:5|five|10|ten|\d+)\s+more\b/i.test(lower) ||
+      /\b(?:in|at)\s+(?:chennai|bangalore|bengaluru|mumbai|delhi|hyderabad|kolkata|pune|ooty|tirupur|salem|madurai|calicut|kochi)\b/i.test(lower)
+    ) {
+      return 'NEW_LOCAL_SEARCH';
+    }
+
+    // Check category change
+    if (lastResearchResults) {
+      const prevCategory = (lastResearchResults.serviceCategory || lastResearchResults.categoryTitle || '').toLowerCase();
+      if (this.detectCategoryChange(lower, prevCategory)) {
+        return 'NEW_LOCAL_SEARCH';
+      }
+    }
+
+    // MAP_REQUEST: User specifically asks for map view / geographic representation
+    if (
+      /(?:(?:show|display|view|render|put)\s+(?:all\s+)?(?:these|the|those|\d+)?\s*(?:locations?|places?|centres?|centers?|theatres?|cinemas?|shops?|spots?)?\s*(?:on\s+(?:the\s+)?map|on\s+map)|where\s+(?:are\s+)?(?:these|those|all\s+(?:the|these))\s+(?:businesses|centres|locations)\s+located|map\s+(?:the\s+)?(?:closest|all|\d+|these|those)|can\s+you\s+show\s+(?:those|these)\s+locations\s+on\s+the\s+map|show\s+(?:those\s+|these\s+)?locations\s+on\s+map)/i.test(lower)
+    ) {
+      return 'MAP_REQUEST';
+    }
+
+    // NEAREST_BUSINESS_ANSWER: Closest / second closest / nearest / closely near
+    if (
+      /(?:among\s+(?:all\s+)?(?:the\s+centres?|these\s+centres?|those\s+centres?|the\s+options?|these\s+options?|the|these|those)|which\s+(?:is|one\s+is)\s+(?:closely\s*near|closest|closer|nearest|second\s*closest|third\s*closest)|which\s+(?:centre|center|theatre|theater|cinema|hospital|restaurant|one)\s+is\s+(?:closely\s*near|closest|closer|nearest)|closest\s+(?:one|centre|center|theatre|theater|to\s+me)|nearest\s+(?:one|centre|center|theatre|theater|to\s+me)|second\s+closest|third\s+closest)/i.test(lower)
+    ) {
+      return 'NEAREST_BUSINESS_ANSWER';
+    }
+
+    // DISTANCE_FILTER_ANSWER: Distance criteria
+    if (/(?:within\s+\d+|less\s+than\s+\d+|under\s+\d+|centres?\s+within\s+\d+|theatres?\s+within\s+\d+|locations?\s+within\s+\d+)/i.test(lower)) {
+      return 'DISTANCE_FILTER_ANSWER';
+    }
+
+    // BUSINESS_COMPARISON: Comparative assessment
+    if (/(?:compare\s+(?:the\s+)?(?:first|second|third|1st|2nd|3rd|these|all|both)|compare\s+.*and\s+.*|difference\s+between|versus|vs\b)/i.test(lower)) {
+      return 'BUSINESS_COMPARISON';
+    }
+
+    // DIRECTIONS_REQUEST: Routing or directions
+    if (/(?:(?:give\s+me\s+|show\s+me\s+)?directions?\s+to\s+(?:that|the\s+closest|the\s+first|the\s+second|the\s+third|the\s+centre|[a-z0-9\s]+)|how\s+to\s+get\s+to|navigation\s+to|route\s+to)/i.test(lower)) {
+      return 'DIRECTIONS_REQUEST';
+    }
+
+    // SINGLE_BUSINESS_DETAILS: Specific business details (Address, contact number, details)
+    if (
+      /(?:(?:address|phone|contact|number|call|details|info)\s+of\s+(?:the\s+)?(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th|that|closest|[a-z0-9\s]+)|show\s+me\s+its\s+address|give\s+me\s+its\s+address|its\s+address|its\s+contact|its\s+phone)/i.test(lower)
+    ) {
+      return 'SINGLE_BUSINESS_DETAILS';
+    }
+
+    // RATING_INQUIRY: Rating inspection
+    if (/(?:highest\s*rating|best\s*rating|which\s+has\s+the\s+highest\s*rating|top\s*rating|rating\s+of|reviews?)/i.test(lower)) {
+      return 'RATING_INQUIRY';
+    }
+
+    // PRICE_INQUIRY: Cost / pricing
+    if (/(?:cheapest|lowest\s*cost|pricing|fees?|affordable|cost)/i.test(lower)) {
+      return 'PRICE_INQUIRY';
+    }
+
+    // GENERAL_INFORMATION_FOLLOW_UP: Opening hours, best available option
+    if (/(?:open\s+now|operating\s+hours|best\s*option|best\s*based\s*on|which\s+is\s+best)/i.test(lower)) {
+      return 'GENERAL_INFORMATION_FOLLOW_UP';
+    }
+
+    // Default for any other follow-up
+    if (lastResearchResults && Array.isArray(lastResearchResults.providers) && lastResearchResults.providers.length > 0) {
+      return 'LOCAL_SEARCH_FOLLOW_UP';
+    }
+
+    return 'NEW_LOCAL_SEARCH';
+  }
+
+  /**
+   * Determine presentation contract instructions (showBusinessList, showMap) based on responseType
+   */
+  getPresentationMode(responseType, userRequest = '') {
+    switch (responseType) {
+      case 'NEW_LOCAL_SEARCH':
+        return {
+          showBusinessList: true,
+          showMap: true,
+          mode: 'FULL_SEARCH',
+        };
+      case 'MAP_REQUEST':
+        return {
+          showBusinessList: false, // Map is the primary requested visual; avoid repeating 5 full cards
+          showMap: true,
+          mode: 'MAP_ONLY',
+        };
+      case 'DISTANCE_FILTER_ANSWER':
+        return {
+          showBusinessList: false, // Filtered list presented directly in markdown
+          showMap: false,          // Map hidden unless explicitly requested
+          mode: 'FILTERED_ANSWER',
+        };
+      case 'NEAREST_BUSINESS_ANSWER':
+      case 'SINGLE_BUSINESS_DETAILS':
+      case 'BUSINESS_COMPARISON':
+      case 'DIRECTIONS_REQUEST':
+      case 'RATING_INQUIRY':
+      case 'PRICE_INQUIRY':
+      case 'GENERAL_INFORMATION_FOLLOW_UP':
+      case 'LOCAL_SEARCH_FOLLOW_UP':
+      default:
+        return {
+          showBusinessList: false, // Hide 5-business list
+          showMap: false,          // Hide map
+          mode: 'CONCISE_ANSWER',
+        };
+    }
+  }
+
+  /**
    * Determine if a user query is a follow-up referring to previously retrieved local search results
    */
   isFollowUpQuery(userRequest, lastResearchResults = null) {
