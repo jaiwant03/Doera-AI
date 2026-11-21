@@ -8,53 +8,48 @@ import { Copy, Check, Download } from 'lucide-react';
 
 /**
  * Cleans a LaTeX formula body, ensuring unescaped currency symbols ($) are escaped as (\$)
- * so KaTeX does not fail with parse errors.
+ * and percent signs (%) are escaped as (\%) so KaTeX does not fail with parse errors.
  */
 function cleanMathBlock(formula) {
   if (!formula || typeof formula !== 'string') return '';
   let clean = formula.replace(/\\n/g, '\n').trim();
   // Escape unescaped dollar signs inside math mode so KaTeX parses without error
-  clean = clean.replace(/(^|[^\\])\$/g, (m, p1) => (p1 || '') + '\\$');
+  clean = clean.replace(/(^|[^\\])\$/g, '$1\\$');
   // Escape unescaped percent signs inside math mode so KaTeX does not treat them as LaTeX comments
-  clean = clean.replace(/(^|[^\\])%/g, (m, p1) => (p1 || '') + '\\%');
+  clean = clean.replace(/(^|[^\\])%/g, '$1\\%');
   return clean;
 }
 
 /**
  * Normalizes mathematical delimiters so KaTeX renders inline and block formulas seamlessly.
- * - Converts \[ ... \] to block math $$ ... $$
+ * - Converts \[ ... \] to display math \n\n$$\n...\n$$\n\n
  * - Converts \( ... \) to inline math $ ... $
  * - Resolves double-escaped backslashes in LaTeX macros
  * - Safely escapes unescaped currency symbols ($) and % inside math blocks
- * - Automatically wraps standalone \boxed{...} expressions
  */
 function normalizeMathDelimiters(text) {
   if (!text || typeof text !== 'string') return text;
 
-  // 1. Resolve double-escaped backslashes for common LaTeX commands
+  // 1. Resolve double-escaped LaTeX slashes (e.g., \\boxed -> \boxed, \\frac -> \frac)
   let normalized = text.replace(/\\\\(frac|sum|sigma|mu|bar|sqrt|text|boxed|times|le|ge|alpha|beta|theta|cdot|approx|left|right|quad)/g, '\\$1');
 
-  // 2. Normalize existing $$ ... $$ blocks to escape unescaped $ and % inside
-  normalized = normalized.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+  // 2. Convert LaTeX block math \[ ... \] to display math \n\n$$\n...\n$$\n\n
+  normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
     return `\n\n$$\n${cleanMathBlock(formula)}\n$$\n\n`;
   });
 
-  // 3. Convert LaTeX block math \[ ... \] to \n\n$$\n...\n$$\n\n
-  normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
+  // 3. Ensure any existing $$ ... $$ blocks are properly formatted and escaped
+  normalized = normalized.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
     return `\n\n$$\n${cleanMathBlock(formula)}\n$$\n\n`;
   });
 
   // 4. Convert LaTeX inline math \( ... \) to $ ... $
   normalized = normalized.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
-    return `$${cleanMathBlock(formula).replace(/\n+/g, ' ')}$`;
+    let clean = formula.replace(/\\n/g, ' ').trim();
+    return `$${clean}$`;
   });
 
-  // 5. Detect any standalone \boxed{...} that wasn't already wrapped in $$ or $
-  normalized = normalized.replace(/(^|[^\$])(\s*\\boxed\{[\s\S]*?\}\s*)(?!\$)/g, (match, prefix, boxed) => {
-    return `${prefix}\n\n$$\n${cleanMathBlock(boxed)}\n$$\n\n`;
-  });
-
-  // 6. Clean excessive blank lines around math blocks
+  // 5. Clean excessive blank lines around math blocks
   normalized = normalized.replace(/\n{3,}/g, '\n\n');
 
   return normalized;

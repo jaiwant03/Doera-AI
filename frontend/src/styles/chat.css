@@ -470,15 +470,27 @@ ol.doera-prose-list {
 
 /* Distinct Final Answer Highlighting (\boxed) */
 .katex .mord.boxed,
-.katex .boxed {
-  border: 2px solid #F52FA8 !important;
+.katex .boxed,
+.katex .fbox,
+.katex .stretchy.fbox {
+  border: 1.5px solid rgba(245, 47, 168, 0.75) !important;
   background: rgba(245, 47, 168, 0.12) !important;
-  padding: 5px 14px !important;
-  border-radius: 8px !important;
+  padding: 4px 14px !important;
+  border-radius: 6px !important;
   font-weight: 700 !important;
   color: #FFFFFF !important;
-  box-shadow: 0 0 16px rgba(245, 47, 168, 0.25) !important;
+  box-shadow: 0 0 16px rgba(245, 47, 168, 0.3) !important;
   display: inline-block !important;
+}
+
+/* Graceful Fallback for Math Syntax Errors */
+.katex-error {
+  color: #FF79C6 !important;
+  background: rgba(255, 121, 198, 0.12) !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 0.9em !important;
 }
 
 /* Tables */
