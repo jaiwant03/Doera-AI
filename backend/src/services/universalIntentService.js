@@ -153,11 +153,20 @@ User Personalized Context: ${memoryContext || 'None'}`;
       categories.unshift(CATEGORIES.DATA_ANALYSIS);
     }
 
+    const isMission = /(organize|plan|host|conduct|manage|execution\s*plan|complete\s*plan)\s+(?:a|an)?\s*(?:two-day|2-day|\d+-day)?\s*(?:[a-z0-9_-]+\s+){0,3}(?:hackathon|event|symposium|conference|workshop|fest|competition|championship)/i.test(text) ||
+      ((/hackathon|symposium|conference|fest/i.test(text) || /organize/i.test(text)) && /budget|participants|schedule|plan/i.test(text));
+
+    let finalPrimary = parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION;
+    if (isMission && (finalPrimary === CATEGORIES.TASK_AUTOMATION || finalPrimary === CATEGORIES.GENERAL_QUESTION)) {
+      finalPrimary = CATEGORIES.MISSION_PLANNING;
+      if (!categories.includes(CATEGORIES.MISSION_PLANNING)) categories.unshift(CATEGORIES.MISSION_PLANNING);
+    }
+
     const primaryCategory = hasImageAttachment
       ? CATEGORIES.IMAGE_ANALYSIS
       : (hasSpreadsheetAttachment 
           ? CATEGORIES.DATA_ANALYSIS 
-          : (parsed.primaryCategory || categories[0] || CATEGORIES.GENERAL_QUESTION));
+          : finalPrimary);
 
     // Determine required agents dynamically
     const requiredAgents = new Set(parsed.requiredAgents || ['Planner']);
