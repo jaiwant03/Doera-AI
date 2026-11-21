@@ -503,7 +503,7 @@ class LocalServiceResearcher {
 
           if (Array.isArray(res.data) && res.data.length > 0) {
             for (const p of res.data) {
-              const parsed = this.parseNominatimPlace(p, center);
+              const parsed = this.parseNominatimPlace(p, center, params.categoryTitle);
               if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
                 seenNames.add(parsed.businessName.toLowerCase());
                 parsed.isBrandMatch = true;
@@ -529,7 +529,7 @@ class LocalServiceResearcher {
           providerHttpStatus = 200;
           const feats = res.data?.features || [];
           for (const f of feats) {
-            const parsed = this.parsePhotonPlace(f, center);
+            const parsed = this.parsePhotonPlace(f, center, params.categoryTitle);
             if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
               seenNames.add(parsed.businessName.toLowerCase());
               parsed.isBrandMatch = true;
@@ -566,7 +566,7 @@ class LocalServiceResearcher {
 
         if (Array.isArray(res.data) && res.data.length > 0) {
           for (const p of res.data) {
-            const parsed = this.parseNominatimPlace(p, center);
+            const parsed = this.parseNominatimPlace(p, center, params.categoryTitle);
             if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
               seenNames.add(parsed.businessName.toLowerCase());
               candidates.push(parsed);
@@ -592,7 +592,7 @@ class LocalServiceResearcher {
         networkSuccess = true;
         if (Array.isArray(res.data)) {
           for (const p of res.data) {
-            const parsed = this.parseNominatimPlace(p, center);
+            const parsed = this.parseNominatimPlace(p, center, params.categoryTitle);
             if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
               seenNames.add(parsed.businessName.toLowerCase());
               candidates.push(parsed);
@@ -619,7 +619,7 @@ class LocalServiceResearcher {
           providerHttpStatus = 200;
           const feats = res.data?.features || [];
           for (const f of feats) {
-            const parsed = this.parsePhotonPlace(f, center);
+            const parsed = this.parsePhotonPlace(f, center, params.categoryTitle);
             if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
               seenNames.add(parsed.businessName.toLowerCase());
               candidates.push(parsed);
@@ -642,7 +642,7 @@ class LocalServiceResearcher {
             providerHttpStatus = 200;
             const feats = res.data?.features || [];
             for (const f of feats) {
-              const parsed = this.parsePhotonPlace(f, center);
+              const parsed = this.parsePhotonPlace(f, center, params.categoryTitle);
               if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
                 seenNames.add(parsed.businessName.toLowerCase());
                 candidates.push(parsed);
