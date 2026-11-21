@@ -129,10 +129,35 @@ class DocumentAgent {
         };
         const deepAnalysis = await this.extractDocumentIntelligence(processed, userRequest, taskContext?.historyContext);
         extractedDocs.push({
-          ...prevDoc,
-          ...deepAnalysis,
-          requestIntent: deepAnalysis.requestIntent || prevDoc.requestIntent || 'GENERAL_ANALYSIS',
+          filename: prevDoc.filename,
+          fileSize: prevDoc.fileSize,
+          fileType: prevDoc.fileType,
+          pageCount: prevDoc.pageCount || 1,
+          wordCount: prevDoc.wordCount || 0,
+          isScanned: prevDoc.isScanned || false,
+          isOcr: prevDoc.isOcr || false,
+          extractionStatus: prevDoc.extractionStatus || 'COMPLETED',
+          extractedText: prevDoc.extractedText,
+          technicalArchitecture: deepAnalysis.technicalArchitecture || null,
+          architectureAnalysis: deepAnalysis.architectureAnalysis || null,
+          frontendArchitecture: deepAnalysis.frontendArchitecture || null,
+          backendArchitecture: deepAnalysis.backendArchitecture || null,
+          databaseArchitecture: deepAnalysis.databaseArchitecture || null,
+          databaseAnalysis: deepAnalysis.databaseAnalysis || null,
+          techStackDetails: deepAnalysis.techStackDetails || null,
+          technologies: deepAnalysis.technologies || prevDoc.technologies || [],
+          workflowSteps: deepAnalysis.workflowSteps || null,
+          identifiedWeaknesses: deepAnalysis.identifiedWeaknesses || [],
+          recommendations: deepAnalysis.recommendations || [],
+          improvementsAnalysis: deepAnalysis.improvementsAnalysis || null,
+          summarization: deepAnalysis.summarization || null,
+          datesExtraction: deepAnalysis.datesExtraction || null,
+          requirementsExtraction: deepAnalysis.requirementsExtraction || null,
+          slideExplanation: deepAnalysis.slideExplanation || null,
+          specificAnswer: deepAnalysis.specificAnswer || null,
           summary: deepAnalysis.summary || prevDoc.summary,
+          ...deepAnalysis,
+          requestIntent: deepAnalysis.requestIntent || 'GENERAL_ANALYSIS',
         });
       }
     }
