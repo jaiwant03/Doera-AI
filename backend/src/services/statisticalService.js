@@ -623,6 +623,41 @@ class StatisticalService {
   }
 
   /**
+   * Covariance (Population & Sample)
+   * Pop: sum((x_i - meanX) * (y_i - meanY)) / N
+   * Sample: sum((x_i - meanX) * (y_i - meanY)) / (n - 1)
+   */
+  calculateCovariance(xVals, yVals) {
+    if (!xVals || !yVals || xVals.length === 0 || xVals.length !== yVals.length) {
+      return null;
+    }
+    const n = xVals.length;
+    if (n < 2) return null;
+
+    const meanX = this.calculateMean(xVals);
+    const meanY = this.calculateMean(yVals);
+
+    let sumDiffProd = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xVals[i] - meanX;
+      const dy = yVals[i] - meanY;
+      sumDiffProd += dx * dy;
+    }
+
+    const populationCovariance = sumDiffProd / n;
+    const sampleCovariance = sumDiffProd / (n - 1);
+
+    return {
+      n,
+      meanX,
+      meanY,
+      sumDiffProd,
+      populationCovariance: Number(populationCovariance.toFixed(4)),
+      sampleCovariance: Number(sampleCovariance.toFixed(4)),
+    };
+  }
+
+  /**
    * Spearman Rank Correlation
    */
   calculateSpearmanCorrelation(xVals, yVals) {
