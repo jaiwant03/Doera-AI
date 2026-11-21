@@ -76,6 +76,10 @@ const ConversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
+    lastDocumentAnalysis: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     taskState: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

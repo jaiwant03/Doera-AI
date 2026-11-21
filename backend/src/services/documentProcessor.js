@@ -346,18 +346,44 @@ class DocumentProcessor {
       const slideNum = idx + 1;
       const xml = entry.getData().toString('utf8');
 
-      // Extract all text inside <a:t> tags
-      const textMatches = [];
-      const textTagRegex = /<a:t[^>]*>([\s\S]*?)<\/a:t>/gi;
-      let m;
-      while ((m = textTagRegex.exec(xml)) !== null) {
-        const val = m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').trim();
-        if (val) textMatches.push(val);
+      // Extract paragraphs (<a:p>) to preserve structured lines, bullet points, and headers
+      const pMatches = xml.match(/<a:p\b[\s\S]*?<\/a:p>/gi) || [];
+      const paragraphs = [];
+
+      for (const pXml of pMatches) {
+        const textTagRegex = /<a:t[^>]*>([\s\S]*?)<\/a:t>/gi;
+        const lineTokens = [];
+        let m;
+        while ((m = textTagRegex.exec(pXml)) !== null) {
+          const val = m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').trim();
+          if (val) lineTokens.push(val);
+        }
+        const line = lineTokens.join('').trim();
+        if (line) {
+          paragraphs.push(line);
+        }
       }
 
-      const slideText = textMatches.join(' ').replace(/\s{2,}/g, ' ');
+      // Fallback if no <a:p> tags matched
+      let slideText = '';
+      if (paragraphs.length > 0) {
+        slideText = paragraphs.join('\n');
+      } else {
+        const textTagRegex = /<a:t[^>]*>([\s\S]*?)<\/a:t>/gi;
+        const fallbackTexts = [];
+        let m;
+        while ((m = textTagRegex.exec(xml)) !== null) {
+          const val = m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').trim();
+          if (val) fallbackTexts.push(val);
+        }
+        slideText = fallbackTexts.join(' ').replace(/\s{2,}/g, ' ');
+      }
+
+      const slideTitle = paragraphs[0] || `Slide ${slideNum}`;
+
       slides.push({
         slideNumber: slideNum,
+        title: slideTitle,
         text: slideText,
       });
 
