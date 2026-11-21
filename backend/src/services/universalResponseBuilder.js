@@ -87,12 +87,6 @@ export const buildUniversalResponse = (taskOrPayload) => {
   const summaryPrefix = getCategorySummary(category, userRequest, isConfirmed, status);
   md += `${summaryPrefix}\n\n`;
 
-  const isLocalResearch =
-    category === 'LOCATION_DISCOVERY' ||
-    category === 'LOCAL_SERVICE_RESEARCH' ||
-    category === 'LOCAL_SERVICE' ||
-    Boolean(task.discoveredData?.localService);
-
   // ==========================================
   // SECTION B: RESULTS / DISCOVERED INFORMATION
   // ==========================================
