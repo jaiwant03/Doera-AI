@@ -803,12 +803,14 @@ class StatisticalService {
 
     const isOutliersRequested = !isFullSummaryRequested && /\b(outlier|outliers|anomalies|anomalous)\b/i.test(queryLower);
     const isQ1Requested = !isFullSummaryRequested && /\b(q1|first\s*quartile|25th\s*percentile)\b/i.test(queryLower);
+    const isQ2Requested = !isFullSummaryRequested && /\b(q2|second\s*quartile)\b/i.test(queryLower);
     const isQ3Requested = !isFullSummaryRequested && /\b(q3|third\s*quartile|75th\s*percentile)\b/i.test(queryLower);
     const isIQRRequested = !isFullSummaryRequested && !isOutliersRequested && /\b(iqr|interquartile\s*range)\b/i.test(queryLower);
     const isQuartilesRequested = !isFullSummaryRequested && (
-      /\b(quartile|quartiles|interquartile|five[\s-]number)\b/i.test(queryLower) ||
+      /\b(quartiles|five[\s-]number)\b/i.test(queryLower) ||
+      (/\bquartile\b/i.test(queryLower) && !isQ1Requested && !isQ2Requested && !isQ3Requested) ||
       (/\biqr\b/i.test(queryLower) && !isOutliersRequested) ||
-      (isQ1Requested && isQ3Requested)
+      (isQ1Requested && isQ2Requested && isQ3Requested)
     );
 
     const isSkewnessRequested = !isFullSummaryRequested && /\b(skew|skewness)\b/i.test(queryLower);
