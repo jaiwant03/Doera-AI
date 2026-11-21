@@ -28,9 +28,14 @@ class SpreadsheetService {
       throw new Error(`Spreadsheet "${filename}" is empty or has zero bytes.`);
     }
 
-    if (buffer.length > this.MAX_FILE_SIZE_BYTES) {
+    let rawBuffer = buffer;
+    if (typeof rawBuffer === 'string') {
+      rawBuffer = Buffer.from(rawBuffer, 'utf8');
+    }
+
+    if (rawBuffer.length > this.MAX_FILE_SIZE_BYTES) {
       throw new Error(
-        `Spreadsheet "${filename}" size (${(buffer.length / 1024 / 1024).toFixed(1)}MB) exceeds allowable limit of 25MB.`
+        `Spreadsheet "${filename}" size (${(rawBuffer.length / 1024 / 1024).toFixed(1)}MB) exceeds allowable limit of 25MB.`
       );
     }
 
@@ -41,14 +46,14 @@ class SpreadsheetService {
     try {
       if (isCsv) {
         // Read CSV/TSV with raw preservation of exact strings
-        workbook = XLSX.read(buffer, {
+        workbook = XLSX.read(rawBuffer, {
           type: 'buffer',
           raw: true,
           codepage: 65001, // UTF-8
         });
       } else {
         // Read Excel (.xlsx, .xls)
-        workbook = XLSX.read(buffer, {
+        workbook = XLSX.read(rawBuffer, {
           type: 'buffer',
           cellDates: true,
           raw: false,
@@ -233,6 +238,91 @@ class SpreadsheetService {
       if (!isNaN(d.getTime())) return d;
     }
     return null;
+  }
+
+  /**
+   * Helper: Detect currency symbol from sample values ($ by default, ₹, €, £)
+   */
+  detectCurrency(values) {
+    if (!Array.isArray(values) || values.length === 0) return '$';
+    for (const v of values) {
+      if (typeof v === 'string') {
+        if (v.includes('₹') || /inr/i.test(v)) return '₹';
+        if (v.includes('€') || /eur/i.test(v)) return '€';
+        if (v.includes('£') || /gbp/i.test(v)) return '£';
+        if (v.includes('$') || /usd/i.test(v)) return '$';
+      }
+    }
+    return '$';
+  }
+
+  /**
+   * Look for a category code -> name mapping table across sheets or in current sheet
+   */
+  resolveCategoryMapping(parsedSpreadsheet, targetSheet, dimensionCol) {
+    if (!parsedSpreadsheet || !parsedSpreadsheet.sheets || parsedSpreadsheet.sheets.length === 0) {
+      return { mapping: {}, hasMapping: false, mappingSheetName: null };
+    }
+
+    const mapping = {};
+    let hasMapping = false;
+    let mappingSheetName = null;
+
+    // 1. Check other sheets in the workbook (e.g. "Mapping", "Categories", "Codes", "Legend", etc.)
+    for (const sheet of parsedSpreadsheet.sheets) {
+      if (sheet === targetSheet && parsedSpreadsheet.sheets.length > 1) {
+        continue;
+      }
+
+      const headers = sheet.headers || [];
+      const codeCol = headers.find((h) =>
+        /(^code$|category.*code|^id$|cat.*id|^category_id$|^code_id$|^key$)/i.test(h.trim())
+      );
+      const nameCol = headers.find((h) =>
+        /(^name$|category.*name|^description$|^label$|^title$|^meaning$|^category$)/i.test(h.trim()) && h !== codeCol
+      );
+
+      if (codeCol && nameCol) {
+        for (const row of sheet.rows) {
+          const rawCode = row[codeCol];
+          const rawName = row[nameCol];
+          if (rawCode !== null && rawCode !== undefined && String(rawCode).trim() !== '' && rawName) {
+            mapping[String(rawCode).trim()] = String(rawName).trim();
+            hasMapping = true;
+          }
+        }
+        if (hasMapping) {
+          mappingSheetName = sheet.name;
+          break;
+        }
+      }
+    }
+
+    // 2. If not found in other sheets and targetSheet has code + name columns:
+    if (!hasMapping && targetSheet) {
+      const headers = targetSheet.headers || [];
+      const codeCol = headers.find((h) =>
+        /(^code$|category.*code|^id$|cat.*id|^category_id$)/i.test(h.trim())
+      );
+      const nameCol = headers.find((h) =>
+        /(^name$|category.*name|^description$|^label$)/i.test(h.trim()) && h !== codeCol
+      );
+      if (codeCol && nameCol) {
+        for (const row of targetSheet.rows) {
+          const rawCode = row[codeCol];
+          const rawName = row[nameCol];
+          if (rawCode !== null && rawCode !== undefined && String(rawCode).trim() !== '' && rawName) {
+            mapping[String(rawCode).trim()] = String(rawName).trim();
+            hasMapping = true;
+          }
+        }
+        if (hasMapping) {
+          mappingSheetName = targetSheet.name;
+        }
+      }
+    }
+
+    return { mapping, hasMapping, mappingSheetName };
   }
 
   /**
