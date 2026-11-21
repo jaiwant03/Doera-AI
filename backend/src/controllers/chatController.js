@@ -289,8 +289,17 @@ export const streamMessage = async (req, res) => {
       if (!intent.categories.includes(contextPayload.resolvedCategory)) {
         intent.categories.unshift(contextPayload.resolvedCategory);
       }
-      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' || contextPayload.followUpType === 'STATISTICAL_INSPECTION') {
+      if (
+        contextPayload.followUpType === 'CHART_INSPECTION' ||
+        contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' ||
+        contextPayload.followUpType === 'STATISTICAL_INSPECTION' ||
+        contextPayload.followUpType === 'DOCUMENT_INSPECTION'
+      ) {
         intent.isActionTask = true;
+      }
+      if (contextPayload.followUpType === 'DOCUMENT_INSPECTION') {
+        if (!intent.requiredAgents.includes('Document')) intent.requiredAgents.push('Document');
+        if (!intent.requiredAgents.includes('Verification')) intent.requiredAgents.push('Verification');
       }
     }
 
@@ -783,8 +792,17 @@ export const sendMessage = async (req, res, next) => {
       if (!intent.categories.includes(contextPayload.resolvedCategory)) {
         intent.categories.unshift(contextPayload.resolvedCategory);
       }
-      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' || contextPayload.followUpType === 'STATISTICAL_INSPECTION') {
+      if (
+        contextPayload.followUpType === 'CHART_INSPECTION' ||
+        contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' ||
+        contextPayload.followUpType === 'STATISTICAL_INSPECTION' ||
+        contextPayload.followUpType === 'DOCUMENT_INSPECTION'
+      ) {
         intent.isActionTask = true;
+      }
+      if (contextPayload.followUpType === 'DOCUMENT_INSPECTION') {
+        if (!intent.requiredAgents.includes('Document')) intent.requiredAgents.push('Document');
+        if (!intent.requiredAgents.includes('Verification')) intent.requiredAgents.push('Verification');
       }
     }
 
