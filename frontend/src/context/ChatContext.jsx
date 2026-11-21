@@ -171,7 +171,7 @@ export const ChatProvider = ({ children }) => {
           accuracy: null,
           name: resolvedName,
           displayName: g.displayName || clean,
-          source: 'manual',
+          source: 'manual_entry',
         };
         setUserLocation(loc);
         setIsDetectingLocation(false);
@@ -186,7 +186,7 @@ export const ChatProvider = ({ children }) => {
       lng: null,
       name: clean,
       displayName: clean,
-      source: 'manual',
+      source: 'manual_entry',
     };
     setUserLocation(manualLoc);
     setIsDetectingLocation(false);
@@ -429,9 +429,14 @@ export const ChatProvider = ({ children }) => {
 
       const effectiveLocation = overrideLocation !== null
         ? overrideLocation
-        : (userLocation && (userLocation.status === 'resolved' || userLocation.status === 'manual' || userLocation.lat)
+        : (userLocation && (userLocation.status === 'resolved' || userLocation.status === 'manual' || userLocation.lat || userLocation.name)
             ? userLocation
             : (userLocation?.status === 'denied' || userLocation?.denied ? { denied: true, source: 'denied' } : null));
+
+      console.log('[DIAGNOSTICS][Point 3] Chat submission payload:', {
+        message: content,
+        userLocation: effectiveLocation,
+      });
 
       const res = await api.post('/chat/message', {
         conversationId: currentConversation ? (currentConversation._id || currentConversation.id) : null,
