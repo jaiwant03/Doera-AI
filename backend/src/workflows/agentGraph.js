@@ -116,6 +116,29 @@ const orchestratorNode = async (state) => {
     };
   }
 
+  // Pure document intelligence short-circuit: Direct to Document and Verification
+  if (state.category === 'DOCUMENT_ANALYSIS' || state.intentAnalysis?.primaryCategory === 'DOCUMENT_ANALYSIS') {
+    logger.info(`[LangGraph Workflow] Document Intelligence routing directly to Document Agent for: ${state.taskId}`);
+    const activeReq = ['Document', 'Verification'];
+    const steps = [
+      { id: 'doc', name: 'Analyzing uploaded documents and extracting structured knowledge', agent: 'Document', status: 'pending', timestamp: new Date() },
+      { id: 'verify', name: 'Auditing document assertions and section citations', agent: 'Verification', status: 'pending', timestamp: new Date() },
+    ];
+    return {
+      category: 'DOCUMENT_ANALYSIS',
+      requiredAgents: activeReq,
+      subtasks: steps,
+      steps,
+      intentAnalysis: state.intentAnalysis || { primaryCategory: 'DOCUMENT_ANALYSIS' },
+      currentAgent: 'Document',
+      currentAction: 'Executing direct document analysis and section extraction...',
+      bookingDetails: null,
+      pendingApproval: null,
+      externalContacts: [],
+      status: 'RUNNING',
+    };
+  }
+
   await logMissionEvent(
     state,
     'STEP_PROGRESS',
