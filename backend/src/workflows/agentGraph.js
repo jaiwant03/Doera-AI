@@ -58,6 +58,7 @@ const TaskStateAnnotation = Annotation.Root({
   chartConfig: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   planningData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   budgetData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  lastDocumentAnalysis: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   communicationDrafts: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
   error: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   userIntegration: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
