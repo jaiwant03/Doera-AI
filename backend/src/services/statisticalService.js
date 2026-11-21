@@ -860,7 +860,11 @@ class StatisticalService {
     const isMultiStat = requestedOperations.length >= 2;
 
     // 3. Compute Comprehensive Profile
-    const mean = this.calculateMean(values);
+    let totalSum = 0;
+    for (let i = 0; i < values.length; i++) {
+      totalSum += values[i];
+    }
+    const mean = values.length > 0 ? totalSum / values.length : 0;
     const median = this.calculateMedian(values);
     const modeObj = this.calculateMode(values);
     const rangeObj = this.calculateRange(values);
@@ -954,6 +958,7 @@ class StatisticalService {
         completeness: Number(((seriesData.validCount / Math.max(seriesData.totalRows, 1)) * 100).toFixed(2)),
       },
       results: {
+        sum: totalSum,
         mean,
         median,
         mode: modeObj,
