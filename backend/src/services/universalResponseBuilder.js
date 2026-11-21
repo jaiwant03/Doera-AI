@@ -800,53 +800,7 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     return md.trim();
   }
 
-  // 6. MULTI-DOCUMENT COMPARISON
-  if (
-    requestIntent === 'COMPARISON' ||
-    (crossDocAnalysis && crossDocAnalysis.comparisonMatrix?.length > 0) ||
-    /compare/i.test(reqLower)
-  ) {
-    md += `## Document Comparison\n\n`;
-    if (crossDocAnalysis?.comparisonSummary) {
-      md += `### Executive Comparison\n${crossDocAnalysis.comparisonSummary}\n\n`;
-    }
-
-    if (crossDocAnalysis?.comparisonMatrix?.length > 0) {
-      md += `### Comparative Matrix\n\n`;
-      md += `| Dimension | Document 1 | Document 2 | Comparative Finding |\n`;
-      md += `| :--- | :--- | :--- | :--- |\n`;
-      crossDocAnalysis.comparisonMatrix.forEach((m) => {
-        md += `| **${m.criteria}** | ${m.doc1Value || '-'} | ${m.doc2Value || '-'} | ${m.verdict || '-'} |\n`;
-      });
-      md += `\n`;
-    }
-
-    if (crossDocAnalysis?.commonRequirements?.length > 0) {
-      md += `### Common Terms & Requirements\n`;
-      crossDocAnalysis.commonRequirements.forEach((r) => (md += `- ${r}\n`));
-      md += `\n`;
-    }
-
-    if (crossDocAnalysis?.conflictingRequirements?.length > 0) {
-      md += `### Key Differences & Conflicts\n`;
-      crossDocAnalysis.conflictingRequirements.forEach((c) => {
-        if (typeof c === 'string') {
-          md += `- ${c}\n`;
-        } else {
-          md += `- **${c.issue}**: Doc 1 (*${c.doc1Stance}*) vs Doc 2 (*${c.doc2Stance}*)\n`;
-        }
-      });
-      md += `\n`;
-    }
-
-    if (crossDocAnalysis?.recommendation) {
-      md += `### Grounded Recommendation\n${crossDocAnalysis.recommendation}\n`;
-    }
-
-    return md.trim();
-  }
-
-  // 7. SPECIFIC QUESTION / FOCUSED FOLLOW-UP
+  // 6. SPECIFIC QUESTION / FOCUSED FOLLOW-UP
   if (primaryDoc.specificAnswer) {
     const ans = primaryDoc.specificAnswer;
     md += `## Document Analysis: ${primaryDoc.filename || 'Uploaded File'}\n\n`;
