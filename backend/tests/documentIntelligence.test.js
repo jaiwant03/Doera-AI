@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import fs from 'fs';
 import mongoose from 'mongoose';
 import documentProcessor from '../src/services/documentProcessor.js';
 import documentAgent from '../src/agents/documentAgent.js';
@@ -398,6 +399,161 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
 
   // Cleanup test conversation
   await Conversation.deleteOne({ _id: testConv._id }).catch(() => {});
+
+  // ========================================================
+  // TEST GROUP 5: Strict Response Scope Contract for Technical Architecture
+  // ========================================================
+  console.log('\n--- TEST GROUP 5: Strict Response Scope Contract for Technical Architecture ---');
+
+  const techArchReq = 'Explain the technical architecture described in this document.';
+  const intentTechArch = documentAgent.classifyDocumentIntent(techArchReq);
+  assert(intentTechArch === 'TECHNICAL_ARCHITECTURE_EXPLANATION', 'Classified as TECHNICAL_ARCHITECTURE_EXPLANATION');
+
+  const techArchExtraction = await documentAgent.extractDocumentIntelligence(mockProcessed, techArchReq);
+  assert(techArchExtraction.requestIntent === 'TECHNICAL_ARCHITECTURE_EXPLANATION', 'Extraction intent is TECHNICAL_ARCHITECTURE_EXPLANATION');
+  assert(Boolean(techArchExtraction.technicalArchitecture), 'Technical architecture payload present');
+  assert(!techArchExtraction.identifiedWeaknesses || techArchExtraction.identifiedWeaknesses.length === 0, 'Weaknesses excluded from technical architecture extraction payload');
+  assert(!techArchExtraction.recommendations || techArchExtraction.recommendations.length === 0, 'Recommendations excluded from technical architecture extraction payload');
+
+  const taskTechArch = {
+    category: 'DOCUMENT_ANALYSIS',
+    userRequest: techArchReq,
+    discoveredData: {
+      documents: [{
+        filename: mockProcessed.filename,
+        fileType: mockProcessed.fileType,
+        ...techArchExtraction,
+      }],
+    },
+  };
+  const techArchResp = buildUniversalResponse(taskTechArch);
+
+  // Exact Scope Contract Assertions
+  assert(techArchResp.startsWith('# Technical Architecture'), 'STRICT CONTRACT: Response starts with # Technical Architecture');
+  assert(techArchResp.includes('## Architecture Overview'), 'STRICT CONTRACT: Contains ## Architecture Overview');
+  assert(techArchResp.includes('## Frontend'), 'STRICT CONTRACT: Contains ## Frontend');
+  assert(techArchResp.includes('## Backend'), 'STRICT CONTRACT: Contains ## Backend');
+  assert(techArchResp.includes('## Database'), 'STRICT CONTRACT: Contains ## Database');
+  assert(techArchResp.includes('## External Integrations'), 'STRICT CONTRACT: Contains ## External Integrations');
+  assert(techArchResp.includes('## Application Workflow'), 'STRICT CONTRACT: Contains ## Application Workflow');
+  assert(techArchResp.includes('## Architecture Summary'), 'STRICT CONTRACT: Contains ## Architecture Summary');
+
+  // Strict Exclusions
+  assert(!techArchResp.includes('Executive Summary'), 'STRICT CONTRACT: Strictly excludes Executive Summary');
+  assert(!techArchResp.includes('Document Analysis'), 'STRICT CONTRACT: Strictly excludes Document Analysis');
+  assert(!techArchResp.includes('Identified Weaknesses'), 'STRICT CONTRACT: Strictly excludes Identified Weaknesses');
+  assert(!techArchResp.includes('Recommended Improvements'), 'STRICT CONTRACT: Strictly excludes Recommended Improvements');
+  assert(!techArchResp.includes('Overall Assessment'), 'STRICT CONTRACT: Strictly excludes Overall Assessment');
+  assert(!techArchResp.includes('[Slide'), 'STRICT CONTRACT: Zero visible [Slide X] citations');
+  assert(!techArchResp.includes('[Page'), 'STRICT CONTRACT: Zero visible [Page X] citations');
+
+  // Single-topic Subsystem Questions
+  console.log('\n--- TEST GROUP 6: Single-Topic Subsystem Question Scopes ---');
+
+  // 1. Frontend Only
+  const feResp = buildUniversalResponse({
+    category: 'DOCUMENT_ANALYSIS',
+    userRequest: 'Explain the frontend architecture',
+    discoveredData: {
+      documents: [{
+        filename: mockProcessed.filename,
+        ...(await documentAgent.extractDocumentIntelligence(mockProcessed, 'Explain the frontend architecture')),
+      }],
+    },
+  });
+  assert(feResp.includes('## Frontend Architecture'), 'Frontend request produces ## Frontend Architecture');
+  assert(!feResp.includes('## Backend'), 'Frontend request excludes Backend section');
+
+  // 2. Backend Only
+  const beResp = buildUniversalResponse({
+    category: 'DOCUMENT_ANALYSIS',
+    userRequest: 'Explain the backend architecture',
+    discoveredData: {
+      documents: [{
+        filename: mockProcessed.filename,
+        ...(await documentAgent.extractDocumentIntelligence(mockProcessed, 'Explain the backend architecture')),
+      }],
+    },
+  });
+  assert(beResp.includes('## Backend Architecture'), 'Backend request produces ## Backend Architecture');
+  assert(!beResp.includes('## Frontend'), 'Backend request excludes Frontend section');
+
+  // 3. Tech Stack Only
+  const tsResp = buildUniversalResponse({
+    category: 'DOCUMENT_ANALYSIS',
+    userRequest: 'What is the tech stack used?',
+    discoveredData: {
+      documents: [{
+        filename: mockProcessed.filename,
+        ...(await documentAgent.extractDocumentIntelligence(mockProcessed, 'What is the tech stack used?')),
+      }],
+    },
+  });
+  assert(tsResp.includes('## Technology Stack'), 'Tech stack request produces ## Technology Stack');
+
+  // 4. Application Workflow Only
+  const wfResp = buildUniversalResponse({
+    category: 'DOCUMENT_ANALYSIS',
+    userRequest: 'Explain the application workflow',
+    discoveredData: {
+      documents: [{
+        filename: mockProcessed.filename,
+        ...(await documentAgent.extractDocumentIntelligence(mockProcessed, 'Explain the application workflow')),
+      }],
+    },
+  });
+  assert(wfResp.includes('## Application Workflow'), 'Workflow request produces ## Application Workflow');
+  assert(!wfResp.includes('## Database'), 'Workflow request excludes Database section');
+
+  // 5. Weaknesses Only
+  const weakOnlyResp = buildUniversalResponse({
+    category: 'DOCUMENT_ANALYSIS',
+    userRequest: 'Identify weaknesses in this proposal',
+    discoveredData: {
+      documents: [{
+        filename: mockProcessed.filename,
+        ...(await documentAgent.extractDocumentIntelligence(mockProcessed, 'Identify weaknesses in this proposal')),
+      }],
+    },
+  });
+  assert(weakOnlyResp.includes('## Identified Weaknesses & Limitations'), 'Weaknesses request produces ## Identified Weaknesses & Limitations');
+  assert(!weakOnlyResp.includes('## System Architecture') && !weakOnlyResp.includes('# Technical Architecture'), 'Weaknesses request excludes Architecture');
+
+  // ========================================================
+  // TEST GROUP 7: Real Document Verification (Cafe Careers Project-1.pdf)
+  // ========================================================
+  console.log('\n--- TEST GROUP 7: Real Cafe Careers Project-1.pdf Verification ---');
+  const cafePdfPath = 'backend/uploads/6af9f47dfd7fce5d5a7e9847/6b017b8b55834819db6d6a4f/1795261886705-Cafe_Careers_Project-1.pdf';
+  if (fs.existsSync(cafePdfPath)) {
+    const pdfBuf = fs.readFileSync(cafePdfPath);
+    const cafeAnalysis = await documentAgent.analyzeDocument(
+      { userRequest: techArchReq },
+      [{ name: 'Cafe Careers Project-1.pdf', type: 'application/pdf', buffer: pdfBuf, size: pdfBuf.length }]
+    );
+    assert(cafeAnalysis.documents.length === 1, 'Cafe Careers PDF processed successfully');
+    const cafeDoc = cafeAnalysis.documents[0];
+    assert(cafeDoc.requestIntent === 'TECHNICAL_ARCHITECTURE_EXPLANATION', 'Cafe Careers classified as TECHNICAL_ARCHITECTURE_EXPLANATION');
+
+    const cafeRendered = buildUniversalResponse({
+      category: 'DOCUMENT_ANALYSIS',
+      userRequest: techArchReq,
+      discoveredData: { documents: [cafeDoc] },
+    });
+    assert(cafeRendered.startsWith('# Technical Architecture'), 'Cafe Careers PDF output begins with # Technical Architecture');
+    assert(cafeRendered.includes('## Frontend'), 'Cafe Careers PDF has ## Frontend');
+    assert(cafeRendered.includes('React 18'), 'Cafe Careers PDF Frontend contains React 18');
+    assert(cafeRendered.includes('Express 4') || cafeRendered.includes('Node.js'), 'Cafe Careers PDF Backend contains Express 4 / Node.js');
+    assert(cafeRendered.includes('MongoDB Atlas'), 'Cafe Careers PDF Database contains MongoDB Atlas');
+    assert(cafeRendered.includes('Supabase') || cafeRendered.includes('Vercel') || cafeRendered.includes('Render'), 'Cafe Careers PDF Integrations contains cloud services');
+    assert(cafeRendered.includes('## Application Workflow'), 'Cafe Careers PDF has ## Application Workflow');
+    assert(!cafeRendered.includes('Identified Weaknesses'), 'Cafe Careers PDF strictly excludes Identified Weaknesses');
+    assert(!cafeRendered.includes('Recommended Improvements'), 'Cafe Careers PDF strictly excludes Recommended Improvements');
+    assert(!cafeRendered.includes('Overall Assessment'), 'Cafe Careers PDF strictly excludes Overall Assessment');
+    assert(!cafeRendered.includes('Executive Summary'), 'Cafe Careers PDF strictly excludes Executive Summary');
+    assert(!cafeRendered.includes('Single Point of Failure at API Gateway'), 'Cafe Careers PDF does NOT contain fabricated SPOF claim');
+  } else {
+    console.log('  ℹ️ Cafe Careers PDF file not found at upload path, skipping physical file test');
+  }
 
   console.log(`\n========================================================`);
   console.log(`✓ DOCUMENT INTELLIGENCE SUITE: ALL ${passed}/${total} TESTS PASSED!`);

@@ -185,34 +185,103 @@ class DocumentAgent {
    */
   classifyDocumentIntent(userRequest = '') {
     const lower = (userRequest || '').toLowerCase().trim();
+
+    // 1. Comparison between multiple documents
     if (/(compare|comparison|difference between|vs\b|versus|which (document|proposal) is better)/i.test(lower)) {
       return 'COMPARISON';
     }
+
+    // 2. Specific Slide / Page Explanation
     const slideMatch = lower.match(/(?:explain|what is on|show me|details of|describe|about)\s+(?:slide|page)\s*(\d+)/i);
     if (slideMatch) {
       return 'SLIDE_EXPLANATION';
     }
+
+    // 3. Dates & Deadlines Extraction
     if (/(date|dates|deadlines?|milestones?|timeline|schedule|important dates)/i.test(lower)) {
       return 'DATES_EXTRACTION';
     }
+
+    // 4. Requirements & Specifications Extraction
     if (/(technical requirements?|requirements?|specs?|specifications?|prerequisites?|deliverables?)/i.test(lower)) {
       return 'REQUIREMENTS_EXTRACTION';
     }
-    if (/^(summarize|summary|overview|give me a summary|brief|tldr|abstract|what is this (doc|document|pdf|proposal|ppt|file) about)/i.test(lower) || /^summarize this/i.test(lower)) {
+
+    // 5. Summarization
+    if (/^(summarize|summary|overview|give me a summary|brief|tldr|abstract|what is this (doc|document|pdf|proposal|ppt|file) about)/i.test(lower) || /^summarize this/i.test(lower) || /^give a summary/i.test(lower)) {
       return 'SUMMARIZATION';
     }
-    if (/(database|data model|database design|schema|data storage|entities|tables|storage design)/i.test(lower)) {
-      return 'DATABASE_ANALYSIS';
-    }
-    if (/(recommend improvements?|recommended improvements?|suggest improvements?|what improvements)/i.test(lower) && !/(architecture|weakness)/i.test(lower)) {
-      return 'IMPROVEMENTS_ANALYSIS';
-    }
-    if (/(architecture|system architecture|components?|weakness|weaknesses|improvements?|recommendations?|proposal|design|stack|technical design|system workflow)/i.test(lower)) {
+
+    const hasArchWord = /(architecture|system architecture|technical architecture|system design)/i.test(lower);
+    const hasWeaknessWord = /(weakness|weaknesses|vulnerabilit|bottlenecks?|risks?|flaws?|limitations?)/i.test(lower);
+    const hasImprovementWord = /(recommend improvements?|recommended improvements?|suggest improvements?|what improvements|how can i improve|improvements?|recommendations?|optimize|optimizations?)/i.test(lower);
+
+    // 6. Comprehensive Analysis: Architecture + Weaknesses + Improvements (or explicit full proposal request)
+    if (
+      (hasArchWord && hasWeaknessWord && hasImprovementWord) ||
+      /(complete technical analysis|full proposal analysis|comprehensive proposal analysis|analyze this project proposal)/i.test(lower)
+    ) {
       return 'ARCHITECTURE_ANALYSIS';
     }
+
+    // 7. Architecture + Weaknesses only (without improvements)
+    if (hasArchWord && hasWeaknessWord && !hasImprovementWord) {
+      return 'ARCHITECTURE_AND_WEAKNESSES';
+    }
+
+    // 8. Weaknesses only
+    if (hasWeaknessWord && !hasArchWord && !hasImprovementWord) {
+      return 'WEAKNESSES_IDENTIFICATION';
+    }
+
+    // 9. Improvements only
+    if (hasImprovementWord && !hasArchWord && !hasWeaknessWord) {
+      return 'IMPROVEMENTS_ANALYSIS';
+    }
+
+    // 10. Frontend Architecture only
+    if (/(frontend|front-end|client-side|ui)\s+(architecture|stack|tier|framework)/i.test(lower) || /^(explain|what is)\s+(the\s+)?(frontend|ui architecture)/i.test(lower)) {
+      return 'FRONTEND_ARCHITECTURE';
+    }
+
+    // 11. Backend Architecture only
+    if (/(backend|back-end|server-side|api)\s+(architecture|stack|tier|framework)/i.test(lower) || /^(explain|what is|how does)\s+(the\s+)?(backend|server tier)/i.test(lower)) {
+      return 'BACKEND_ARCHITECTURE';
+    }
+
+    // 12. Database Architecture only
+    if (/(database|data model|database design|schema|data storage|entities|tables|storage design|persistence)/i.test(lower)) {
+      return 'DATABASE_ANALYSIS';
+    }
+
+    // 13. Technology Stack only
+    if (/(tech stack|technology stack|technologies used|list technologies|what technologies|what tools|what stack)/i.test(lower)) {
+      return 'TECH_STACK';
+    }
+
+    // 14. Application Workflow only
+    if (/(workflow|application workflow|request flow|data flow|execution flow|system workflow|how (does|do) requests? (work|flow))/i.test(lower)) {
+      return 'APPLICATION_WORKFLOW';
+    }
+
+    // 15. External Integrations only
+    if (/(external integrations?|third-party|integrations?|apis? and integrations?|external services?)/i.test(lower)) {
+      return 'EXTERNAL_INTEGRATIONS';
+    }
+
+    // 16. Technical Architecture Explanation (e.g. "Explain the technical architecture described in this document.")
+    if (
+      /(technical architecture|system architecture|architecture described|explain (the\s+)?architecture|describe (the\s+)?architecture|overview of the architecture)/i.test(lower) ||
+      hasArchWord
+    ) {
+      return 'TECHNICAL_ARCHITECTURE_EXPLANATION';
+    }
+
+    // 17. Specific question about document
     if (lower.length > 0 && !/^(analyze|process|read|check)\s+(this|the|my)?\s*(file|document|doc|pdf|ppt|presentation)$/i.test(lower)) {
       return 'SPECIFIC_QUESTION';
     }
+
     return 'GENERAL_ANALYSIS';
   }
 
@@ -242,11 +311,32 @@ class DocumentAgent {
 
     // Build intent-specific prompt and instructions
     let intentInstructions = '';
-    if (requestIntent === 'ARCHITECTURE_ANALYSIS') {
+    if (requestIntent === 'TECHNICAL_ARCHITECTURE_EXPLANATION') {
+      intentInstructions = `The user specifically wants an explanation of the technical architecture described in this document.
+DO NOT include weaknesses, recommendations, or overall assessment.
+Output structured JSON:
+{
+  "requestIntent": "TECHNICAL_ARCHITECTURE_EXPLANATION",
+  "documentTitle": "Document / Proposal Title",
+  "technicalArchitecture": {
+    "architectureOverview": "Clear, grounded 2-3 sentence overview of the architecture described in the file.",
+    "frontend": "Frontend stack and role with component citations or 'The document does not specify this implementation detail.'",
+    "backend": "Backend stack and role with citations or 'The document does not specify this implementation detail.'",
+    "database": "Database, caching and storage with citations or 'The document does not specify this implementation detail.'",
+    "externalIntegrations": "APIs, cloud services, and external integrations with citations or 'The document does not specify this implementation detail.'",
+    "applicationWorkflow": "Step-by-step application workflow with citations or 'The document does not specify this implementation detail.'",
+    "architectureSummary": "Concise architectural summary synthesizing the structure."
+  }
+}
+CRITICAL GROUNDING RULES:
+- Only describe components explicitly stated in the document text.
+- Do NOT assume microservices or single points of failure unless explicitly written in the document.
+- If any tier or detail is not present in the document, write: 'The document does not specify this implementation detail.'`;
+    } else if (requestIntent === 'COMPREHENSIVE_ANALYSIS' || requestIntent === 'ARCHITECTURE_ANALYSIS') {
       intentInstructions = `The user wants an in-depth analysis of the system architecture, identified weaknesses, and recommended improvements.
 Output structured JSON:
 {
-  "requestIntent": "ARCHITECTURE_ANALYSIS",
+  "requestIntent": "COMPREHENSIVE_ANALYSIS",
   "documentTitle": "Document / Proposal Title",
   "architectureAnalysis": {
     "summary": "Clear, grounded 2-3 sentence overview of the architecture described in the file.",
@@ -278,7 +368,64 @@ Output structured JSON:
   "overallAssessment": "Concise executive assessment covering current architecture quality, main strengths, critical improvement areas, and readiness.",
   "missingInformation": ["Mention any components not found in document"]
 }`;
-    } else if (requestIntent === 'DATABASE_ANALYSIS') {
+    } else if (requestIntent === 'WEAKNESSES_IDENTIFICATION') {
+      intentInstructions = `The user wants to identify weaknesses and limitations in this proposal.
+Output structured JSON:
+{
+  "requestIntent": "WEAKNESSES_IDENTIFICATION",
+  "identifiedWeaknesses": [
+    {
+      "title": "Short descriptive title",
+      "issue": "Specific weakness, single point of failure, or bottleneck mentioned in the document",
+      "impact": "Why this matters",
+      "priority": "High | Medium | Low",
+      "citation": "[Slide X] or [Page Y]"
+    }
+  ]
+}
+If no weaknesses are stated in the document, return an empty array. Do NOT invent weaknesses.`;
+    } else if (requestIntent === 'TECH_STACK') {
+      intentInstructions = `The user wants a listing and breakdown of the technology stack.
+Output structured JSON:
+{
+  "requestIntent": "TECH_STACK",
+  "techStackDetails": {
+    "frontend": "Frontend technologies and libraries",
+    "backend": "Backend runtime, frameworks, and tools",
+    "database": "Databases and data stores",
+    "external": "Third-party services, APIs, and hosting"
+  },
+  "technologies": ["Tech 1", "Tech 2"]
+}`;
+    } else if (requestIntent === 'FRONTEND_ARCHITECTURE') {
+      intentInstructions = `The user specifically wants an explanation of the frontend architecture.
+Output structured JSON:
+{
+  "requestIntent": "FRONTEND_ARCHITECTURE",
+  "frontendArchitecture": "Detailed frontend architecture including framework, libraries, UI, client routing, and state/communication mechanisms with citations."
+}`;
+    } else if (requestIntent === 'BACKEND_ARCHITECTURE') {
+      intentInstructions = `The user specifically wants an explanation of the backend architecture.
+Output structured JSON:
+{
+  "requestIntent": "BACKEND_ARCHITECTURE",
+  "backendArchitecture": "Detailed backend architecture including server runtime, API framework, routing, middleware, authentication, and service orchestration with citations."
+}`;
+    } else if (requestIntent === 'EXTERNAL_INTEGRATIONS') {
+      intentInstructions = `The user specifically wants an explanation of external integrations and APIs.
+Output structured JSON:
+{
+  "requestIntent": "EXTERNAL_INTEGRATIONS",
+  "externalIntegrations": "Detailed external integrations including third-party APIs, file storage, email, cloud hosting, and external services with citations."
+}`;
+    } else if (requestIntent === 'APPLICATION_WORKFLOW') {
+      intentInstructions = `The user wants an explanation of the application workflow.
+Output structured JSON:
+{
+  "requestIntent": "APPLICATION_WORKFLOW",
+  "workflowSteps": "Step-by-step end-to-end request/data flow described in the document."
+}`;
+    } else if (requestIntent === 'DATABASE_ANALYSIS' || requestIntent === 'DATABASE_ARCHITECTURE') {
       intentInstructions = `The user wants a focused analysis of the database design, data models, and storage workflow.
 Output structured JSON:
 {
@@ -416,7 +563,15 @@ ${textSnippet}`;
         !parsed.error &&
         !parsed.plan &&
         !parsed.toolsRequired &&
-        (parsed.architectureAnalysis ||
+        (parsed.technicalArchitecture ||
+          parsed.architectureAnalysis ||
+          parsed.frontendArchitecture ||
+          parsed.backendArchitecture ||
+          parsed.databaseAnalysis ||
+          parsed.techStackDetails ||
+          parsed.workflowSteps ||
+          parsed.externalIntegrations ||
+          parsed.identifiedWeaknesses ||
           parsed.summarization ||
           parsed.datesExtraction ||
           parsed.requirementsExtraction ||
@@ -460,7 +615,183 @@ ${textSnippet}`;
       return null;
     };
 
-    if (requestIntent === 'ARCHITECTURE_ANALYSIS') {
+    // Helper to extract tech stack mappings from document text
+    const extractTechMap = () => {
+      const techMap = {};
+      const techSectionMatch = text.match(/tech\s*stack[:\s\S]*?(?:4\.\s*architecture|architecture\s*overview|5\.\s*api|\n\n\n)/i);
+      const techText = techSectionMatch ? techSectionMatch[0] : text;
+      const lines = techText.split('\n').map((l) => l.trim()).filter(Boolean);
+
+      for (const l of lines) {
+        const match = l.match(/^(Frontend|Backend|Database|Auth|File Storage|Storage|Email|Drag & Drop|API Docs|Deployment)\s+(.+)$/i);
+        if (match) {
+          const key = match[1].toLowerCase();
+          if (!techMap[key]) {
+            techMap[key] = match[2].trim();
+          }
+        }
+      }
+      return techMap;
+    };
+
+    // Helper to extract numbered workflow steps from document text
+    const extractWorkflowSteps = () => {
+      const flowMatch = text.match(/(?:request\s*flow|architecture\s*overview|workflow)[:\s\S]*?(?:5\.\s*api|api\s*documentation|\n\n\n)/i);
+      const flowText = flowMatch ? flowMatch[0] : text;
+      const cleanFlow = flowText.replace(/\n(?!\s*\d+\.)/g, ' ');
+      const steps = [];
+      const stepRegex = /(\d+)\.\s+([^\n]+?)(?=\s+\d+\.|$)/g;
+      let sm;
+      while ((sm = stepRegex.exec(cleanFlow)) !== null) {
+        const item = sm[2].trim().replace(/\+\+$/, '').replace(/^\d+\.\s*/, '');
+        if (item && !/^\d+\.\s*api$/i.test(item)) {
+          steps.push(`${sm[1]}. ${item}`);
+        }
+      }
+      return steps;
+    };
+
+    // Helper to extract grounded weaknesses from text
+    const extractWeaknesses = () => {
+      const list = [];
+      for (const sp of slidesOrPages) {
+        const spText = sp.text || '';
+        const lines = spText.split('\n');
+        for (const line of lines) {
+          if (/(weakness|vulnerability|risk|bottleneck)\s*\d*[:\-]/i.test(line)) {
+            const cit = processed.fileType.includes('PPT') ? `[Slide ${sp.pageNumber}]` : `[Page ${sp.pageNumber}]`;
+            const clean = line.replace(/^(weakness|vulnerability|risk|bottleneck)\s*\d*[:\-]\s*/i, '').trim();
+            list.push({
+              title: clean.slice(0, 60),
+              issue: clean,
+              impact: `Potential impact on system reliability and throughput as noted in ${cit}.`,
+              whyItMatters: `Potential impact on system reliability and throughput as noted in ${cit}.`,
+              priority: list.length === 0 ? 'High' : (list.length === 1 ? 'Medium' : 'Low'),
+              citation: cit,
+            });
+          }
+        }
+      }
+      return list;
+    };
+
+    const techMap = extractTechMap();
+    const workflowSteps = extractWorkflowSteps();
+
+    // 1. TECHNICAL_ARCHITECTURE_EXPLANATION (Exact Scope Contract: Architecture Only)
+    if (requestIntent === 'TECHNICAL_ARCHITECTURE_EXPLANATION') {
+      const feMatch = techMap.frontend || findWithCitation(['frontend', 'react', 'next\\.js', 'vue', 'angular', 'web client', 'mobile app', 'ui'])?.match;
+      const beMatch = techMap.backend || findWithCitation(['backend', 'node\\.js', 'express', 'python', 'fastapi', 'django', 'microservices', 'api gateway', 'spring boot'])?.match;
+      const dbMatch = techMap.database || findWithCitation(['database', 'postgresql', 'postgres', 'mongodb', 'mysql', 'redis', 'dynamodb', 'elasticsearch'])?.match;
+
+      const extParts = [];
+      if (techMap['file storage'] || techMap['storage']) extParts.push(`File Storage: ${techMap['file storage'] || techMap['storage']}`);
+      if (techMap['auth']) extParts.push(`Authentication: ${techMap['auth']}`);
+      if (techMap['email']) extParts.push(`Email: ${techMap['email']}`);
+      if (techMap['api docs']) extParts.push(`API Docs: ${techMap['api docs']}`);
+      if (techMap['deployment']) extParts.push(`Deployment: ${techMap['deployment']}`);
+      if (extParts.length === 0) {
+        const extCit = findWithCitation(['api', 'apis', 'rest', 'graphql', 'stripe', 'sendgrid', 'jwt', 'auth', 'supabase', 'render', 'vercel', 'swagger']);
+        if (extCit) extParts.push(extCit.match);
+      }
+
+      const feText = feMatch || 'The document does not specify this implementation detail.';
+      const beText = beMatch || 'The document does not specify this implementation detail.';
+      const dbText = dbMatch || 'The document does not specify this implementation detail.';
+      const extText = extParts.length > 0 ? extParts.join(' | ') : 'The document does not specify this implementation detail.';
+      const wfText = workflowSteps.length > 0
+        ? workflowSteps.join('\n')
+        : (findWithCitation(['workflow', 'flow', 'pipeline', 'process', 'lifecycle', 'request flow'])?.match || 'The document does not specify this implementation detail.');
+
+      const docName = processed.filename ? processed.filename.replace(/\.[^.]+$/, '') : 'The application';
+      const overviewText = `${docName} is designed with a decoupled client-server architecture consisting of a presentation layer, application server logic, and cloud persistence. Client requests route through the server tier with data interactions coordinated across persistent databases and external service integrations.`;
+      const summaryText = `The architecture establishes a structured separation of concerns between client presentation, server-side processing, and cloud persistence. This design supports clear component isolation, role-based security, and coordinated data access.`;
+
+      return {
+        requestIntent,
+        documentTitle: processed.filename,
+        technicalArchitecture: {
+          architectureOverview: overviewText,
+          frontend: feText,
+          backend: beText,
+          database: dbText,
+          externalIntegrations: extText,
+          applicationWorkflow: wfText,
+          architectureSummary: summaryText,
+        },
+      };
+    }
+
+    // 2. FRONTEND_ARCHITECTURE
+    if (requestIntent === 'FRONTEND_ARCHITECTURE') {
+      const feMatch = techMap.frontend || findWithCitation(['frontend', 'react', 'next\\.js', 'vue', 'angular', 'web client', 'mobile app', 'ui'])?.match;
+      return {
+        requestIntent,
+        frontendArchitecture: feMatch
+          ? `The frontend is implemented using ${feMatch}. It handles client-side UI rendering, user interaction, state management, and authenticated communication with the API tier.`
+          : 'The document does not specify this implementation detail.',
+      };
+    }
+
+    // 3. BACKEND_ARCHITECTURE
+    if (requestIntent === 'BACKEND_ARCHITECTURE') {
+      const beMatch = techMap.backend || findWithCitation(['backend', 'node\\.js', 'express', 'python', 'fastapi', 'django', 'microservices', 'api gateway', 'spring boot'])?.match;
+      return {
+        requestIntent,
+        backendArchitecture: beMatch
+          ? `The backend server runtime is built using ${beMatch}. It manages routing, middleware verification, business logic execution, and database persistence.`
+          : 'The document does not specify this implementation detail.',
+      };
+    }
+
+    // 4. TECH_STACK
+    if (requestIntent === 'TECH_STACK') {
+      return {
+        requestIntent,
+        techStackDetails: {
+          frontend: techMap.frontend || findWithCitation(['frontend', 'react', 'next', 'vue', 'ui'])?.match || 'Not specified',
+          backend: techMap.backend || findWithCitation(['backend', 'node', 'express', 'python', 'fastapi'])?.match || 'Not specified',
+          database: techMap.database || findWithCitation(['database', 'mongodb', 'postgresql', 'mysql', 'redis'])?.match || 'Not specified',
+          external: Object.keys(techMap).filter(k => !['frontend', 'backend', 'database'].includes(k)).map(k => `${k}: ${techMap[k]}`).join(', ') || 'Not specified',
+        },
+        technologies: Object.values(techMap),
+      };
+    }
+
+    // 5. APPLICATION_WORKFLOW
+    if (requestIntent === 'APPLICATION_WORKFLOW') {
+      return {
+        requestIntent,
+        workflowSteps: workflowSteps.length > 0
+          ? workflowSteps.join('\n')
+          : (findWithCitation(['workflow', 'flow', 'pipeline', 'process', 'lifecycle', 'request flow'])?.match || 'The document does not specify this implementation detail.'),
+      };
+    }
+
+    // 6. EXTERNAL_INTEGRATIONS
+    if (requestIntent === 'EXTERNAL_INTEGRATIONS') {
+      const extList = [];
+      if (techMap['file storage']) extList.push(`Storage: ${techMap['file storage']}`);
+      if (techMap['email']) extList.push(`Email: ${techMap['email']}`);
+      if (techMap['api docs']) extList.push(`API Documentation: ${techMap['api docs']}`);
+      if (techMap['deployment']) extList.push(`Deployment & Hosting: ${techMap['deployment']}`);
+      return {
+        requestIntent,
+        externalIntegrations: extList.length > 0 ? extList.join('\n') : (findWithCitation(['api', 'apis', 'rest', 'stripe', 'sendgrid', 'supabase', 'render', 'vercel'])?.match || 'The document does not specify this implementation detail.'),
+      };
+    }
+
+    // 7. WEAKNESSES_IDENTIFICATION
+    if (requestIntent === 'WEAKNESSES_IDENTIFICATION') {
+      const groundedWeaknesses = extractWeaknesses();
+      return {
+        requestIntent,
+        identifiedWeaknesses: groundedWeaknesses,
+      };
+    }
+
+    // 8. COMPREHENSIVE_ANALYSIS or ARCHITECTURE_ANALYSIS or ARCHITECTURE_AND_WEAKNESSES
+    if (requestIntent === 'COMPREHENSIVE_ANALYSIS' || requestIntent === 'ARCHITECTURE_ANALYSIS' || requestIntent === 'ARCHITECTURE_AND_WEAKNESSES') {
       const arch = {
         summary: `The proposal defines a system architecture across ${processed.metadata?.pageCount || 1} slide(s)/page(s).`,
         frontend: null,
@@ -477,7 +808,7 @@ ${textSnippet}`;
         arch.frontend = `${fe.match} *(${fe.citation})*`;
         arch.citations.push(fe.citation);
       } else {
-        arch.frontend = 'Modular web/client interface';
+        arch.frontend = techMap.frontend || 'Modular web/client interface';
       }
 
       const be = findWithCitation(['backend', 'node\\.js', 'express', 'python', 'fastapi', 'django', 'microservices', 'api gateway', 'spring boot']);
@@ -485,7 +816,7 @@ ${textSnippet}`;
         arch.backend = `${be.match} *(${be.citation})*`;
         arch.citations.push(be.citation);
       } else {
-        arch.backend = 'Microservice API layer';
+        arch.backend = techMap.backend || 'Server API layer';
       }
 
       const db = findWithCitation(['database', 'postgresql', 'postgres', 'mongodb', 'mysql', 'redis', 'dynamodb', 'elasticsearch']);
@@ -493,16 +824,16 @@ ${textSnippet}`;
         arch.database = `${db.match} *(${db.citation})*`;
         arch.citations.push(db.citation);
       } else {
-        arch.database = 'Relational/Document persistence store';
+        arch.database = techMap.database || 'Persistence store';
       }
 
-      const apis = findWithCitation(['api', 'apis', 'rest', 'graphql', 'stripe', 'sendgrid', 'jwt', 'auth']);
+      const apis = findWithCitation(['api', 'apis', 'rest', 'graphql', 'stripe', 'sendgrid', 'jwt', 'auth', 'swagger', 'supabase']);
       if (apis) {
         arch.apis = `${apis.match} *(${apis.citation})*`;
         arch.citations.push(apis.citation);
       }
 
-      const comm = findWithCitation(['kafka', 'grpc', 'rabbitmq', 'websocket', 'event', 'streaming', 'pub/sub', 'message queue']);
+      const comm = findWithCitation(['kafka', 'grpc', 'rabbitmq', 'websocket', 'socket.io', 'event', 'streaming', 'pub/sub', 'message queue']);
       if (comm) {
         arch.communication = `${comm.match} *(${comm.citation})*`;
         arch.citations.push(comm.citation);
@@ -512,28 +843,34 @@ ${textSnippet}`;
       if (wf) {
         arch.workflow = `${wf.match} *(${wf.citation})*`;
         arch.citations.push(wf.citation);
+      } else if (workflowSteps.length > 0) {
+        arch.workflow = workflowSteps.join(' → ');
       } else {
         arch.workflow = 'Client requests routed via API Gateway to services and database';
       }
 
-      const weaknesses = [
-        {
-          title: 'Single Point of Failure at API Gateway',
-          issue: 'API Gateway Single Point of Failure (SPOF)',
-          impact: 'If the primary API gateway instance experiences outage or traffic spikes without horizontal auto-scaling, all downstream microservices become unreachable.',
-          whyItMatters: 'If the primary API gateway instance experiences outage or traffic spikes without horizontal auto-scaling, all downstream microservices become unreachable.',
-          priority: 'High',
-          citation: arch.citations[0] || '[Slide 2]',
-        },
-        {
-          title: 'Synchronous Inter-Service Coupling',
-          issue: 'Synchronous Inter-Service Coupling',
-          impact: 'Tight HTTP REST coupling across internal services increases latency and causes cascading failures if any single dependency slows down.',
-          whyItMatters: 'Tight HTTP REST coupling across internal services increases latency and causes cascading failures if any single dependency slows down.',
-          priority: 'Medium',
-          citation: arch.citations[1] || '[Slide 3]',
-        },
-      ];
+      // Grounded weaknesses from text
+      const extractedWeak = extractWeaknesses();
+      const weaknesses = extractedWeak.length > 0
+        ? extractedWeak
+        : [
+            {
+              title: 'Single Point of Failure at API Gateway',
+              issue: 'API Gateway Single Point of Failure (SPOF)',
+              impact: 'If the primary API gateway instance experiences outage or traffic spikes without horizontal auto-scaling, all downstream microservices become unreachable.',
+              whyItMatters: 'If the primary API gateway instance experiences outage or traffic spikes without horizontal auto-scaling, all downstream microservices become unreachable.',
+              priority: 'High',
+              citation: arch.citations[0] || '[Slide 2]',
+            },
+            {
+              title: 'Synchronous Inter-Service Coupling',
+              issue: 'Synchronous Inter-Service Coupling',
+              impact: 'Tight HTTP REST coupling across internal services increases latency and causes cascading failures if any single dependency slows down.',
+              whyItMatters: 'Tight HTTP REST coupling across internal services increases latency and causes cascading failures if any single dependency slows down.',
+              priority: 'Medium',
+              citation: arch.citations[1] || '[Slide 3]',
+            },
+          ];
 
       const recommendations = [
         {

@@ -609,32 +609,160 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     return md.trim();
   }
 
-  // 2. DATABASE_ANALYSIS (e.g. "Explain the database design.")
+  // 2. TECHNICAL ARCHITECTURE EXPLANATION (Exact Scope Contract: # Technical Architecture)
+  // When user asks specifically for technical/system architecture (without requesting weaknesses or improvements)
+  const isTechArchOnly =
+    requestIntent === 'TECHNICAL_ARCHITECTURE_EXPLANATION' ||
+    (
+      /(technical architecture|system architecture|architecture described|explain (the\s+)?(technical\s+|system\s+)?architecture)/i.test(reqLower) &&
+      !/(frontend|front-end|backend|back-end|database|data model|workflow|integrations?)/i.test(reqLower) &&
+      !/(weakness|weaknesses|vulnerabilit|bottlenecks?|improv|recommend)/i.test(reqLower)
+    );
+
+  if (isTechArchOnly) {
+    const techArch = primaryDoc.technicalArchitecture || primaryDoc.architectureAnalysis || {};
+    const overview = techArch.architectureOverview || techArch.summary || primaryDoc.summary || 'Architecture overview described in the document.';
+    const frontend = techArch.frontend || 'The document does not specify this implementation detail.';
+    const backend = techArch.backend || 'The document does not specify this implementation detail.';
+    const database = techArch.database || 'The document does not specify this implementation detail.';
+    const externalIntegrations = techArch.externalIntegrations || techArch.apis || 'The document does not specify this implementation detail.';
+    const applicationWorkflow = techArch.applicationWorkflow || techArch.workflow || 'The document does not specify this implementation detail.';
+    const summary = techArch.architectureSummary || 'The architecture provides a decoupled design foundation for application workloads.';
+
+    md += `# Technical Architecture\n\n`;
+    md += `## Architecture Overview\n${stripPageReferences(overview)}\n\n`;
+    md += `## Frontend\n${stripPageReferences(frontend)}\n\n`;
+    md += `## Backend\n${stripPageReferences(backend)}\n\n`;
+    md += `## Database\n${stripPageReferences(database)}\n\n`;
+    md += `## External Integrations\n${stripPageReferences(externalIntegrations)}\n\n`;
+    md += `## Application Workflow\n${stripPageReferences(applicationWorkflow)}\n\n`;
+    md += `## Architecture Summary\n${stripPageReferences(summary)}\n`;
+
+    return md.trim();
+  }
+
+  // 3. FRONTEND ARCHITECTURE ONLY
+  const isFrontendOnly =
+    requestIntent === 'FRONTEND_ARCHITECTURE' ||
+    (/(frontend|front-end|ui)\s+(architecture|stack|tier)/i.test(reqLower) && !/(backend|database)/i.test(reqLower));
+
+  if (isFrontendOnly) {
+    const fe = primaryDoc.frontendArchitecture || primaryDoc.technicalArchitecture?.frontend || primaryDoc.architectureAnalysis?.frontend || 'The document does not specify this implementation detail.';
+    md += `## Frontend Architecture\n\n`;
+    md += `${stripPageReferences(fe)}\n`;
+    return md.trim();
+  }
+
+  // 4. BACKEND ARCHITECTURE ONLY
+  const isBackendOnly =
+    requestIntent === 'BACKEND_ARCHITECTURE' ||
+    (/(backend|back-end|server)\s+(architecture|stack|tier)/i.test(reqLower) && !/(frontend|database)/i.test(reqLower));
+
+  if (isBackendOnly) {
+    const be = primaryDoc.backendArchitecture || primaryDoc.technicalArchitecture?.backend || primaryDoc.architectureAnalysis?.backend || 'The document does not specify this implementation detail.';
+    md += `## Backend Architecture\n\n`;
+    md += `${stripPageReferences(be)}\n`;
+    return md.trim();
+  }
+
+  // 5. TECHNOLOGY STACK ONLY
+  const isTechStackOnly =
+    requestIntent === 'TECH_STACK' ||
+    /(tech stack|technology stack|list technologies|what technologies|technologies used)/i.test(reqLower);
+
+  if (isTechStackOnly) {
+    md += `## Technology Stack\n\n`;
+    if (primaryDoc.techStackDetails) {
+      const ts = primaryDoc.techStackDetails;
+      if (ts.frontend && ts.frontend !== 'Not specified') md += `### Frontend Stack\n${stripPageReferences(ts.frontend)}\n\n`;
+      if (ts.backend && ts.backend !== 'Not specified') md += `### Backend Stack\n${stripPageReferences(ts.backend)}\n\n`;
+      if (ts.database && ts.database !== 'Not specified') md += `### Database & Persistence\n${stripPageReferences(ts.database)}\n\n`;
+      if (ts.external && ts.external !== 'Not specified') md += `### Cloud & Third-Party Services\n${stripPageReferences(ts.external)}\n\n`;
+    } else if (primaryDoc.technologies?.length > 0) {
+      md += primaryDoc.technologies.map((t) => `- **${t}**`).join('\n') + '\n';
+    } else {
+      md += `The document does not specify explicit technology stack details.\n`;
+    }
+    return md.trim();
+  }
+
+  // 6. APPLICATION WORKFLOW ONLY
+  const isWorkflowOnly =
+    requestIntent === 'APPLICATION_WORKFLOW' ||
+    (/(workflow|application workflow|request flow|data flow)/i.test(reqLower) && !/(architecture|weakness)/i.test(reqLower));
+
+  if (isWorkflowOnly) {
+    const wf = primaryDoc.workflowSteps || primaryDoc.technicalArchitecture?.applicationWorkflow || primaryDoc.architectureAnalysis?.workflow || 'The document does not specify this implementation detail.';
+    md += `## Application Workflow\n\n`;
+    md += `${stripPageReferences(wf)}\n`;
+    return md.trim();
+  }
+
+  // 7. EXTERNAL INTEGRATIONS ONLY
+  const isExternalOnly =
+    requestIntent === 'EXTERNAL_INTEGRATIONS' ||
+    (/(external integrations?|third-party|apis? and integrations?)/i.test(reqLower) && !/(architecture|weakness)/i.test(reqLower));
+
+  if (isExternalOnly) {
+    const apis = primaryDoc.externalIntegrations || primaryDoc.technicalArchitecture?.externalIntegrations || primaryDoc.architectureAnalysis?.apis || 'The document does not specify this implementation detail.';
+    md += `## External Integrations\n\n`;
+    md += `${stripPageReferences(apis)}\n`;
+    return md.trim();
+  }
+
+  // 8. WEAKNESSES IDENTIFICATION ONLY
+  const isWeaknessesOnly =
+    requestIntent === 'WEAKNESSES_IDENTIFICATION' ||
+    (/(weakness|weaknesses|vulnerabilit|bottlenecks?|risks?)/i.test(reqLower) && !/(architecture|improv|recommend)/i.test(reqLower));
+
+  if (isWeaknessesOnly) {
+    const weaknesses = primaryDoc.identifiedWeaknesses || [];
+    md += `## Identified Weaknesses & Limitations\n\n`;
+    if (weaknesses.length > 0) {
+      weaknesses.forEach((w, idx) => {
+        const title = w.title || w.issue?.slice(0, 50) || `Limitation ${idx + 1}`;
+        const issue = w.issue || w.title || 'Identified limitation.';
+        const impact = w.impact || w.whyItMatters || 'Potential risk to system operation or scalability.';
+        const priority = w.priority || 'Medium';
+
+        md += `**${idx + 1}. ${stripPageReferences(title)}**\n`;
+        md += `- **Issue:** ${stripPageReferences(issue)}\n`;
+        md += `- **Impact:** ${stripPageReferences(impact)}\n`;
+        md += `- **Priority:** ${priority}\n\n`;
+      });
+    } else {
+      md += `*No critical architectural vulnerabilities or operational bottlenecks were explicitly flagged in the provided proposal content.*\n\n`;
+    }
+    return md.trim();
+  }
+
+  // 9. DATABASE_ANALYSIS (e.g. "Explain the database design.")
   const wantsDatabaseOnly =
     requestIntent === 'DATABASE_ANALYSIS' ||
-    /(explain|what is|describe|show me|detail|about)\s+(the\s+)?(database|database design|data model|schema|db design|storage design)/i.test(reqLower);
+    requestIntent === 'DATABASE_ARCHITECTURE' ||
+    (/(explain|what is|describe|show me|detail|about)\s+(the\s+)?(database|database design|data model|schema|db design|storage design)/i.test(reqLower) && !/(frontend|backend|weakness)/i.test(reqLower));
 
   if (wantsDatabaseOnly) {
     const dbInfo = primaryDoc.databaseAnalysis || {};
     const arch = primaryDoc.architectureAnalysis || {};
+    const dbOverview = primaryDoc.technicalArchitecture?.database || dbInfo.overview || arch.database || 'The persistence tier utilizes structured tables/collections to manage application records.';
 
-    md += `## Document Analysis: ${primaryDoc.filename || 'Uploaded Document'}\n\n`;
-    md += `### Document Analysis\n`;
-    md += `**Document:** ${primaryDoc.filename || 'Uploaded Document'} (\`${primaryDoc.fileType || 'DOCUMENT'}\`)\n`;
-    md += `Database architecture, data organization, and storage workflow.\n\n`;
-    md += `---\n\n`;
+    md += `## Database Architecture\n\n`;
+    md += `### Database Overview\n`;
+    md += `${stripPageReferences(dbOverview)}\n\n`;
 
-    md += `### 1. Database Overview\n`;
-    md += `${stripPageReferences(dbInfo.overview || arch.database || 'The persistence tier utilizes structured tables/collections to manage application records.')}\n\n`;
+    if (dbInfo.dataOrganization) {
+      md += `### Data Organization & Schemas\n`;
+      md += `${stripPageReferences(dbInfo.dataOrganization)}\n\n`;
+    }
 
-    md += `### 2. Data Organization & Schemas\n`;
-    md += `${stripPageReferences(dbInfo.dataOrganization || 'Application entities are partitioned into normalized relational tables or document collections for user state, transactions, and event logs.')}\n\n`;
-
-    md += `### 3. Relationships and Workflow\n`;
-    md += `${stripPageReferences(dbInfo.relationshipsAndWorkflow || arch.workflow || 'Foreign key mappings and indexed query patterns manage transactional data flow between the API service tier and persistent storage.')}\n\n`;
+    if (dbInfo.relationshipsAndWorkflow || arch.workflow) {
+      md += `### Relationships and Storage Workflow\n`;
+      md += `${stripPageReferences(dbInfo.relationshipsAndWorkflow || arch.workflow)}\n\n`;
+    }
 
     if (dbInfo.potentialImprovements && dbInfo.potentialImprovements.length > 0) {
-      md += `### 4. Potential Improvements\n`;
+      md += `### Potential Improvements\n`;
       dbInfo.potentialImprovements.forEach((imp) => {
         md += `- ${stripPageReferences(imp)}\n`;
       });
@@ -643,9 +771,10 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     return md.trim();
   }
 
-  // 3. IMPROVEMENTS_ONLY (e.g. "Recommend improvements for this project.")
+  // 10. IMPROVEMENTS_ONLY (e.g. "Recommend improvements for this project.")
   const wantsImprovementsOnly =
     (requestIntent === 'IMPROVEMENTS_ANALYSIS' ||
+    requestIntent === 'IMPROVEMENTS_RECOMMENDATIONS' ||
     /(recommend improvements?|recommended improvements?|suggest improvements?|what improvements|how can i improve)/i.test(reqLower)) &&
     !/(architecture|system architecture)/i.test(reqLower);
 
@@ -653,12 +782,7 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     const improvements = primaryDoc.recommendations || primaryDoc.improvementsAnalysis?.recommendations || [];
     const context = primaryDoc.improvementsAnalysis?.context || 'Targeted technical recommendations derived from document architecture analysis.';
 
-    md += `## Document Analysis: ${primaryDoc.filename || 'Project Proposal'}\n\n`;
-    md += `### Document Analysis\n`;
-    md += `**Document:** ${primaryDoc.filename || 'Project Proposal'} (\`${primaryDoc.fileType || 'DOCUMENT'}\`)\n`;
-    md += `Targeted technical improvements and implementation strategies.\n\n`;
-    md += `---\n\n`;
-
+    md += `## Recommended Improvements\n\n`;
     md += `### 1. Identified Issues & Context\n`;
     md += `${stripPageReferences(context)}\n\n`;
 
@@ -676,16 +800,18 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
         md += `- **Expected benefit:** ${stripPageReferences(benefits)}\n\n`;
       });
     } else {
-      md += `*Practical optimizations should align with microservice scalability guidelines and redundant load balancing.*\n\n`;
+      md += `*No specific recommendations were recorded for this document.*\n\n`;
     }
 
-    md += `### 3. Expected Benefits & Strategic Impact\n`;
-    md += `${stripPageReferences(primaryDoc.improvementsAnalysis?.strategicImpact || 'Applying these improvements establishes a horizontally scalable, production-grade foundation with sub-50ms gateway latency and automated disaster recovery.')}\n`;
+    if (primaryDoc.improvementsAnalysis?.strategicImpact) {
+      md += `### 3. Expected Benefits & Strategic Impact\n`;
+      md += `${stripPageReferences(primaryDoc.improvementsAnalysis.strategicImpact)}\n`;
+    }
 
     return md.trim();
   }
 
-  // 4. ARCHITECTURE & WEAKNESSES ONLY (e.g. "Examine the system architecture and identify weaknesses.")
+  // 11. ARCHITECTURE & WEAKNESSES ONLY (e.g. "Examine the system architecture and identify weaknesses.")
   const wantsArchitectureAndWeaknessesOnly =
     /(architecture|system architecture)/i.test(reqLower) &&
     /(weakness|weaknesses|bottlenecks?|vulnerabilit)/i.test(reqLower) &&
@@ -736,11 +862,16 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     return md.trim();
   }
 
-  // 5. COMPREHENSIVE ARCHITECTURE & PROPOSAL ANALYSIS (e.g. "Analyze this project proposal PDF to examine system architecture, identify weaknesses, and recommend improvements.")
+  // 12. COMPREHENSIVE ARCHITECTURE & PROPOSAL ANALYSIS (When architecture, weaknesses, AND improvements are all requested)
   if (
+    requestIntent === 'COMPREHENSIVE_ANALYSIS' ||
     requestIntent === 'ARCHITECTURE_ANALYSIS' ||
-    primaryDoc.architectureAnalysis ||
-    /(architecture|system architecture|weakness|weaknesses|improvements?|project proposal|proposal)/i.test(reqLower)
+    (
+      /(architecture|system architecture)/i.test(reqLower) &&
+      /(weakness|weaknesses|vulnerabilit)/i.test(reqLower) &&
+      /(recommend|improv)/i.test(reqLower)
+    ) ||
+    /analyze this project proposal/i.test(reqLower)
   ) {
     const arch = primaryDoc.architectureAnalysis || {};
     const weaknesses = primaryDoc.identifiedWeaknesses || [];
