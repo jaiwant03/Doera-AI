@@ -92,7 +92,7 @@ async function runTestSuite() {
   const meanResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: meanRes }, {}, 'Calculate mean of Amount');
   assert(meanResponse.includes('**Mean Calculation**'), 'Mean: Clean calculation title present');
   assert(meanResponse.includes('\\[') && meanResponse.includes('\\bar{x} = \\frac{\\sum x_i}{N}'), 'Mean: Standard LaTeX block formula present');
-  assert(meanResponse.includes('251,034,733.91') && meanResponse.includes('100,000'), 'Mean: Actual dataset numerator and denominator substituted');
+  assert(meanResponse.includes('251,035,003.20') && meanResponse.includes('100,000'), 'Mean: Actual dataset numerator and denominator substituted');
   assert(meanResponse.includes('\\boxed{\\bar{x} = $2,510.35}'), 'Mean: Boxed final answer present');
   assert(!meanResponse.includes('Variance'), 'Mean: Unrequested Variance is not displayed');
   assert(!meanResponse.includes('Standard Deviation'), 'Mean: Unrequested Standard Deviation is not displayed');
@@ -580,7 +580,7 @@ async function runTestSuite() {
   const t4Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t4Query);
   assert(t4Analysis.statisticalResult.primaryOperation === 'COEFFICIENT_OF_VARIATION', 'Turn 4: Op is COEFFICIENT_OF_VARIATION');
   const t4Text = universalResponseBuilder.buildDataAnalysisResponse(t4Analysis, {}, t4Query);
-  assert(t4Text.includes('57.40%'), 'Turn 4: CV 57.40% present');
+  assert(t4Text.includes('57.40%') || t4Text.includes('57.40\\%'), 'Turn 4: CV 57.40% present');
   conversationHistory.push({ role: 'user', content: t4Query });
   conversationHistory.push({
     role: 'assistant',

@@ -772,7 +772,7 @@ function buildSingleMathResponse({
         ? results.sum
         : (mean !== null && mean !== undefined ? mean * validCount : 0);
 
-      md += '**Mean Calculation\n\n';
+      md += '**Mean Calculation**\n\n';
       md += 'Formula:\n\n';
       md += '\\[\n\\bar{x} = \\frac{\\sum x_i}{N}\n\\]\n\n';
       md += 'Substitute the actual calculated values:\n\n';
@@ -784,7 +784,7 @@ function buildSingleMathResponse({
 
     case 'MEDIAN': {
       const median = results?.median;
-      md += '**Median Calculation\n\n';
+      md += '**Median Calculation**\n\n';
       md += 'Method:\n\n';
       md += 'The median represents the 50th percentile (central observation in the sorted series).\n\n';
       md += 'Calculation:\n\n';
@@ -803,7 +803,7 @@ function buildSingleMathResponse({
 
     case 'MODE': {
       const mode = results?.mode;
-      md += '**Mode Calculation\n\n';
+      md += '**Mode Calculation**\n\n';
       md += 'Method:\n\n';
       md += 'The mode represents the value that occurs with the highest frequency in the dataset.\n\n';
       md += 'Calculation:\n\n';
@@ -828,10 +828,10 @@ function buildSingleMathResponse({
       const isPopOnly = activeOperations?.isPopulationVariance && !activeOperations?.isSampleVariance;
       const isSampleOnly = activeOperations?.isSampleVariance && !activeOperations?.isPopulationVariance;
 
-      md += '**Variance Calculation\n\n';
+      md += '**Variance Calculation**\n\n';
 
       if (!isSampleOnly) {
-        md += '**Population variance\n\n';
+        md += '**Population variance**\n\n';
         md += 'Formula:\n\n';
         md += '\\[\n\\sigma^2 = \\frac{\\sum (x_i-\\mu)^2}{N}\n\\]\n\n';
         md += 'Substitute the actual calculated values:\n\n';
@@ -841,7 +841,7 @@ function buildSingleMathResponse({
       }
 
       if (!isPopOnly) {
-        md += '**Sample variance\n\n';
+        md += '**Sample variance**\n\n';
         md += 'Formula:\n\n';
         md += '\\[\ns^2 = \\frac{\\sum (x_i-\\bar{x})^2}{n-1}\n\\]\n\n';
         md += 'Substitute the actual values:\n\n';
@@ -866,10 +866,10 @@ function buildSingleMathResponse({
       const isPopOnly = activeOperations?.isPopulationStdDev && !activeOperations?.isSampleStdDev;
       const isSampleOnly = activeOperations?.isSampleStdDev && !activeOperations?.isPopulationStdDev;
 
-      md += '**Standard Deviation Calculation\n\n';
+      md += '**Standard Deviation Calculation**\n\n';
 
       if (!isSampleOnly) {
-        md += '**Population Standard Deviation\n\n';
+        md += '**Population Standard Deviation**\n\n';
         md += 'Formula:\n\n';
         md += '\\[\n\\sigma = \\sqrt{\\frac{\\sum (x_i-\\mu)^2}{N}}\n\\]\n\n';
         md += 'Substitute the actual calculated values:\n\n';
@@ -879,7 +879,7 @@ function buildSingleMathResponse({
       }
 
       if (!isPopOnly) {
-        md += '**Sample Standard Deviation\n\n';
+        md += '**Sample Standard Deviation**\n\n';
         md += 'Formula:\n\n';
         md += '\\[\ns = \\sqrt{\\frac{\\sum (x_i-\\bar{x})^2}{n-1}}\n\\]\n\n';
         md += 'Substitute the actual calculated values:\n\n';
@@ -901,20 +901,20 @@ function buildSingleMathResponse({
       const sampleCV = cv?.sampleCV;
       const popCV = cv?.populationCV;
 
-      md += '**Coefficient of Variation\n\n';
+      md += '**Coefficient of Variation**\n\n';
       md += 'Formula:\n\n';
       md += '\\[\nCV = \\frac{s}{\\bar{x}} \\times 100\n\\]\n\n';
       md += 'Substitute actual values:\n\n';
       md += `\\[\nCV = \\frac{${formatRaw(sampleSD, 4)}}{${formatRaw(mean, 4)}} \\times 100\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{CV = ${sampleCV !== null && sampleCV !== undefined ? `${sampleCV.toFixed(2)}\%` : 'Undefined'}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{CV = ${sampleCV !== null && sampleCV !== undefined ? `${sampleCV.toFixed(2)}\\%` : 'Undefined'}}\n\\]\n\n`;
       md += `*Note: Evaluated using sample standard deviation ($s = ${formatCurrency(sampleSD)}$) over sample mean ($\\bar{x} = ${formatCurrency(mean)}$). Population CV is ${popCV !== null && popCV !== undefined ? `${popCV.toFixed(2)}%` : 'Undefined'}.*\n`;
       break;
     }
 
     case 'RANGE': {
       const r = results?.range;
-      md += '**Range Calculation\n\n';
+      md += '**Range Calculation**\n\n';
       md += 'Formula:\n\n';
       md += '\\[\n\\text{Range} = x_{\\max} - x_{\\min}\n\\]\n\n';
       md += 'Substitute actual values:\n\n';
@@ -927,7 +927,7 @@ function buildSingleMathResponse({
 
     case 'QUARTILES': {
       const q = results?.quartiles;
-      md += '**Quartiles & Interquartile Range (IQR) Calculation\n\n';
+      md += '**Quartiles & Interquartile Range (IQR) Calculation**\n\n';
       md += 'Formula:\n\n';
       md += '\\[\n\\text{IQR} = Q_3 - Q_1\n\\]\n\n';
       md += 'Substitute actual calculated values:\n\n';
@@ -940,7 +940,7 @@ function buildSingleMathResponse({
 
     case 'OUTLIERS': {
       const o = results?.outliers;
-      md += '**Outlier Detection (Tukey IQR Method)\n\n';
+      md += '**Outlier Detection (Tukey IQR Method)**\n\n';
       md += 'Formulas:\n\n';
       md += '\\[\n\\text{Lower Bound} = Q_1 - 1.5 \\times \\text{IQR}\n\\]\n';
       md += '\\[\n\\text{Upper Bound} = Q_3 + 1.5 \\times \\text{IQR}\n\\]\n\n';
@@ -948,14 +948,14 @@ function buildSingleMathResponse({
       md += `\\[\n\\text{Lower Bound} = ${formatRaw(o?.q1)} - 1.5(${formatRaw(o?.iqr)}) = ${formatRaw(o?.lowerBound)}\n\\]\n`;
       md += `\\[\n\\text{Upper Bound} = ${formatRaw(o?.q3)} + 1.5(${formatRaw(o?.iqr)}) = ${formatRaw(o?.upperBound)}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{Outliers Identified} = ${o?.outlierCount.toLocaleString()} \\quad (${o?.outlierPercentage}\%)}\n\\]\n\n`;
+      md += `\\[\n\\boxed{\\text{Outliers Identified} = ${o?.outlierCount.toLocaleString()} \\quad (${o?.outlierPercentage}\\%)}\n\\]\n\n`;
       md += `*Note: ${o?.outlierCount === 0 ? `All ${validCountFormatted} observations reside strictly within the theoretical envelope [${formatCurrency(o?.lowerBound)}, ${formatCurrency(o?.upperBound)}].` : `Identified ${o?.outlierCount.toLocaleString()} observations beyond the boundaries.`}*\n`;
       break;
     }
 
     case 'SKEWNESS': {
       const dist = results?.distribution;
-      md += '**Skewness Calculation\n\n';
+      md += '**Skewness Calculation**\n\n';
       md += 'Formula (Sample Skewness $G_1$):\n\n';
       md += '\\[\nG_1 = \\frac{n}{(n-1)(n-2)} \\sum_{i=1}^{n} \\left(\\frac{x_i - \\bar{x}}{s}\\right)^3\n\\]\n\n';
       md += 'Substitute actual calculated values:\n\n';
@@ -968,7 +968,7 @@ function buildSingleMathResponse({
 
     case 'KURTOSIS': {
       const dist = results?.distribution;
-      md += '**Kurtosis Calculation\n\n';
+      md += '**Kurtosis Calculation**\n\n';
       md += 'Formula (Sample Excess Kurtosis $G_2$):\n\n';
       md += '\\[\nG_2 = \\frac{n(n+1)}{(n-1)(n-2)(n-3)} \\sum_{i=1}^{n} \\left(\\frac{x_i - \\bar{x}}{s}\\right)^4 - \\frac{3(n-1)^2}{(n-2)(n-3)}\n\\]\n\n';
       md += 'Substitute actual calculated values:\n\n';
@@ -1000,12 +1000,12 @@ function buildSingleMathResponse({
       const sd = results?.standardDeviation;
       const cv = results?.coefficientOfVariation;
       const mean = results?.mean;
-      md += '**Metric Comparison: Standard Deviation vs. Coefficient of Variation\n\n';
+      md += '**Metric Comparison: Standard Deviation vs. Coefficient of Variation**\n\n';
       md += `- **Arithmetic Mean ($\\bar{x}$)**: ${formatCurrency(mean)}\n`;
       md += `- **Sample Standard Deviation ($s$)**: ${formatCurrency(sd?.sampleStandardDeviation)} (Absolute Dispersion)\n`;
       md += `- **Sample Coefficient of Variation ($CV$)**: ${cv?.sampleCV !== null && cv?.sampleCV !== undefined ? `${cv.sampleCV.toFixed(2)}%` : 'Undefined'} (Relative Dispersion)\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{s = ${formatCurrency(sd?.sampleStandardDeviation)} \\quad | \\quad CV = ${cv?.sampleCV?.toFixed(2)}\%}\n\\]\n`;
+      md += `\\[\n\\boxed{s = ${formatCurrency(sd?.sampleStandardDeviation)} \\quad | \\quad CV = ${cv?.sampleCV?.toFixed(2)}\\%}\n\\]\n`;
       break;
     }
 
@@ -1035,7 +1035,7 @@ function buildMultiMathResponse({
   userRequest,
 }) {
   const allowlist = new Set(requestedOperations);
-  let md = '**Statistical Calculations\n\n';
+  let md = '**Statistical Calculations**\n\n';
   let step = 1;
 
   if (allowlist.has('mean')) {
