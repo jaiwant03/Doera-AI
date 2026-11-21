@@ -94,7 +94,7 @@ const b = String.raw`function buildStatisticalResponse(statResult, chart, userRe
 
   // If a chart was explicitly generated, attach it cleanly
   if (chart && Array.isArray(chart.data) && chart.data.length > 0) {
-    md += ` + '`' + `\\n\\n### Visualization\\n\\n\`\`\`json:doera-chart\\n\${JSON.stringify(chart, null, 2)}\\n\`\`\`\\n\\n` + '`' + `;
+    md += '\\n\\n### Visualization\\n\\n```json:doera-chart\\n' + JSON.stringify(chart, null, 2) + '\\n```\\n\\n';
   }
 
   return md.trim();
