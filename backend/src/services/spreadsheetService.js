@@ -993,6 +993,7 @@ class SpreadsheetService {
 
     return {
       chartType,
+      type: chartType,
       title,
       description,
       xAxis: {
