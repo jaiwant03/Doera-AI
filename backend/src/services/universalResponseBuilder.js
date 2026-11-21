@@ -1140,7 +1140,7 @@ function buildSingleMathResponse({
       md += 'Substitute actual values:\n\n';
       md += `\\[\n\\text{Range} = ${formatRaw(r?.max)} - ${formatRaw(r?.min)}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{Range} = ${formatMathCurrency(r?.range)}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{\\text{Range} = ${formatCurrency(r?.range)}}\n\\]\n\n`;
       md += `*Note: Minimum observation is ${formatCurrency(r?.min)} and maximum observation is ${formatCurrency(r?.max)}.*\n`;
       break;
     }
@@ -1153,7 +1153,7 @@ function buildSingleMathResponse({
       md += 'Substitute actual calculated values:\n\n';
       md += `\\[\n\\text{IQR} = ${formatRaw(q?.q3)} - ${formatRaw(q?.q1)}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{IQR} = ${formatMathCurrency(q?.iqr)}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{\\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
       md += `*Note: First Quartile ($Q_1$) is ${formatCurrency(q?.q1)}, Second Quartile ($Q_2$ / Median) is ${formatCurrency(q?.q2)}, and Third Quartile ($Q_3$) is ${formatCurrency(q?.q3)}.*\n`;
       break;
     }
