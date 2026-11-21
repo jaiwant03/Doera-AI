@@ -1,22 +1,29 @@
 import axios from 'axios';
 
-async function testOverpass() {
-  const query = `[out:json][timeout:15];(node["amenity"="cinema"](around:15000,11.0445,76.9232);way["amenity"="cinema"](around:15000,11.0445,76.9232););out center 10;`;
+async function testPhotonSearch() {
   try {
-    const res = await axios.post('https://overpass-api.de/api/interpreter', 'data=' + encodeURIComponent(query), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'DOERA-AI-Local-Research/3.0 (contact@doera.ai)',
-      },
-      timeout: 10000,
+    // 1. Search cinema / theatre around coordinates
+    const res = await axios.get('https://photon.komoot.io/api/?q=theatre&lat=11.0445&lon=76.9232&limit=5', {
+      headers: { 'User-Agent': 'DOERA-AI-Local-Research/3.0' },
+      timeout: 5000,
     });
-    console.log('Overpass status:', res.status, 'Elements found:', res.data.elements?.length);
-    res.data.elements?.forEach((e) => {
-      console.log(' - Name:', e.tags?.name, 'Lat/Lon:', e.lat || e.center?.lat, e.lon || e.center?.lon);
+    console.log('Photon search "theatre" status:', res.status, 'Features:', res.data.features?.length);
+    res.data.features?.forEach((f) => {
+      console.log(' - Name:', f.properties.name, 'City:', f.properties.city, 'Coords:', f.geometry.coordinates);
+    });
+
+    // 2. Search mobile phone repair
+    const resMobile = await axios.get('https://photon.komoot.io/api/?q=mobile+repair&lat=11.0445&lon=76.9232&limit=5', {
+      headers: { 'User-Agent': 'DOERA-AI-Local-Research/3.0' },
+      timeout: 5000,
+    });
+    console.log('Photon search "mobile repair" status:', resMobile.status, 'Features:', resMobile.data.features?.length);
+    resMobile.data.features?.forEach((f) => {
+      console.log(' - Name:', f.properties.name, 'City:', f.properties.city, 'Coords:', f.geometry.coordinates);
     });
   } catch (err) {
-    console.error('Overpass error:', err.message);
+    console.error('Photon search error:', err.message);
   }
 }
 
-testOverpass();
+testPhotonSearch();
