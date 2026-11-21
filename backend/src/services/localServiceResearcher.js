@@ -315,9 +315,11 @@ class LocalServiceResearcher {
 
         if (hasLocName) {
           targetLocation = userLocation.name;
+          if (userLocation.city) targetCity = userLocation.city;
         } else {
           try {
             const rev = await locationService.reverseGeocode(center.lat, center.lng);
+            if (rev?.city) targetCity = rev.city;
             targetLocation = rev?.displayName ? rev.displayName.split(',').slice(0, 3).join(',').trim() : (rev?.city || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
           } catch (_) {
             targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
@@ -359,6 +361,7 @@ class LocalServiceResearcher {
       locationSourceLabel = locationSource === 'approximate' ? 'Approximate' : 'Device Location';
       try {
         const rev = await locationService.reverseGeocode(center.lat, center.lng);
+        if (rev?.city) targetCity = rev.city;
         targetLocation = rev?.displayName ? rev.displayName.split(',').slice(0, 3).join(',').trim() : (rev?.city || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
       } catch (_) {
         targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
