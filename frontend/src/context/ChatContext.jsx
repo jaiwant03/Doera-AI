@@ -451,7 +451,10 @@ export const ChatProvider = ({ children }) => {
       const userMsg = data.userMessage || optimisticMsg;
       const aiMsg = data.aiMessage;
       const task = data.task;
-      const locationData = data.locationData || aiMsg?.locationData || task?.locationData || null;
+      const showMap = aiMsg?.showMap ?? task?.showMap;
+      const locationData = showMap === false
+        ? null
+        : (data.locationData || aiMsg?.locationData || (task?.showMap !== false ? task?.locationData : null));
       const chartConfig = data.chartConfig || aiMsg?.chartConfig || task?.chartConfig || null;
 
       // Update current conversation safely
@@ -472,7 +475,8 @@ export const ChatProvider = ({ children }) => {
         ? {
             ...aiMsg,
             task: aiMsg.task || task,
-            locationData: locationData,
+            locationData: showMap === false ? null : locationData,
+            showMap: showMap,
             chartConfig: chartConfig,
           }
         : null;

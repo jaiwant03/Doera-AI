@@ -62,6 +62,9 @@ const TaskStateAnnotation = Annotation.Root({
   budgetData: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   lastDocumentAnalysis: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   lastResearchResults: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  showMap: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  responseType: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
+  presentationMode: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   communicationDrafts: Annotation({ reducer: (x, y) => y ?? x, default: () => [] }),
   error: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   userIntegration: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
@@ -1166,14 +1169,21 @@ const localServiceNode = async (state) => {
 
   return {
     status: isLocationRequired ? 'LOCATION_REQUIRED' : (isSearchFailed ? 'SEARCH_FAILED' : state.status),
-    externalContacts: res.providers || [],
-    locationData: res.locationData || null,
+    externalContacts: res.presentationMode?.showBusinessList !== false ? (res.providers || []) : [],
+    locationData: res.presentationMode?.showMap !== false ? (res.locationData || null) : null,
+    showMap: res.showMap ?? (res.presentationMode?.showMap ?? (Boolean(res.locationData))),
+    responseType: res.responseType || (res.isFollowUp ? 'LOCAL_SEARCH_FOLLOW_UP' : 'NEW_LOCAL_SEARCH'),
+    presentationMode: res.presentationMode || null,
     comparisonMatrix: res.comparisonMatrix || null,
     researchSummary: res.output?.recommendation?.rationale || null,
     discoveredData: {
       ...(state.discoveredData || {}),
       localService: {
         ...res.output,
+        responseType: res.responseType,
+        presentationMode: res.presentationMode,
+        showMap: res.showMap,
+        showBusinessList: res.showBusinessList,
         params: res.output?.params || res.input?.params,
         searchState: res.output?.searchState || (isLocationRequired ? 'LOCATION_REQUIRED' : (isSearchFailed ? 'SEARCH_FAILED' : 'RESULTS_FOUND')),
         locationRequired: isLocationRequired,

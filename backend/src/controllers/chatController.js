@@ -22,6 +22,13 @@ import { logger } from '../utils/logger.js';
  * Geocodes missing contact coordinates and creates structured locationData for interactive maps
  */
 const enrichLocationData = async (task) => {
+  // If task or discoveredData explicitly indicates showMap === false, do NOT enrich or return a map
+  const showMap = task.showMap ?? task.discoveredData?.localService?.presentationMode?.showMap;
+  const isFollowUp = task.isFollowUp || task.discoveredData?.localService?.isFollowUp;
+  if (showMap === false || (isFollowUp && showMap !== true)) {
+    return null;
+  }
+
   if (task.locationData && Array.isArray(task.locationData.places) && task.locationData.places.length > 0) {
     return task.locationData;
   }
@@ -421,6 +428,17 @@ export const streamMessage = async (req, res) => {
         task.chartConfig = resultState.chartConfig || resultState.discoveredData?.dataAnalysis?.chartConfig || task.chartConfig || null;
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
+        if (resultState.showMap !== undefined) {
+          task.showMap = resultState.showMap;
+        }
+        if (resultState.responseType) {
+          task.responseType = resultState.responseType;
+        }
+        if (resultState.presentationMode) {
+          task.presentationMode = resultState.presentationMode;
+        }
+        task.isFollowUp = Boolean(contextPayload.isFollowUp || resultState.discoveredData?.localService?.isFollowUp);
+        task.followUpAnswer = resultState.discoveredData?.localService?.followUpAnswer || null;
 
         if (
           task.category === 'DATA_ANALYSIS' ||
@@ -438,7 +456,8 @@ export const streamMessage = async (req, res) => {
         await task.save().catch(() => {});
       }
 
-      const locationData = await enrichLocationData(task);
+      const effectiveShowMap = task.showMap ?? (Boolean(task.locationData));
+      const locationData = effectiveShowMap ? await enrichLocationData(task) : null;
       const chartConfig = task.chartConfig || task.discoveredData?.dataAnalysis?.chartConfig || null;
       const aiMessageContent = buildUniversalResponse(task);
 
@@ -451,6 +470,9 @@ export const streamMessage = async (req, res) => {
         content: aiMessageContent,
         taskId: task._id,
         locationData,
+        showMap: effectiveShowMap,
+        responseType: task.responseType || (effectiveShowMap ? 'NEW_LOCAL_SEARCH' : 'LOCAL_SEARCH_FOLLOW_UP'),
+        presentationMode: task.presentationMode,
         chartConfig,
         status: 'complete',
       });
@@ -479,7 +501,7 @@ export const streamMessage = async (req, res) => {
       sendEvent('task_created', {
         aiMessage,
         task,
-        locationData,
+        locationData: effectiveShowMap ? locationData : null,
         chartConfig,
       });
 
@@ -487,7 +509,7 @@ export const streamMessage = async (req, res) => {
         conversationId: conversation._id,
         aiMessage,
         task,
-        locationData,
+        locationData: effectiveShowMap ? locationData : null,
         chartConfig,
         usage: {
           used: quota.used,
@@ -949,6 +971,17 @@ export const sendMessage = async (req, res, next) => {
         task.chartConfig = resultState.chartConfig || resultState.discoveredData?.dataAnalysis?.chartConfig || task.chartConfig || null;
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
+        if (resultState.showMap !== undefined) {
+          task.showMap = resultState.showMap;
+        }
+        if (resultState.responseType) {
+          task.responseType = resultState.responseType;
+        }
+        if (resultState.presentationMode) {
+          task.presentationMode = resultState.presentationMode;
+        }
+        task.isFollowUp = Boolean(contextPayload.isFollowUp || resultState.discoveredData?.localService?.isFollowUp);
+        task.followUpAnswer = resultState.discoveredData?.localService?.followUpAnswer || null;
 
         if (
           task.category === 'DATA_ANALYSIS' ||
@@ -966,7 +999,8 @@ export const sendMessage = async (req, res, next) => {
         await task.save().catch(() => {});
       }
 
-      const locationData = await enrichLocationData(task);
+      const effectiveShowMap = task.showMap ?? (Boolean(task.locationData));
+      const locationData = effectiveShowMap ? await enrichLocationData(task) : null;
       const chartConfig = task.chartConfig || task.discoveredData?.dataAnalysis?.chartConfig || null;
       const aiMessageContent = buildUniversalResponse(task);
 
@@ -979,6 +1013,9 @@ export const sendMessage = async (req, res, next) => {
         content: aiMessageContent,
         taskId: task._id,
         locationData,
+        showMap: effectiveShowMap,
+        responseType: task.responseType || (effectiveShowMap ? 'NEW_LOCAL_SEARCH' : 'LOCAL_SEARCH_FOLLOW_UP'),
+        presentationMode: task.presentationMode,
         chartConfig,
         status: 'complete',
       });
@@ -1052,7 +1089,9 @@ ${memoryContext}`;
       await usageService.completeQuota(requestId);
     }
 
-    const finalLocationData = aiMessage.locationData || task?.locationData || null;
+    const finalLocationData = (aiMessage.showMap !== false && task?.showMap !== false)
+      ? (aiMessage.locationData || task?.locationData || null)
+      : null;
     const finalChartConfig = aiMessage.chartConfig || task?.chartConfig || null;
 
     res.status(200).json({
