@@ -224,10 +224,20 @@ class ConversationContextEngine {
       };
     }
 
+    // Check if the previous message was an assistant clarification asking for column names (e.g. covariance)
+    const lastAssistantMsg = rawMessages && rawMessages.length > 0
+      ? rawMessages.slice().reverse().find(m => m.sender === 'assistant')
+      : null;
+    const isAnsweringCovarianceClarification =
+      lastAssistantMsg &&
+      /(covariance|correlation|which two columns|specify which two columns)/i.test(lastAssistantMsg.content || '') &&
+      !/^(start|new|cancel|stop|reset)\b/i.test(lower);
+
     // 1. Statistical & Chart Follow-ups (Phases 7, 8, 9)
     const isStatFollowUp =
-      (activeCategory === 'DATA_ANALYSIS' || hasEffectiveAttachments || Boolean(lastCalculation)) &&
-      /(mean|median|mode|average|avg|middle\s*value|most\s*frequent|occurs?\s*most|variance|\bvar\b|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|range|spread|quartile|quartiles|q1|q2|q3|iqr|interquartile|five[\s-]number|skew|skewness|kurtosis|outlier|outliers|anomalies|anomalous|correlation|spearman|pearson|covariance|statistical\s*(summary|analysis|profile|measures?|results?)|full\s*statistics|all\s*statistics|explain\s*(what\s*)?(this|the)?\s*(cv|variance|standard\s*deviation|mean|median|mode)|compare\s*(it\s*)?with\s*(the\s*)?previous\s*(standard\s*deviation|mean|median|variance)|give\s*me\s*a\s*complete\s*statistical\s*summary)/i.test(lower);
+      isAnsweringCovarianceClarification ||
+      ((activeCategory === 'DATA_ANALYSIS' || hasEffectiveAttachments || Boolean(lastCalculation)) &&
+      /(mean|median|mode|average|avg|middle\s*value|most\s*frequent|occurs?\s*most|variance|\bvar\b|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|range|spread|quartile|quartiles|q1|q2|q3|iqr|interquartile|five[\s-]number|skew|skewness|kurtosis|outlier|outliers|anomalies|anomalous|correlation|spearman|pearson|covariance|statistical\s*(summary|analysis|profile|measures?|results?)|full\s*statistics|all\s*statistics|explain\s*(what\s*)?(this|the)?\s*(cv|variance|standard\s*deviation|mean|median|mode)|compare\s*(it\s*)?with\s*(the\s*)?previous\s*(standard\s*deviation|mean|median|variance)|give\s*me\s*a\s*complete\s*statistical\s*summary)/i.test(lower));
 
     if (isStatFollowUp) {
       return {

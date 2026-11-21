@@ -1110,7 +1110,7 @@ function buildSingleMathResponse({
       }
 
       if (!isPopOnly && !isSampleOnly) {
-        md += `*Note: Population standard deviation $\\sigma = ${formatCurrency(popSD)}$; Sample standard deviation $s = ${formatCurrency(sampleSD)}$.*\n`;
+        md += `*Note: Population standard deviation $\\sigma$ is ${formatCurrency(popSD)}; Sample standard deviation $s$ is ${formatCurrency(sampleSD)}.*\n`;
       }
       break;
     }
@@ -1129,7 +1129,7 @@ function buildSingleMathResponse({
       md += `\\[\nCV = \\frac{${formatRaw(sampleSD, 4)}}{${formatRaw(mean, 4)}} \\times 100\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
       md += `\\[\n\\boxed{CV = ${sampleCV !== null && sampleCV !== undefined ? `${sampleCV.toFixed(2)}\\%` : 'Undefined'}}\n\\]\n\n`;
-      md += `*Note: Evaluated using sample standard deviation ($s = ${formatCurrency(sampleSD)}$) over sample mean ($\\bar{x} = ${formatCurrency(mean)}$). Population CV is ${popCV !== null && popCV !== undefined ? `${popCV.toFixed(2)}%` : 'Undefined'}.*\n`;
+      md += `*Note: Evaluated using sample standard deviation ($s = ${formatMathCurrency(sampleSD)}$) over sample mean ($\\bar{x} = ${formatMathCurrency(mean)}$). Population CV is ${popCV !== null && popCV !== undefined ? `${popCV.toFixed(2)}%` : 'Undefined'}.*\n`;
       break;
     }
 

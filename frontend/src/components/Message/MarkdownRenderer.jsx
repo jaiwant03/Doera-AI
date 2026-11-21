@@ -15,6 +15,8 @@ function cleanMathBlock(formula) {
   let clean = formula.replace(/\\n/g, '\n').trim();
   // Escape unescaped dollar signs inside math mode so KaTeX parses without error
   clean = clean.replace(/(^|[^\\])\$/g, (m, p1) => (p1 || '') + '\\$');
+  // Escape unescaped percent signs inside math mode so KaTeX does not treat them as LaTeX comments
+  clean = clean.replace(/(^|[^\\])%/g, (m, p1) => (p1 || '') + '\\%');
   return clean;
 }
 
@@ -23,7 +25,8 @@ function cleanMathBlock(formula) {
  * - Converts \[ ... \] to block math $$ ... $$
  * - Converts \( ... \) to inline math $ ... $
  * - Resolves double-escaped backslashes in LaTeX macros
- * - Safely escapes unescaped currency symbols ($) inside math blocks
+ * - Safely escapes unescaped currency symbols ($) and % inside math blocks
+ * - Automatically wraps standalone \boxed{...} expressions
  */
 function normalizeMathDelimiters(text) {
   if (!text || typeof text !== 'string') return text;
@@ -31,7 +34,7 @@ function normalizeMathDelimiters(text) {
   // 1. Resolve double-escaped backslashes for common LaTeX commands
   let normalized = text.replace(/\\\\(frac|sum|sigma|mu|bar|sqrt|text|boxed|times|le|ge|alpha|beta|theta|cdot|approx|left|right|quad)/g, '\\$1');
 
-  // 2. Normalize existing $$ ... $$ blocks to escape unescaped $ inside
+  // 2. Normalize existing $$ ... $$ blocks to escape unescaped $ and % inside
   normalized = normalized.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
     return `\n\n$$\n${cleanMathBlock(formula)}\n$$\n\n`;
   });
@@ -46,7 +49,12 @@ function normalizeMathDelimiters(text) {
     return `$${cleanMathBlock(formula).replace(/\n+/g, ' ')}$`;
   });
 
-  // 5. Clean excessive blank lines around math blocks
+  // 5. Detect any standalone \boxed{...} that wasn't already wrapped in $$ or $
+  normalized = normalized.replace(/(^|[^\$])(\s*\\boxed\{[\s\S]*?\}\s*)(?!\$)/g, (match, prefix, boxed) => {
+    return `${prefix}\n\n$$\n${cleanMathBlock(boxed)}\n$$\n\n`;
+  });
+
+  // 6. Clean excessive blank lines around math blocks
   normalized = normalized.replace(/\n{3,}/g, '\n\n');
 
   return normalized;
