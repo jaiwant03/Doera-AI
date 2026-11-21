@@ -58,6 +58,21 @@ export const buildUniversalResponse = (taskOrPayload) => {
     return buildDataAnalysisResponse(dataAnalysis || task.discoveredData?.dataAnalysis, task, userRequest);
   }
 
+  const isDocAnalysis =
+    category === 'DOCUMENT_ANALYSIS' ||
+    Boolean(docData) ||
+    Boolean(task.discoveredData?.documents);
+
+  // Dedicated clean, uncontaminated response for Document Intelligence & Universal Files
+  if (isDocAnalysis && !isMissionPlanning && !isLocalResearch) {
+    return buildDocumentAnalysisResponse(
+      docData || task.discoveredData?.documents,
+      crossDocAnalysis || task.discoveredData?.crossDocAnalysis,
+      task,
+      userRequest
+    );
+  }
+
   let md = '';
 
   // ==========================================
@@ -131,14 +146,15 @@ export const buildUniversalResponse = (taskOrPayload) => {
   // ==========================================
   // SECTION F: APPOINTMENT / ACTION STATUS
   // ==========================================
-  if (booking && !isLocalResearch && !isMissionPlanning) {
+  const isCoordinationCategory = category === 'COMMUNICATION' || category === 'APPOINTMENT_COORDINATION';
+  if (booking && isCoordinationCategory && !isLocalResearch && !isMissionPlanning && !isDocAnalysis && !isDataAnalysis) {
     md += buildBookingStatusSection(booking, isConfirmed);
   }
 
   // ==========================================
   // SECTION G: APPROVAL STATUS (HITL Gate)
   // ==========================================
-  if ((status === 'AWAITING_APPROVAL' || status === 'WAITING_FOR_APPROVAL' || pendingApproval) && !isLocalResearch && !isMissionPlanning) {
+  if ((status === 'AWAITING_APPROVAL' || status === 'WAITING_FOR_APPROVAL' || pendingApproval) && isCoordinationCategory && !isLocalResearch && !isMissionPlanning && !isDocAnalysis && !isDataAnalysis) {
     md += buildApprovalGateSection(pendingApproval, contacts);
   }
 
