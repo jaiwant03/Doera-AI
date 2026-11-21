@@ -293,6 +293,10 @@ export const streamMessage = async (req, res) => {
       }
     }
 
+    logger.info(
+      `[DOERA Router] Intent: ${intent.primaryCategory} | Feature: ${contextPayload.followUpType || 'Standard'} | Agents: ${(intent.requiredAgents || []).join(', ')} | Dataset: ${effectiveAttachments[0]?.name || 'N/A'} | Request: "${message.slice(0, 80)}"`
+    );
+
     // If concise clarification is strictly required
     if (intent.clarificationNeeded) {
       const aiMessage = await Message.create({
@@ -771,6 +775,10 @@ export const sendMessage = async (req, res, next) => {
         intent.isActionTask = true;
       }
     }
+
+    logger.info(
+      `[DOERA Router] Intent: ${intent.primaryCategory} | Feature: ${contextPayload.followUpType || 'Standard'} | Agents: ${(intent.requiredAgents || []).join(', ')} | Dataset: ${effectiveAttachments[0]?.name || 'N/A'} | Request: "${message.slice(0, 80)}"`
+    );
 
     // If concise clarification is strictly required
     if (intent.clarificationNeeded) {

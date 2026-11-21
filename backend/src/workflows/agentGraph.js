@@ -94,6 +94,27 @@ const logMissionEvent = async (state, eventType, agentName, action, details = {}
  */
 const orchestratorNode = async (state) => {
   logger.info(`[LangGraph Workflow] Supervisor/Planner Node analyzing: ${state.taskId}`);
+
+  // Pure statistical / data analysis short-circuit: Direct to DataAnalysis and Verification
+  if (state.category === 'DATA_ANALYSIS' || state.intentAnalysis?.primaryCategory === 'DATA_ANALYSIS') {
+    logger.info(`[LangGraph Workflow] Data Analytics routing directly to DataAnalysis Agent for: ${state.taskId}`);
+    const activeReq = ['DataAnalysis', 'Verification'];
+    const steps = [
+      { id: 'data', name: 'Evaluating dataset patterns and statistical insights', agent: 'DataAnalysis', status: 'pending', timestamp: new Date() },
+      { id: 'verify', name: 'Auditing dataset computations and statistical accuracy', agent: 'Verification', status: 'pending', timestamp: new Date() },
+    ];
+    return {
+      category: 'DATA_ANALYSIS',
+      requiredAgents: activeReq,
+      subtasks: steps,
+      steps,
+      intentAnalysis: state.intentAnalysis || { primaryCategory: 'DATA_ANALYSIS' },
+      currentAgent: 'DataAnalysis',
+      currentAction: 'Executing direct data analytics and mathematical calculation...',
+      status: 'RUNNING',
+    };
+  }
+
   await logMissionEvent(
     state,
     'STEP_PROGRESS',

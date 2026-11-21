@@ -1178,12 +1178,45 @@ function buildMultiMathResponse({
 
   if (allowlist.has('q1') || allowlist.has('q3') || allowlist.has('quartiles') || allowlist.has('iqr')) {
     const q = results?.quartiles;
-    md += `**${step}. Quartiles & Interquartile Range**\n\n`;
-    md += `- First Quartile ($Q_1$): **${formatCurrency(q?.q1)}**\n`;
-    md += `- Third Quartile ($Q_3$): **${formatCurrency(q?.q3)}**\n`;
-    md += `- Interquartile Range ($\\text{IQR} = Q_3 - Q_1$): **${formatCurrency(q?.iqr)}**\n\n`;
-    md += '**Final Answer:**\n\n';
-    md += `\\[\n\\boxed{Q_1 = ${formatCurrency(q?.q1)} \\quad | \\quad Q_3 = ${formatCurrency(q?.q3)} \\quad | \\quad \\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
+    if (allowlist.has('iqr') && !allowlist.has('quartiles') && !allowlist.has('q1') && !allowlist.has('q3')) {
+      md += `**${step}. Interquartile Range (IQR)**\n\n`;
+      md += 'Formula & Substitution:\n\n';
+      md += `\\[\n\\text{IQR} = Q_3 - Q_1 = ${formatCurrency(q?.q3)} - ${formatCurrency(q?.q1)}\n\\]\n\n`;
+      md += '**Final Answer:**\n\n';
+      md += `\\[\n\\boxed{\\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
+    } else {
+      md += `**${step}. Quartiles & Interquartile Range**\n\n`;
+      md += `- First Quartile ($Q_1$): **${formatCurrency(q?.q1)}**\n`;
+      md += `- Third Quartile ($Q_3$): **${formatCurrency(q?.q3)}**\n`;
+      md += `- Interquartile Range ($\\text{IQR} = Q_3 - Q_1$): **${formatCurrency(q?.iqr)}**\n\n`;
+      md += '**Final Answer:**\n\n';
+      md += `\\[\n\\boxed{Q_1 = ${formatCurrency(q?.q1)} \\quad | \\quad Q_3 = ${formatCurrency(q?.q3)} \\quad | \\quad \\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
+    }
+    step++;
+  }
+
+  if (allowlist.has('covariance')) {
+    const cov = results?.covariance;
+    md += `**${step}. Covariance**\n\n`;
+    if (cov?.isSpecified) {
+      md += `Variables: **${cov.colA}** ($X$) and **${cov.colB}** ($Y$)\n\n`;
+      md += 'Formulas:\n\n';
+      md += '\\[\n\\text{Cov}(X,Y) = \\frac{\\sum (x_i - \\mu_x)(y_i - \\mu_y)}{N}\n\\]\n';
+      md += '\\[\ns_{xy} = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{n-1}\n\\]\n\n';
+      md += 'Substitute actual calculated values:\n\n';
+      md += `\\[\n\\text{Cov}(X,Y) = \\frac{${formatRaw(cov.sumDiffProd, 2)}}{${formatRaw(cov.n, 0)}} = ${formatRaw(cov.populationCovariance, 4)}\n\\]\n`;
+      md += `\\[\ns_{xy} = \\frac{${formatRaw(cov.sumDiffProd, 2)}}{${formatRaw(cov.n - 1, 0)}} = ${formatRaw(cov.sampleCovariance, 4)}\n\\]\n\n`;
+      md += '**Final Answer:**\n\n';
+      md += `\\[\n\\boxed{\\text{Cov}(X,Y) = ${formatRaw(cov.populationCovariance, 4)} \\quad | \\quad s_{xy} = ${formatRaw(cov.sampleCovariance, 4)}}\n\\]\n\n`;
+    } else {
+      md += `Covariance requires two numeric variables to measure joint variability.\n\n`;
+      md += `Please specify which two columns you would like to compare. For example:\n`;
+      const pairs = cov?.plausiblePairs || ['Amount and Year', 'Amount and Month', 'Amount and Day'];
+      pairs.forEach(p => {
+        md += `- **${p}**\n`;
+      });
+      md += `\n*Note: Identifier columns (such as Transaction_ID and User_ID) are excluded to ensure meaningful statistical analysis.*\n\n`;
+    }
     step++;
   }
 

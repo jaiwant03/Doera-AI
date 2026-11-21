@@ -42,16 +42,20 @@ class UniversalIntentService {
       a.type?.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(a.name || '')
     );
 
-    const isDataAnalysis = hasSpreadsheetAttachment || (
-      /(analyze|analysis|trend|distribution|correlation|dataset|csv|excel|spreadsheet|sheet|metrics|statistics|table|data|chart|expenses?|spending|sales|revenue|profit|cost|price|transactions?|columns?|rows?|top\s*\d+|lowest|highest|average|mean|median|mode|variance|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|skewness|kurtosis|quartiles?|iqr|covariance|sum|total|rank|growth|outliers?|anomalies|spread|middle\s*value|most\s*frequent|how\s*much\s*variation)/i.test(lower) &&
-      (hasAttachments || /(dataset|dataframe|spreadsheet|numbers|rows|columns|expenses?|sales|table|chart|amount|day|year|month|values|records)/i.test(lower) || Boolean(historyContext))
-    );
+    const isStatisticalCalculation = /\b(range|interquartile|interquartile\s*range|iqr|covariance|mean|median|mode|variance|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|skewness|kurtosis|quartiles?|percentiles?|z-score|sum|total|correlation)\b/i.test(lower);
+
     const isDocAnalysis = (hasAttachments && !hasSpreadsheetAttachment) || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
+
+    const isDataAnalysis = hasSpreadsheetAttachment || (!isDocAnalysis && isStatisticalCalculation) || (
+      !isDocAnalysis &&
+      /(analyze|analysis|trend|distribution|correlation|dataset|csv|excel|spreadsheet|sheet|metrics|statistics|table|data|chart|expenses?|spending|sales|revenue|profit|cost|price|transactions?|columns?|rows?|top\s*\d+|lowest|highest|average|mean|median|mode|variance|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|skewness|kurtosis|quartiles?|iqr|interquartile|covariance|range|sum|total|rank|growth|outliers?|anomalies|spread|middle\s*value|most\s*frequent|how\s*much\s*variation)/i.test(lower) &&
+      (hasSpreadsheetAttachment || /(dataset|dataframe|spreadsheet|numbers|rows|columns|expenses?|sales|table|chart|amount|day|year|month|values|records)/i.test(lower) || Boolean(historyContext))
+    );
     const isMissionPlanning = /(organize|plan|host|conduct|manage|execution\s*plan|complete\s*plan)\s+(?:a|an)?\s*(?:two-day|2-day|\d+-day)?\s*(?:[a-z0-9_-]+\s+){0,3}(?:hackathon|event|symposium|conference|workshop|fest|competition|championship)/i.test(lower) ||
       ((/hackathon|symposium|conference|fest/i.test(lower) || /organize/i.test(lower)) && /budget|participants|schedule|plan/i.test(lower));
     const isTravel = /(plan a trip|travel to|itinerary|route from|trip to|driving to|visit.*for \d+ days|flight|road trip)/i.test(lower) && !isMissionPlanning;
-    const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower) && !isMissionPlanning;
-    const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower) && !isMissionPlanning;
+    const isOutreach = /(contact|inquir|send email|email them|whatsapp|reach out|get quote|quotation|call them|message them)/i.test(lower) && !isMissionPlanning && !isStatisticalCalculation;
+    const isBooking = /(book|appointment|slot|reserve|schedule)/i.test(lower) && !isMissionPlanning && !isStatisticalCalculation;
     const isComparison = /(compare|difference between|vs\b|versus|pros and cons|best (among|of|option)|which is better)/i.test(lower);
     const isLocation = /(?:(?:near|around)\s+(?:me|here|[a-z]+)|(?:in|at|near)\s+(?:coimbatore|chennai|bangalore|bengaluru|mumbai|delhi|hyderabad|kolkata|pune|ooty|tirupur|salem|madurai|calicut|kochi)|local\s+(?:businesses?|services?|shops?|stores?)|hospital|clinic|electrician|plumber|mechanic|restaurant|repair|printing\s+shop)/i.test(lower) &&
       !/at\s+(?:sea\s+level|home|work|all|first|last|least|once|random|present|night|noon)/i.test(lower);
@@ -209,6 +213,8 @@ User Personalized Context: ${memoryContext || 'None'}`;
       const hasExplicitOutreach = /send\s+email|email\s+this|dispatch\s+to|reach\s+out/i.test(lowerText);
       const hasExplicitBooking = /book\s+an?\s+appointment|reserve\s+slot/i.test(lowerText);
       if (!hasExplicitOutreach && !hasExplicitBooking) {
+        requiredAgents.delete('Planner');
+        requiredAgents.delete('Planning');
         requiredAgents.delete('Communication');
         requiredAgents.delete('Execution');
         requiredAgents.delete('Scheduling');
@@ -285,6 +291,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
       requiredAgents.add('Verification');
     } else if (flags.hasSpreadsheetAttachment || flags.isDataAnalysis) {
       categories.push(CATEGORIES.DATA_ANALYSIS);
+      requiredAgents.delete('Planner');
       requiredAgents.add('DataAnalysis');
       requiredAgents.add('Verification');
     } else if (flags.hasAttachments || flags.isDocAnalysis) {

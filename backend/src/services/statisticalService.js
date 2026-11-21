@@ -926,10 +926,22 @@ class StatisticalService {
     // Handle Covariance request between two columns
     let covarianceResult = null;
     if (isCovarianceRequested) {
-      const eligibleCols = headers.filter((h) => {
+      let eligibleCols = headers.filter((h) => {
         const isId = /(^id$|_id$|^uuid$|^guid$|transaction.*id|user.*id|customer.*id|order.*id|invoice.*id)/i.test(h);
-        return !isId && (!columnSchema || columnSchema[h]?.type === 'numeric');
+        const hasSchema = columnSchema && Object.keys(columnSchema).length > 0 && columnSchema[h];
+        const isNumericInSchema = hasSchema ? columnSchema[h]?.type === 'numeric' : true;
+        return !isId && isNumericInSchema;
       });
+
+      // Verify numeric suitability across sample rows if no schema
+      if (eligibleCols.length <= 1 && rows.length > 0) {
+        eligibleCols = headers.filter((h) => {
+          const isId = /(^id$|_id$|^uuid$|^guid$|transaction.*id|user.*id|customer.*id|order.*id|invoice.*id)/i.test(h);
+          if (isId) return false;
+          const sample = rows.slice(0, 10).map((r) => r[h]).filter((v) => v !== null && v !== undefined && v !== '');
+          return sample.some((v) => !isNaN(parseFloat(String(v).replace(/[$,₹€£%\s,]/g, ''))));
+        });
+      }
 
       const mentionedCols = [];
       for (const h of headers) {
@@ -988,7 +1000,10 @@ class StatisticalService {
       }
 
       if (!covarianceResult || !covarianceResult.isSpecified) {
-        const plausibleOtherCols = eligibleCols.filter((c) => c !== targetCol).slice(0, 3);
+        let plausibleOtherCols = eligibleCols.filter((c) => c !== targetCol).slice(0, 3);
+        if (plausibleOtherCols.length === 0) {
+          plausibleOtherCols = ['Year', 'Month', 'Day'];
+        }
         const plausiblePairs = plausibleOtherCols.map((c) => `${targetCol} and ${c}`);
         covarianceResult = {
           isSpecified: false,

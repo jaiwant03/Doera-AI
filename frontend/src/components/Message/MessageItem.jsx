@@ -142,50 +142,7 @@ const MessageItem = ({ message, activeTask }) => {
       if (activeChartConfig && rawContent.includes('```json:doera-chart')) {
         rawContent = rawContent.replace(/```json:doera-chart\s*[\s\S]*?\s*```/g, '').trim();
       }
-
-      if (!attachedTask || !['COMPLETED', 'PARTIALLY_COMPLETED'].includes(attachedTask.status)) {
-        return rawContent;
-      }
-
-      const isLocalResearch =
-        attachedTask.category === 'LOCATION_DISCOVERY' ||
-        attachedTask.category === 'LOCAL_SERVICE_RESEARCH' ||
-        attachedTask.category === 'LOCAL_SERVICE' ||
-        rawContent.includes('Research completed. No business was contacted');
-
-      if (isLocalResearch || (rawContent && rawContent.length > 180 && !rawContent.startsWith('Understood. I am actively coordinating'))) {
-        return rawContent;
-      }
-
-      const outcome = attachedTask.outcome || {};
-      const contact = (outcome.contacted && outcome.contacted[0]) || (attachedTask.externalContacts && attachedTask.externalContacts[0]);
-      const booking = outcome.booking || attachedTask.bookingDetails;
-      const comm = outcome.responseReceived || (Array.isArray(attachedTask.steps) ? attachedTask.steps.find(s => s && s.agent === 'Communication')?.details : null);
-
-      let text = `I found verified options and coordinated the execution process for: "${attachedTask.userRequest || message.content}".\n\n`;
-
-      if (contact) {
-        text += `### Service provider\n\n**${contact.businessName || contact.name || 'Verified Provider'}**\n`;
-        if (contact.address) text += `- Location: ${contact.address}\n`;
-        if (contact.phone) text += `- Contact: ${contact.phone}\n`;
-        if (contact.rating) text += `- Rating: ★ ${contact.rating}\n`;
-        text += '\n';
-      }
-
-      if (booking) {
-        text += `### Appointment details\n\n`;
-        text += `- Status: Confirmed\n`;
-        if (booking.dateTime || booking.date) text += `- Date & Time: ${booking.dateTime || booking.date}\n`;
-        if (booking.referenceId || attachedTask.taskId) text += `- Reference: ${booking.referenceId || attachedTask.taskId}\n`;
-        text += '\n';
-      }
-
-      if (comm) {
-        text += `### Communication\n\n${comm}\n\n`;
-      }
-
-      text += `Your appointment details are ready.`;
-      return text;
+      return rawContent;
     } catch (err) {
       return message.content || '';
     }
