@@ -367,7 +367,7 @@ class ConversationContextEngine {
       /(?:highest\s*rating|best\s*rating|which\s+has\s+the\s+highest\s*rating|cheapest|lowest\s*cost|within\s+\d+\s*(?:km|kilometers?)|less\s+than\s+\d+\s*(?:km|kilometers?)|centres?\s+within\s+\d+)/i.test(lower) ||
       /(?:compare\s+(?:the\s+)?(?:first|second|third|1st|2nd|3rd|these|all|both)|compare\s+.*and\s+.*)/i.test(lower) ||
       /(?:give\s+me\s+directions\s+to\s+(?:that|the\s+closest|the\s+first|the\s+second|the\s+third)|show\s+me\s+directions\s+to\s+the\s+closest|directions\s+to\s+that\s+centre)/i.test(lower) ||
-      /(?:can\s+you\s+show\s+those\s+locations\s+on\s+the\s+map|show\s+(?:those\s+|these\s+)?locations\s+on\s+map)/i.test(lower) ||
+      /(?:(?:show|display|view|render|put)\s+(?:me\s+)?(?:all\s+)?(?:these|the|those|\d+|one|two|three|four|five)?\s*(?:locations?|places?|centres?|centers?|theatres?|cinemas?|shops?|spots?|results?)?\s*(?:on\s+(?:the\s+)?map|on\s+map)|(?:show|display|view)\s+(?:the\s+)?map|where\s+(?:are\s+)?(?:these|those|all\s+(?:the|these))\s+(?:businesses|centres|locations)\s+located|map\s+(?:the\s+)?(?:closest|all|\d+|these|those)|can\s+you\s+show\s+(?:those|these|the|all)?\s*locations\s+on\s+(?:the\s+)?map|show\s+(?:those\s+|these\s+)?locations\s+on\s+map)/i.test(lower) ||
       /(?:which\s+(?:one\s+)?is\s+best\s+based\s+on\s+(?:the\s+)?available\s+information|which\s+is\s+the\s+best\s+option)/i.test(lower) ||
       Boolean(
         lastResearchResults?.providers &&
