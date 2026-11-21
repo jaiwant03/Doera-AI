@@ -1368,6 +1368,10 @@ class LocalServiceResearcher {
     const countWords = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten' };
     const countText = countWords[providers.length] || `${providers.length}`;
 
+    // Dynamic Response Type Classification & Presentation Mode (Sections 2 & 5)
+    const responseType = this.classifyLocalServiceQuery(userRequest, lastResearchResults);
+    const presentationMode = this.getPresentationMode(responseType, userRequest);
+
     // Sort providers by distance ascending for distance-based queries
     const sortedByDist = [...providers].sort((a, b) => {
       const dA = a.distanceKmNum ?? (parseFloat(a.distance) || 9999);
@@ -1376,7 +1380,7 @@ class LocalServiceResearcher {
     });
 
     const closest = sortedByDist[0];
-    let resolvedIntent = 'CLOSEST';
+    let resolvedIntent = responseType;
     let resolvedReferenceText = closest ? closest.businessName : 'closest';
     let answer = '';
     let targetFocused = closest;
@@ -1513,13 +1517,14 @@ class LocalServiceResearcher {
           answer = `### ${target.businessName} (${ordinalWord} result)\n\n- **Address**: ${target.address}\n- **Distance**: ${target.distance || target.distanceKm}\n- **Directions**: [Get Directions](${target.directionsUrl})\n- **Contact**: ${target.phone || 'Not publicly listed in open directory'}\n- **Rating**: ${target.rating ? `★ ${target.rating}` : 'Not publicly listed in open directory'}`;
         }
       }
-    } else if (/(map|locations?)/i.test(lower)) {
+    } else if (responseType === 'MAP_REQUEST' || /(map|locations?)/i.test(lower)) {
       resolvedIntent = 'MAP_VIEW';
       resolvedReferenceText = 'all locations on map';
-      answer = `### Verified ${categoryTitle} Locations\n\nHere are the locations of the **${providers.length}** verified ${categoryTitle.toLowerCase()} from your search:\n\n`;
+      answer = `### Verified ${categoryTitle} Locations on Map\n\nHere are the locations of the **${providers.length}** verified ${categoryTitle.toLowerCase()} from your search displayed on the interactive map below:\n\n`;
       providers.forEach((p, idx) => {
         answer += `${idx + 1}. **${p.businessName}** — ${p.distance || p.distanceKm}\n   - **Address**: ${p.address}\n   - **Directions**: [Get Directions](${p.directionsUrl})\n`;
       });
+      answer += `\n*Interactive map rendered below with verified coordinate markers.* 📍`;
     } else if (/(which.*open\s+now|open\s+now)/i.test(lower)) {
       resolvedIntent = 'OPENING_HOURS_CHECK';
       resolvedReferenceText = 'operating hours inspection';
@@ -1550,12 +1555,18 @@ class LocalServiceResearcher {
       });
     }
 
+    // Conditional Map Data: Populated ONLY when current request explicitly requires a map (e.g. MAP_REQUEST)
+    const activeLocationData = presentationMode.showMap ? (lastResearchResults.locationData || null) : null;
+
     // Section 10 Diagnostic Logging
     logger.info(`[Local Service Researcher] Diagnostics:`, {
       requestId,
       conversationId,
       previousMissionId: lastResearchResults.missionId || null,
       executionType: 'LOCAL_RESEARCH_FOLLOW_UP',
+      responseType,
+      showMap: presentationMode.showMap,
+      showBusinessList: presentationMode.showBusinessList,
       detectedIntent: resolvedIntent,
       followUpReferenceResolution: resolvedReferenceText,
       previousBusinessResultsCount: providers.length,
@@ -1568,10 +1579,16 @@ class LocalServiceResearcher {
       status: 'completed',
       isFollowUp: true,
       executionType: 'LOCAL_RESEARCH_FOLLOW_UP',
+      responseType,
+      presentationMode,
+      showMap: presentationMode.showMap,
+      showBusinessList: presentationMode.showBusinessList,
       followUpAnswer: answer,
-      providers,
+      answer,
+      providers: presentationMode.showBusinessList ? providers : [],
+      businesses: presentationMode.showBusinessList ? providers : [],
       providersFound: providers.length,
-      locationData: lastResearchResults.locationData || null,
+      locationData: activeLocationData,
       params: lastResearchResults.params || { targetLocation: lastResearchResults.searchLocation, categoryTitle },
       recommendation: {
         primaryChoice: targetFocused?.businessName || closest.businessName,

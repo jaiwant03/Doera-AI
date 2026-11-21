@@ -27,12 +27,19 @@ class LocalServiceAgent {
       agentStatus = 'SEARCH_FAILED';
     }
 
+    const isShowMap = result.presentationMode?.showMap ?? (Boolean(result.locationData));
+    const isShowList = result.presentationMode?.showBusinessList ?? true;
+
     return {
       agentName: this.name,
       taskId: taskContext.taskId,
       status: agentStatus,
       category: 'LOCATION_DISCOVERY',
       input: { userRequest, params: result.params },
+      responseType: result.responseType || (result.isFollowUp ? 'LOCAL_SEARCH_FOLLOW_UP' : 'NEW_LOCAL_SEARCH'),
+      presentationMode: result.presentationMode || { showBusinessList: isShowList, showMap: isShowMap },
+      showMap: isShowMap,
+      showBusinessList: isShowList,
       output: {
         ...result,
         queryUsed: result.params?.searchTerms?.join(', ') || result.params?.brandQuery || 'local service',
@@ -42,7 +49,11 @@ class LocalServiceAgent {
         providers: result.providers || [],
         comparisonMatrix: result.comparisonMatrix,
         recommendation: result.recommendation,
-        locationData: result.locationData,
+        locationData: isShowMap ? result.locationData : null,
+        showMap: isShowMap,
+        showBusinessList: isShowList,
+        responseType: result.responseType || (result.isFollowUp ? 'LOCAL_SEARCH_FOLLOW_UP' : 'NEW_LOCAL_SEARCH'),
+        presentationMode: result.presentationMode || { showBusinessList: isShowList, showMap: isShowMap },
         limitations: result.limitations,
         noContactGuarantee: result.noContactGuarantee,
         params: result.params,
@@ -50,11 +61,11 @@ class LocalServiceAgent {
         locationRequired: isLocationRequired,
         status: result.status,
       },
-      providers: result.providers || [],
-      contacts: result.providers || [],
-      externalContacts: result.providers || [],
+      providers: isShowList ? (result.providers || []) : [],
+      contacts: isShowList ? (result.providers || []) : [],
+      externalContacts: isShowList ? (result.providers || []) : [],
       comparisonMatrix: result.comparisonMatrix,
-      locationData: result.locationData,
+      locationData: isShowMap ? result.locationData : null,
       evidence: result.evidence || [],
       noContactGuarantee: result.noContactGuarantee,
       searchState: result.searchState,
