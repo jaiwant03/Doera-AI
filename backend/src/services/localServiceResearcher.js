@@ -1115,22 +1115,11 @@ class LocalServiceResearcher {
   /**
    * Determine if a user query is a follow-up referring to previously retrieved local search results
    */
-  isFollowUpQuery(userRequest, lastResearchResults) {
+  isFollowUpQuery(userRequest, lastResearchResults = null) {
     if (!userRequest || typeof userRequest !== 'string') return false;
     const lower = userRequest.toLowerCase().trim();
 
-    // Must have previous research results with providers
-    if (!lastResearchResults) return false;
-    const providers = lastResearchResults.providers || (Array.isArray(lastResearchResults) ? lastResearchResults : []);
-    if (!Array.isArray(providers) || providers.length === 0) return false;
-
-    // Check if category changed (e.g. mobile centres -> laptop repair)
-    const prevCategory = (lastResearchResults.serviceCategory || lastResearchResults.categoryTitle || '').toLowerCase();
-    if (this.detectCategoryChange(lower, prevCategory)) {
-      return false;
-    }
-
-    // Check if user requests a new search or more results
+    // Check if user requests a new search or more results explicitly
     if (
       /^(?:find|search|look for|locate)\s+(?:\d+|more|other|another|new)\s+/i.test(lower) ||
       /\b(?:find|search\s+for|show\s+me)\s+(?:5|five|10|ten|\d+)\s+more\b/i.test(lower) ||
@@ -1139,9 +1128,18 @@ class LocalServiceResearcher {
       return false;
     }
 
-    // Check if query mentions a business from previous results
-    if (providers.some((p) => p.businessName && lower.includes(p.businessName.toLowerCase()))) {
-      return true;
+    // Check if category changed (e.g. mobile centres -> laptop repair) when previous results exist
+    if (lastResearchResults) {
+      const prevCategory = (lastResearchResults.serviceCategory || lastResearchResults.categoryTitle || '').toLowerCase();
+      if (this.detectCategoryChange(lower, prevCategory)) {
+        return false;
+      }
+
+      // Check if query mentions a business from previous results
+      const providers = lastResearchResults.providers || (Array.isArray(lastResearchResults) ? lastResearchResults : []);
+      if (Array.isArray(providers) && providers.some((p) => p.businessName && lower.includes(p.businessName.toLowerCase()))) {
+        return true;
+      }
     }
 
     // Check for follow-up inquiry patterns
