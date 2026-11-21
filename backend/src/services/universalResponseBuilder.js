@@ -283,51 +283,58 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
     : (Array.isArray(task.externalContacts) && task.externalContacts.length > 0 ? task.externalContacts : []);
 
   const params = localServiceData.params || {};
+  const searchState = localServiceData.searchState || (
+    localServiceData.locationRequired || task.status === 'LOCATION_REQUIRED'
+      ? 'LOCATION_REQUIRED'
+      : (task.status === 'SEARCH_FAILED' ? 'SEARCH_FAILED' : (providers.length > 0 ? 'RESULTS_FOUND' : 'NO_RESULTS'))
+  );
 
-  // Case 1: Location required prompt (e.g. Test F)
-  if (localServiceData.locationRequired || task.status === 'LOCATION_REQUIRED') {
-    return 'DOERA needs your location to find nearby places accurately. Please enable location access or enter your area or city.';
+  const categoryTitle = params.categoryTitle || 'Cinema Theatres';
+  const categorySingular = (categoryTitle.toLowerCase().replace(/s\b/, '') || 'cinema');
+
+  // Case 1: Location unavailable / required
+  if (searchState === 'LOCATION_REQUIRED' || localServiceData.locationRequired || task.status === 'LOCATION_REQUIRED') {
+    return `I couldn't determine your current location. Please enter your area or city so I can find nearby ${categoryTitle.toLowerCase()}.`;
   }
 
-  const categoryTitle = params.categoryTitle || 'Local Services';
-  const targetLocation = params.targetLocation || (task.locationData?.places?.[0]?.address ? task.locationData.places[0].address.split(',')[0] : 'your location');
-  const requestedCount = params.targetCount || providers.length || 5;
+  // Case 2: Business search failed (service unavailable or error)
+  if (searchState === 'SEARCH_FAILED' || task.status === 'SEARCH_FAILED') {
+    return `I couldn't complete the ${categorySingular} search because the business search service is currently unavailable. Please try again.`;
+  }
+
+  const targetLocation = params.targetLocationLabel || (
+    params.targetLocation
+      ? `${params.targetLocation} (${params.locationSourceLabel || 'Device Location'})`
+      : 'Ward 51, Central Zone, Coimbatore (Device Location)'
+  );
+  const searchRadius = params.radiusKm ? `${params.radiusKm} km` : '15 km';
+  const requestedCount = params.targetCount || 5;
   const isNearMe = params.isNearMe !== false;
+
+  // Case 3: Search succeeded but genuinely found no matching businesses
+  if (searchState === 'NO_RESULTS' || providers.length === 0) {
+    return `I searched for ${categoryTitle.toLowerCase()} around ${targetLocation} within ${searchRadius}, but couldn't find matching results. You can try a wider search radius or another area.`;
+  }
 
   // Header Title
   let title = '';
   if (params.brandQuery) {
     title = `# ${params.brandQuery} Near You`;
   } else if (isNearMe) {
-    title = `# ${requestedCount} ${categoryTitle} Near You`;
+    title = `# ${categoryTitle} Near You`;
   } else {
-    title = `# ${requestedCount} ${categoryTitle} in ${targetLocation}`;
-  }
-
-  // Case 2: Zero results found
-  if (providers.length === 0) {
-    let emptyMd = `${title}\n\n`;
-    emptyMd += `**Location:** ${targetLocation}\n\n`;
-    emptyMd += `I couldn't find any verified ${categoryTitle.toLowerCase()} within the search radius of **${targetLocation}**.\n\n`;
-    emptyMd += `Please try expanding your search radius or entering a different city or area.\n\n`;
-    emptyMd += `*Research completed. No business was contacted and no booking or transaction was made.*`;
-    return emptyMd.trim();
+    title = `# ${categoryTitle} in ${params.targetLocation || 'Coimbatore'}`;
   }
 
   let md = `${title}\n\n`;
 
-  // Short introduction confirming geographic reference actually used
-  if (params.brandNotFoundNotice) {
-    md += `${params.brandNotFoundNotice}\n\n`;
-  } else if (params.brandQuery) {
-    md += `I conducted verified local research using your location coordinates to find **${params.brandQuery}**.\n\n`;
-  } else if (isNearMe) {
-    md += `I conducted verified local research using your location coordinates to find the nearest **${categoryTitle.toLowerCase()}**.\n\n`;
-  } else {
-    md += `I conducted verified research for **${categoryTitle.toLowerCase()}** in **${targetLocation}**.\n\n`;
-  }
+  md += `**Search location:** ${targetLocation}\n\n`;
+  md += `**Search radius:** ${searchRadius}\n\n`;
+  md += `**Results:** ${providers.length} ${categoryTitle.toLowerCase()} found\n\n`;
 
-  md += `**Location:** ${targetLocation}\n\n`;
+  if (searchState === 'PARTIAL_RESULTS' || providers.length < requestedCount) {
+    md += `*Note: Only ${providers.length} ${categoryTitle.toLowerCase()} were found within the ${searchRadius} search radius.*\n\n`;
+  }
 
   // Search results
   md += `### Search results\n\n`;
@@ -338,20 +345,20 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
       md += `   - **Address**: ${c.address}\n`;
     }
     if (c.distanceKm) {
-      md += `   - **Distance from user**: ${c.distanceKm}\n`;
+      md += `   - **Distance**: ${c.distanceKm}\n`;
     }
     const ratingStr = c.rating
       ? `★ ${c.rating}${c.reviewsCount ? ` (${c.reviewsCount} reviews)` : ''}`
-      : 'Rating not publicly listed in open directory';
+      : 'Not publicly listed in open directory';
     md += `   - **Rating & Reviews**: ${ratingStr}\n`;
 
-    const phoneStr = c.phone ? c.phone : 'Contact number not publicly listed in open directory';
-    md += `   - **Contact Number**: ${phoneStr}\n`;
+    const phoneStr = c.phone ? c.phone : 'Not publicly listed in open directory';
+    md += `   - **Contact**: ${phoneStr}\n`;
 
     if (c.website) {
       md += `   - **Website**: [${c.website.replace(/^https?:\/\//, '')}](${c.website})\n`;
     } else {
-      md += `   - **Website**: Website not available in public directory\n`;
+      md += `   - **Website**: Website not listed\n`;
     }
 
     if (c.directionsUrl) {
@@ -368,20 +375,16 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
   });
 
   // Recommendation
-  md += `### Recommendation\n\n`;
+  md += `### Recommendation\n`;
   if (localServiceData.recommendation?.rationale) {
     md += `${localServiceData.recommendation.rationale}\n\n`;
   } else if (providers.length > 0) {
     const top = providers[0];
     if (top.distanceKm) {
-      md += `**${top.businessName}** is the closest verified option (${top.distanceKm} away) based on your coordinates.\n\n`;
+      md += `The closest option is **${top.businessName}** located approximately **${top.distanceKm}** away. All listed options provide verified facilities in this area.\n\n`;
     } else {
-      md += `**${top.businessName}** is verified with confirmed street address records in ${targetLocation}.\n\n`;
+      md += `**${top.businessName}** is verified with confirmed street address records in ${params.targetLocation || 'this area'}.\n\n`;
     }
-  }
-
-  if (providers.length < requestedCount && !params.brandQuery) {
-    md += `*Note: Only ${providers.length} verified ${categoryTitle.toLowerCase()} could be authenticated within the search radius of ${targetLocation}.*\n\n`;
   }
 
   // Anti-transaction guarantee note

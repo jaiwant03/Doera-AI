@@ -1085,12 +1085,19 @@ const localServiceNode = async (state) => {
 
   const res = await localServiceAgent.execute(state);
 
+  const isLocationRequired = res.status === 'LOCATION_REQUIRED' || res.output?.locationRequired;
+  const isSearchFailed = res.status === 'SEARCH_FAILED' || res.output?.searchState === 'SEARCH_FAILED';
+
   const steps = (state.steps || []).map((s) =>
     s.agent === 'LocalService' || s.agent === 'Discovery' || s.id === 'discover' || s.id === 'local_service'
       ? {
           ...s,
-          status: 'completed',
-          details: `Researched and evaluated ${res.providers?.length || 0} verified providers. Zero bookings or transactions initiated.`,
+          status: isLocationRequired ? 'failed' : (isSearchFailed ? 'failed' : 'completed'),
+          details: isLocationRequired
+            ? 'Location required to search nearby places.'
+            : (isSearchFailed
+                ? 'External business directory lookup failed.'
+                : `Researched and evaluated ${res.providers?.length || 0} verified providers. Zero bookings or transactions initiated.`),
           timestamp: new Date(),
         }
       : s
@@ -1100,18 +1107,35 @@ const localServiceNode = async (state) => {
     state,
     'STEP_PROGRESS',
     'LocalService',
-    `Research complete: ${res.providers?.length || 0} verified providers cataloged. Interactive map coordinates synchronized.`,
-    { step: { id: 'local_service', name: 'Local service research and verification', status: 'completed', timestamp: new Date() } }
+    isLocationRequired
+      ? 'Location permission required from user to proceed.'
+      : (isSearchFailed
+          ? 'Business search provider failed or returned an error.'
+          : `Research complete: ${res.providers?.length || 0} verified providers cataloged. Interactive map coordinates synchronized.`),
+    {
+      step: {
+        id: 'local_service',
+        name: 'Local service research and verification',
+        status: isLocationRequired || isSearchFailed ? 'failed' : 'completed',
+        timestamp: new Date(),
+      },
+    }
   );
 
   return {
+    status: isLocationRequired ? 'LOCATION_REQUIRED' : (isSearchFailed ? 'SEARCH_FAILED' : state.status),
     externalContacts: res.providers || [],
     locationData: res.locationData || null,
     comparisonMatrix: res.comparisonMatrix || null,
     researchSummary: res.output?.recommendation?.rationale || null,
     discoveredData: {
       ...(state.discoveredData || {}),
-      localService: res.output,
+      localService: {
+        ...res.output,
+        params: res.output?.params || res.input?.params,
+        searchState: res.output?.searchState || (isLocationRequired ? 'LOCATION_REQUIRED' : (isSearchFailed ? 'SEARCH_FAILED' : 'RESULTS_FOUND')),
+        locationRequired: isLocationRequired,
+      },
     },
     steps,
     currentAgent: 'Verification',

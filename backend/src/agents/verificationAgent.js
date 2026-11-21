@@ -203,12 +203,21 @@ class VerificationAgent {
     } else if (isMissionPlanning && (planningData || budgetData)) {
       finalStatus = 'COMPLETED';
     } else if (isLocalResearch) {
-      verificationDimensions.push({
-        dimension: 'Zero-Transaction Guarantee',
-        status: 'VERIFIED',
-        note: 'Research completed. No business was contacted and no booking or transaction was made.',
-      });
-      finalStatus = 'COMPLETED';
+      const lsData = task.discoveredData?.localService;
+      if (task.status === 'LOCATION_REQUIRED' || lsData?.locationRequired || lsData?.searchState === 'LOCATION_REQUIRED') {
+        finalStatus = 'LOCATION_REQUIRED';
+        remainingActions.push('Provide user location access or enter a specific city/area.');
+      } else if (task.status === 'SEARCH_FAILED' || lsData?.searchState === 'SEARCH_FAILED') {
+        finalStatus = 'SEARCH_FAILED';
+        remainingActions.push('Retry search when business directory service is reachable.');
+      } else {
+        verificationDimensions.push({
+          dimension: 'Zero-Transaction Guarantee',
+          status: 'VERIFIED',
+          note: 'Research completed. No business was contacted and no booking or transaction was made.',
+        });
+        finalStatus = 'COMPLETED';
+      }
     } else if (failedSteps.length > 0 && completedSteps.length === 0) {
       finalStatus = 'FAILED';
       remainingActions.push('Review error diagnosis and retry with adjusted parameters.');

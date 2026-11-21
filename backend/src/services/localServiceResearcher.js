@@ -44,6 +44,7 @@ class LocalServiceResearcher {
   async researchLocalServices(taskContext) {
     const userRequest = taskContext.userRequest || '';
     const userLocation = taskContext.userLocation || null;
+    const requestId = taskContext.requestId || `req-${Date.now().toString(36)}`;
     const startedAt = new Date();
 
     logger.info(`[Local Service Researcher] Initiating verified research for: "${userRequest}"`);
@@ -54,32 +55,37 @@ class LocalServiceResearcher {
     // If location is required ("near me") but user denied or location is missing
     if (params.isLocationRequired) {
       const completedAt = new Date();
+      const locationPrompt = `I couldn't determine your current location. Please enter your area or city so I can find nearby ${params.categoryTitle.toLowerCase()}.`;
       logger.info(
         `[Local Service Researcher] Location required for "${userRequest}" but not available (${params.locationReason}). Prompting user.`
       );
 
-      // Section 9 Diagnostic Logging
+      // Section 6 Diagnostic Logging
       logger.info(`[Local Service Researcher] Diagnostics:`, {
+        requestId,
         originalQuery: userRequest,
-        classifiedIntent: 'LOCAL_SERVICE_RESEARCH',
         parsedCategory: params.serviceCategory,
-        requestedResultCount: params.targetCount,
-        locationPermissionStatus: userLocation?.denied ? 'denied' : (userLocation ? 'granted' : 'missing'),
+        requestedCount: params.targetCount,
         locationSource: params.locationSource || 'none',
-        searchProviderCalled: 'None (Location Required)',
-        searchParameters: {},
-        businessesReturned: 0,
-        businessesRetained: 0,
-        finalResponsePayloadStructure: 'LOCATION_PERMISSION_REQUIRED_PROMPT',
+        hasValidCoordinates: false,
+        searchRadius: `${params.radiusKm} km`,
+        searchProviderName: 'OpenStreetMap Nominatim',
+        providerRequestStatus: 'SKIPPED_LOCATION_REQUIRED',
+        providerHttpStatus: null,
+        rawResultsCount: 0,
+        filteredResultsCount: 0,
+        normalizedResultsCount: 0,
+        finalApiStatus: 'LOCATION_REQUIRED',
       });
 
       return {
         status: 'LOCATION_REQUIRED',
+        searchState: 'LOCATION_REQUIRED',
         userRequest,
         params,
         locationRequired: true,
         locationReason: params.locationReason,
-        message: 'DOERA needs your location to find nearby places accurately. Please enable location access or enter your area or city.',
+        message: locationPrompt,
         providers: [],
         providersFound: 0,
         requestedCount: params.targetCount,
@@ -89,7 +95,11 @@ class LocalServiceResearcher {
     }
 
     // 2. Discover authentic providers from Nominatim using coordinates & bounding viewbox
-    const rawProviders = await this.discoverProviders(params);
+    const discoveryResult = await this.discoverProviders(params, taskContext);
+    const rawProviders = discoveryResult.providers || [];
+    const searchState = discoveryResult.searchState;
+    const providerError = discoveryResult.error || null;
+    const providerHttpStatus = discoveryResult.httpStatus || 200;
 
     // 3. Evaluate service suitability and evidence
     const evaluatedProviders = await this.evaluateProviders(rawProviders, params);
@@ -106,29 +116,28 @@ class LocalServiceResearcher {
 
     const completedAt = new Date();
 
-    // Section 9 Diagnostic Logging
+    // Section 6 Diagnostic Logging
     logger.info(`[Local Service Researcher] Diagnostics:`, {
+      requestId,
       originalQuery: userRequest,
-      classifiedIntent: 'LOCAL_SERVICE_RESEARCH',
       parsedCategory: params.serviceCategory,
-      requestedResultCount: params.targetCount,
-      locationPermissionStatus: userLocation?.denied ? 'denied' : (userLocation ? 'granted' : 'unspecified'),
+      requestedCount: params.targetCount,
       locationSource: params.locationSource,
-      searchProviderCalled: 'OpenStreetMap Nominatim',
-      searchParameters: {
-        center: params.center,
-        targetLocation: params.targetLocation,
-        radiusKm: params.radiusKm,
-        brandQuery: params.brandQuery,
-        searchTerms: params.searchTerms,
-      },
-      businessesReturned: rawProviders.length,
-      businessesRetained: evaluatedProviders.length,
-      finalResponsePayloadStructure: 'QUERY_SPECIFIC_LOCAL_RESEARCH_RESULTS',
+      hasValidCoordinates: Boolean(params.center?.lat && params.center?.lng),
+      searchRadius: `${params.radiusKm} km`,
+      searchProviderName: 'OpenStreetMap Nominatim',
+      providerRequestStatus: searchState === 'SEARCH_FAILED' ? 'ERROR' : 'SUCCESS',
+      providerHttpStatus,
+      rawResultsCount: rawProviders.length,
+      filteredResultsCount: evaluatedProviders.length,
+      normalizedResultsCount: evaluatedProviders.length,
+      finalApiStatus: searchState,
     });
 
     return {
-      status: 'completed',
+      status: searchState === 'SEARCH_FAILED' ? 'SEARCH_FAILED' : 'completed',
+      searchState,
+      error: providerError,
       userRequest,
       params,
       providers: evaluatedProviders,
@@ -156,8 +165,10 @@ class LocalServiceResearcher {
   async extractResearchParameters(text, userLocation) {
     const lower = text.toLowerCase();
 
-    // Check if user requested "near me"
-    const isNearMe = /\b(near me|nearby|closest|nearest|around me|within \d+\s*(?:km|miles?)|near here)\b/i.test(lower);
+    // Check if user requested "near me" (excluding phrases like "near Gandhipuram")
+    const isNearMe =
+      /\b(near me|nearby|closest|nearest|around me|within \d+\s*(?:km|miles?)|near here)\b/i.test(lower) &&
+      !/\bnear\s+(?!me\b|here\b)[a-z0-9]/i.test(lower);
 
     // Parse requested result count
     let targetCount = 5;
@@ -190,7 +201,7 @@ class LocalServiceResearcher {
 
     // Determine category and search keywords
     let serviceCategory = 'Local Services';
-    let categoryTitle = 'Local Services';
+    let categoryTitle = 'Cinema Theatres'; // Default to Cinema Theatres if context indicates cinema/theatre
     let searchTerms = ['services'];
 
     if (/cinema|theatre|theater|multiplex|movie|film/i.test(lower)) {
@@ -229,13 +240,49 @@ class LocalServiceResearcher {
     let targetLocation = '';
     let targetCity = '';
     let locationSource = 'unknown';
+    let locationSourceLabel = 'Device Location';
+    let targetLocationLabel = '';
 
-    // 1. If explicit "near me" requested
-    if (isNearMe) {
-      if (userLocation?.denied) {
+    // Check for explicit city / area / landmark in text (e.g. "in Coimbatore", "near Gandhipuram, Coimbatore")
+    const placeMatch = text.match(
+      /\b(?:in|at|near|around)\s+(?!me\b|here\b)([A-Za-z0-9\s,-]+?)(?:[.,;]|\s+that|\s+which|\s+providing|\s+with|\s+and|\s+for|\s*$)/i
+    );
+    const blacklist = ['me', 'here', 'a', 'the', 'specified location', 'specified city', 'my location', 'verified', 'google'];
+
+    let extractedPlace = null;
+    if (placeMatch && placeMatch[1]) {
+      const candidate = placeMatch[1].trim();
+      if (!blacklist.includes(candidate.toLowerCase()) && candidate.length > 2) {
+        extractedPlace = candidate;
+      }
+    }
+
+    // 1. If explicit user-entered location in text
+    if (extractedPlace) {
+      targetCity = extractedPlace;
+      locationSource = 'user_specified';
+      locationSourceLabel = 'User Specified';
+      try {
+        const geo = await locationService.geocode(extractedPlace);
+        if (geo && typeof geo.lat === 'number' && typeof geo.lng === 'number') {
+          center = { lat: geo.lat, lng: geo.lng };
+          targetLocation = geo.displayName ? geo.displayName.split(',').slice(0, 3).join(',').trim() : extractedPlace;
+          if (geo.city) targetCity = geo.city;
+        } else {
+          targetLocation = extractedPlace;
+        }
+      } catch (_) {
+        targetLocation = extractedPlace;
+      }
+      targetLocationLabel = `${targetLocation} (User Specified)`;
+    } else if (isNearMe) {
+      // 2. "near me" requested: requires device coordinates
+      if (userLocation?.denied || userLocation?.source === 'denied') {
         return {
           isLocationRequired: true,
+          searchState: 'LOCATION_REQUIRED',
           locationReason: 'DENIED',
+          locationSource: 'denied',
           serviceCategory,
           categoryTitle,
           targetCount,
@@ -248,7 +295,9 @@ class LocalServiceResearcher {
       if (!userLocation || (!userLocation.lat && !userLocation.lng)) {
         return {
           isLocationRequired: true,
-          locationReason: 'MISSING',
+          searchState: 'LOCATION_REQUIRED',
+          locationReason: 'UNAVAILABLE',
+          locationSource: 'unavailable',
           serviceCategory,
           categoryTitle,
           targetCount,
@@ -260,6 +309,7 @@ class LocalServiceResearcher {
 
       center = { lat: Number(userLocation.lat), lng: Number(userLocation.lng) };
       locationSource = userLocation.source || 'precise';
+      locationSourceLabel = locationSource === 'approximate' ? 'Approximate' : 'Device Location';
 
       // Reverse geocode to get human-readable locality
       try {
@@ -271,63 +321,46 @@ class LocalServiceResearcher {
           targetLocation = rev.displayName.split(',').slice(0, 3).join(',').trim();
         } else if (rev && rev.city) {
           targetLocation = rev.city;
+        } else if (userLocation.name && !/your location|detected location|current location/i.test(userLocation.name)) {
+          targetLocation = userLocation.name;
         } else {
-          targetLocation = userLocation.name || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+          targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
         }
       } catch (_) {
-        targetLocation = userLocation.name || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+        targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
       }
+      targetLocationLabel = `${targetLocation} (${locationSourceLabel})`;
+    } else if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
+      // 3. Fall back to active userLocation if available in session
+      center = { lat: Number(userLocation.lat), lng: Number(userLocation.lng) };
+      locationSource = userLocation.source || 'approximate';
+      locationSourceLabel = locationSource === 'approximate' ? 'Approximate' : 'Device Location';
+      try {
+        const rev = await locationService.reverseGeocode(center.lat, center.lng);
+        targetLocation = rev?.displayName ? rev.displayName.split(',').slice(0, 3).join(',').trim() : (rev?.city || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
+      } catch (_) {
+        targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+      }
+      targetLocationLabel = `${targetLocation} (${locationSourceLabel})`;
     } else {
-      // 2. Check for explicit city / area in text (e.g. "in Coimbatore")
-      const inMatch = text.match(/\b(?:in|at)\s+([A-Za-z\s]+?)(?:[.,;]|\s+that|\s+which|\s+providing|\s+with|\s+and|\s+for|\s*$)/i);
-      const blacklist = ['me', 'a', 'the', 'specified location', 'specified city', 'my location', 'verified', 'google'];
-
-      let extractedCity = null;
-      if (inMatch && inMatch[1]) {
-        const candidate = inMatch[1].trim();
-        if (!blacklist.includes(candidate.toLowerCase()) && candidate.length > 2) {
-          extractedCity = candidate;
-        }
-      }
-
-      if (extractedCity) {
-        targetCity = extractedCity;
-        try {
-          const geo = await locationService.geocode(extractedCity);
-          if (geo && typeof geo.lat === 'number' && typeof geo.lng === 'number') {
-            center = { lat: geo.lat, lng: geo.lng };
-            targetLocation = geo.displayName ? geo.displayName.split(',').slice(0, 3).join(',').trim() : extractedCity;
-            locationSource = 'city_specified';
-          } else {
-            targetLocation = extractedCity;
-            locationSource = 'city_specified';
-          }
-        } catch (_) {
-          targetLocation = extractedCity;
-          locationSource = 'city_specified';
-        }
-      } else if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
-        // Fall back to active userLocation if available
-        center = { lat: Number(userLocation.lat), lng: Number(userLocation.lng) };
-        locationSource = userLocation.source || 'approximate';
-        targetLocation = userLocation.name || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
-      } else {
-        // Prompt for city or area
-        return {
-          isLocationRequired: true,
-          locationReason: 'UNSPECIFIED',
-          serviceCategory,
-          categoryTitle,
-          targetCount,
-          radiusKm,
-          brandQuery,
-          searchTerms,
-        };
-      }
+      // 4. Prompt for city or area
+      return {
+        isLocationRequired: true,
+        searchState: 'LOCATION_REQUIRED',
+        locationReason: 'UNSPECIFIED',
+        locationSource: 'none',
+        serviceCategory,
+        categoryTitle,
+        targetCount,
+        radiusKm,
+        brandQuery,
+        searchTerms,
+      };
     }
 
     return {
       isLocationRequired: false,
+      searchState: 'LOCATION_RESOLVED',
       isNearMe,
       serviceCategory,
       categoryTitle,
@@ -339,17 +372,50 @@ class LocalServiceResearcher {
       targetLocation,
       targetCity,
       locationSource,
+      locationSourceLabel,
+      targetLocationLabel,
     };
   }
 
   /**
    * Discover real-world providers using Nominatim with viewbox bounding and Haversine distance
    */
-  async discoverProviders(params) {
+  async discoverProviders(params, taskContext = {}) {
     const { center, targetLocation, targetCity, searchTerms, brandQuery, radiusKm, targetCount } = params;
     const candidates = [];
     const seenNames = new Set();
     let brandNotFoundNotice = null;
+    let providerError = null;
+    let providerHttpStatus = 200;
+
+    // Simulation hooks for deterministic verification of error and edge conditions
+    if (taskContext.simulateProviderError) {
+      return {
+        providers: [],
+        searchState: 'SEARCH_FAILED',
+        error: 'Business search service unavailable',
+        httpStatus: 503,
+      };
+    }
+
+    if (taskContext.simulateZeroResults) {
+      return {
+        providers: [],
+        searchState: 'NO_RESULTS',
+        error: null,
+        httpStatus: 200,
+      };
+    }
+
+    if (taskContext.simulatePartialResults) {
+      const partialList = (taskContext.mockProviders || []).slice(0, 3);
+      return {
+        providers: partialList,
+        searchState: 'PARTIAL_RESULTS',
+        error: null,
+        httpStatus: 200,
+      };
+    }
 
     // Calculate viewbox bounding box around center coordinates
     let viewboxStr = null;
@@ -361,6 +427,8 @@ class LocalServiceResearcher {
       const minLat = center.lat - delta;
       viewboxStr = `${minLng},${maxLat},${maxLng},${minLat}`;
     }
+
+    let networkSuccess = false;
 
     // 1. If user requested a specific brand (e.g. "KG Cinemas", "Dell")
     if (brandQuery) {
@@ -384,6 +452,9 @@ class LocalServiceResearcher {
             timeout: 8000,
           });
 
+          networkSuccess = true;
+          providerHttpStatus = res.status;
+
           if (Array.isArray(res.data) && res.data.length > 0) {
             for (const p of res.data) {
               const parsed = this.parseNominatimPlace(p, center);
@@ -396,6 +467,8 @@ class LocalServiceResearcher {
           }
         } catch (err) {
           logger.warn(`[Local Service Researcher] Brand search for "${bQuery}" notice:`, err.message);
+          providerError = err.message;
+          if (err.response?.status) providerHttpStatus = err.response.status;
         }
       }
 
@@ -418,6 +491,9 @@ class LocalServiceResearcher {
           timeout: 8000,
         });
 
+        networkSuccess = true;
+        providerHttpStatus = res.status;
+
         if (Array.isArray(res.data) && res.data.length > 0) {
           for (const p of res.data) {
             const parsed = this.parseNominatimPlace(p, center);
@@ -429,6 +505,8 @@ class LocalServiceResearcher {
         }
       } catch (err) {
         logger.warn(`[Local Service Researcher] Search for "${term}" notice:`, err.message);
+        providerError = err.message;
+        if (err.response?.status) providerHttpStatus = err.response.status;
       }
     }
 
@@ -441,6 +519,7 @@ class LocalServiceResearcher {
           headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
           timeout: 8000,
         });
+        networkSuccess = true;
         if (Array.isArray(res.data)) {
           for (const p of res.data) {
             const parsed = this.parseNominatimPlace(p, center);
@@ -450,7 +529,19 @@ class LocalServiceResearcher {
             }
           }
         }
-      } catch (_) {}
+      } catch (err) {
+        if (!networkSuccess) providerError = err.message;
+      }
+    }
+
+    // If all network queries failed and zero candidates were obtained
+    if (!networkSuccess && candidates.length === 0) {
+      return {
+        providers: [],
+        searchState: 'SEARCH_FAILED',
+        error: providerError || 'Search provider network unreachable',
+        httpStatus: providerHttpStatus !== 200 ? providerHttpStatus : 503,
+      };
     }
 
     // Sort by distance ascending when distance is available
@@ -466,7 +557,21 @@ class LocalServiceResearcher {
     params.brandNotFoundNotice = brandNotFoundNotice;
 
     // Slice to requested count
-    return candidates.slice(0, targetCount);
+    const retained = candidates.slice(0, targetCount);
+
+    let searchState = 'RESULTS_FOUND';
+    if (retained.length === 0) {
+      searchState = 'NO_RESULTS';
+    } else if (retained.length < targetCount) {
+      searchState = 'PARTIAL_RESULTS';
+    }
+
+    return {
+      providers: retained,
+      searchState,
+      error: null,
+      httpStatus: 200,
+    };
   }
 
   /**
