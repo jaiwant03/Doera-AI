@@ -1,5 +1,6 @@
 import llmService from '../services/llmService.js';
 import spreadsheetService from '../services/spreadsheetService.js';
+import fileStorageService from '../services/fileStorageService.js';
 import { logger } from '../utils/logger.js';
 
 class DataAnalysisAgent {
@@ -33,6 +34,10 @@ class DataAnalysisAgent {
         let buffer = null;
         if (spreadsheetAttachment.buffer && Buffer.isBuffer(spreadsheetAttachment.buffer)) {
           buffer = spreadsheetAttachment.buffer;
+        } else if (spreadsheetAttachment.storagePath) {
+          buffer = await fileStorageService.getFileBuffer(spreadsheetAttachment.storagePath);
+        } else if (spreadsheetAttachment.fileId) {
+          buffer = await fileStorageService.getFileBuffer(spreadsheetAttachment.fileId);
         } else if (spreadsheetAttachment.base64) {
           buffer = Buffer.from(spreadsheetAttachment.base64, 'base64');
         } else if (typeof spreadsheetAttachment.dataUrl === 'string' && spreadsheetAttachment.dataUrl.includes(',')) {
@@ -116,7 +121,7 @@ class DataAnalysisAgent {
       }
     }
 
-    // 3. Execute Deterministic Calculations on the Dataset
+    // 3. Execute Deterministic Calculations on the Dataset or Reuse Previous Context
     let analysisResult = null;
     if (parsedSpreadsheet) {
       try {
@@ -124,13 +129,41 @@ class DataAnalysisAgent {
       } catch (calcErr) {
         logger.error(`[Data Analysis Agent] Execution error: ${calcErr.message}`);
       }
+    } else if (taskContext.lastCalculation || taskContext.lastChartConfig) {
+      // Reusing previous verified calculation and chart configuration
+      const prevCalc = taskContext.lastCalculation;
+      let prevChart = taskContext.lastChartConfig ? JSON.parse(JSON.stringify(taskContext.lastChartConfig)) : null;
+
+      // Check if user is asking to convert chart type (e.g. pie, bar, line, doughnut)
+      if (prevChart) {
+        if (/pie|doughnut|donut/i.test(userRequest)) {
+          prevChart.type = /doughnut|donut/i.test(userRequest) ? 'doughnut' : 'pie';
+          prevChart.title = `${prevChart.title || 'Data'} (Pie Distribution)`;
+        } else if (/line/i.test(userRequest)) {
+          prevChart.type = 'line';
+        } else if (/bar/i.test(userRequest)) {
+          prevChart.type = 'bar';
+        } else if (/area/i.test(userRequest)) {
+          prevChart.type = 'area';
+        }
+      }
+
+      analysisResult = {
+        success: true,
+        sheetName: prevCalc?.sheetName || 'Previous Dataset',
+        rowCount: prevCalc?.totalRowsAnalyzed || prevChart?.data?.length || 0,
+        headers: prevCalc?.targetColumns || [],
+        calculation: prevCalc,
+        chartConfig: prevChart,
+      };
+      logger.info(`[Data Analysis Agent] Successfully reused prior calculation & chart context (${analysisResult.rowCount} rows).`);
     }
 
-    const calc = analysisResult?.calculation || null;
-    const chartConfig = analysisResult?.chartConfig || null;
-    const headers = analysisResult?.headers || parsedSpreadsheet?.primarySheet?.headers || [];
+    const calc = analysisResult?.calculation || taskContext.lastCalculation || null;
+    const chartConfig = analysisResult?.chartConfig || taskContext.lastChartConfig || null;
+    const headers = analysisResult?.headers || parsedSpreadsheet?.primarySheet?.headers || calc?.targetColumns || [];
     const sampleRows = parsedSpreadsheet?.primarySheet?.rows?.slice(0, 10) || [];
-    const rowCount = parsedSpreadsheet?.summary?.totalRows || sampleRows.length;
+    const rowCount = parsedSpreadsheet?.summary?.totalRows || calc?.totalRowsAnalyzed || sampleRows.length || 0;
 
     // 4. Grounded Business Interpretation via LLM
     const systemPrompt = `You are DOERA's Senior Data Analysis & Business Intelligence Agent.

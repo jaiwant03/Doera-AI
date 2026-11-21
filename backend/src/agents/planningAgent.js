@@ -86,7 +86,12 @@ Generate valid JSON matching this schema:
   ]
 }`;
 
+    const prevPlan = taskContext.lastPlan || upstreamData.plan || null;
+    const historySnippet = taskContext.historyContext || '';
+
     const userPrompt = `User Request: "${userRequest}"
+Prior Plan Context: ${prevPlan ? JSON.stringify(prevPlan) : 'None'}
+Conversation History: ${historySnippet ? historySnippet.slice(-1500) : 'None'}
 Upstream Research Findings: ${researchContext ? JSON.stringify(researchContext) : 'None provided'}`;
 
     try {

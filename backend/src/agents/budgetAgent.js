@@ -95,11 +95,14 @@ Output JSON ONLY:
   ]
 }`;
 
+    const prevPlan = taskContext.lastPlan || planningContext;
+    const historySnippet = taskContext.historyContext || '';
+
     let budgetData = null;
     try {
       budgetData = await llmService.generate({
         systemPrompt,
-        userPrompt: `Request: "${userRequest}"\nTotal Budget: ₹${totalBudget}\nParticipants: ${participantCount}\nPlanning Details: ${planningContext ? JSON.stringify(planningContext.scale || {}) : 'None'}`,
+        userPrompt: `Request: "${userRequest}"\nTotal Budget: ₹${totalBudget}\nParticipants: ${participantCount}\nPlanning Details: ${prevPlan ? JSON.stringify(prevPlan.scale || {}) : 'None'}\nPrior Conversation: ${historySnippet ? historySnippet.slice(-1000) : 'None'}`,
         jsonMode: true,
         temperature: 0.1,
       });

@@ -1,4 +1,5 @@
 import documentProcessor from '../services/documentProcessor.js';
+import fileStorageService from '../services/fileStorageService.js';
 import llmService from '../services/llmService.js';
 import { logger } from '../utils/logger.js';
 
@@ -18,7 +19,20 @@ class DocumentAgent {
     const userRequest = taskContext.userRequest || 'Summarize and analyze document';
     logger.info(`[Document Agent] Processing document intelligence for: "${userRequest}"`);
 
-    const files = Array.isArray(attachments) ? attachments : [];
+    const incomingFiles = Array.isArray(attachments) && attachments.length > 0
+      ? attachments
+      : (taskContext.attachments || taskContext.effectiveAttachments || []);
+    const files = [];
+    for (const f of incomingFiles) {
+      if (f.buffer) {
+        files.push(f);
+      } else if (f.storagePath) {
+        const buf = await fileStorageService.getFileBuffer(f.storagePath);
+        files.push({ ...f, buffer: buf });
+      } else {
+        files.push(f);
+      }
+    }
     const extractedDocs = [];
 
     // 1. Process and extract all uploaded documents
@@ -33,7 +47,7 @@ class DocumentAgent {
         });
 
         // Run deep grounded extraction with LLM on the actual content
-        const deepAnalysis = await this.extractDocumentIntelligence(processed, userRequest);
+        const deepAnalysis = await this.extractDocumentIntelligence(processed, userRequest, taskContext?.historyContext);
 
         extractedDocs.push({
           filename: file.name,
@@ -96,7 +110,7 @@ class DocumentAgent {
   /**
    * Single-document deep grounded extraction using configured LLM
    */
-  async extractDocumentIntelligence(processed, userRequest) {
+  async extractDocumentIntelligence(processed, userRequest, historyContext = '') {
     const textSnippet = (processed.extractedText || '').slice(0, 10000);
     const hasText = textSnippet.replace(/\[(Page|Slide|Sheet)[^\]]*\]/g, '').trim().length > 10;
 
@@ -132,6 +146,7 @@ Output pure JSON ONLY.`;
 
     const userPrompt = `Document: ${processed.filename} (${processed.fileType}, ${processed.metadata?.pageCount || 1} pages/slides/sheets)
 User Inquiry: "${userRequest}"
+Prior Conversation Context: ${historyContext ? historyContext.slice(-1500) : 'None'}
 
 Extracted Document Content:
 ${textSnippet}`;

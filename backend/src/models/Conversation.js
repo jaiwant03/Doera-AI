@@ -30,6 +30,56 @@ const ConversationSchema = new mongoose.Schema(
       type: String,
       default: 'openai/gpt-oss-120b',
     },
+    activeMissionId: {
+      type: String,
+      default: null,
+    },
+    activeCategory: {
+      type: String,
+      default: null,
+    },
+    contextSummary: {
+      type: String,
+      default: '',
+    },
+    activeArtifacts: {
+      type: mongoose.Schema.Types.Mixed,
+      default: [],
+    },
+    uploadedFiles: [
+      {
+        fileId: { type: mongoose.Schema.Types.ObjectId, ref: 'FileMetadata' },
+        name: String,
+        type: { type: String },
+        size: Number,
+        storagePath: String,
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+    lastCalculation: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    lastChartConfig: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    lastDraft: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    lastPlan: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    lastResearchResults: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    taskState: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     lastMessageAt: {
       type: Date,
       default: Date.now,

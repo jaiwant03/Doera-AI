@@ -1,4 +1,5 @@
 import imageProcessor from '../services/imageProcessor.js';
+import fileStorageService from '../services/fileStorageService.js';
 import llmService from '../services/llmService.js';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
@@ -20,12 +21,20 @@ class VisionAgent {
     logger.info(`[Vision Agent] Initiating visual intelligence for: "${userRequest}"`);
 
     // 1. Filter all image attachments
-    const files = Array.isArray(attachments) ? attachments : [];
-    const imageFiles = files.filter(
-      (f) =>
-        f.type?.startsWith('image/') ||
-        /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name || f.filename || '')
-    );
+    const candidateFiles = Array.isArray(attachments) && attachments.length > 0
+      ? attachments
+      : (taskContext?.attachments || taskContext?.effectiveAttachments || []);
+
+    const imageFiles = [];
+    for (const f of candidateFiles) {
+      if (f.type?.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name || f.filename || '')) {
+        let buf = f.buffer;
+        if (!buf && f.storagePath) {
+          buf = await fileStorageService.getFileBuffer(f.storagePath);
+        }
+        imageFiles.push({ ...f, buffer: buf });
+      }
+    }
 
     if (imageFiles.length === 0) {
       logger.warn('[Vision Agent] No image attachments found in task context.');

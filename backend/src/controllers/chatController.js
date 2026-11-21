@@ -14,6 +14,8 @@ import buildUniversalResponse from '../services/universalResponseBuilder.js';
 import universalIntentService, { CATEGORIES } from '../services/universalIntentService.js';
 import locationService from '../services/locationService.js';
 import extractAndRegisterDeliverables from '../services/deliverableExtractor.js';
+import conversationContextEngine from '../services/conversationContextEngine.js';
+import fileStorageService from '../services/fileStorageService.js';
 
 /**
  * Geocodes missing contact coordinates and creates structured locationData for interactive maps
@@ -114,32 +116,38 @@ export const streamMessage = async (req, res) => {
       testDate,
     });
 
-    // Find or create conversation
-    let conversation;
-    if (conversationId) {
-      conversation = await Conversation.findOne({ _id: conversationId, userId });
-    }
-    if (!conversation) {
-      const title = message.length > 40 ? `${message.substring(0, 37)}...` : message;
-      conversation = await Conversation.create({
-        userId,
-        title,
-        selectedModel: model || modelManager.getDefaultModel(),
-        lastMessageAt: new Date(),
-      });
-    } else {
-      conversation.lastMessageAt = new Date();
-      if (model) conversation.selectedModel = model;
-      await conversation.save();
+    // Resolve Centralized Universal Conversation Context
+    const contextPayload = await conversationContextEngine.resolveConversationContext({
+      conversationId,
+      userId,
+      message,
+      incomingAttachments: attachments,
+    });
+
+    const conversation = contextPayload.conversation;
+    const effectiveAttachments = contextPayload.effectiveAttachments;
+    let historyContext = contextPayload.historyContext;
+
+    if (model && conversation.selectedModel !== model) {
+      conversation.selectedModel = model;
+      await conversation.save().catch(() => {});
     }
 
-    // Save user message
+    // Save user message with secure disk references (avoiding MongoDB BSON 16MB document overflows)
+    const userMessageAttachments = effectiveAttachments.map((a) => ({
+      name: a.name,
+      type: a.type,
+      size: a.size,
+      storagePath: a.storagePath || null,
+      fileId: a.fileId || null,
+    }));
+
     const userMessage = await Message.create({
       conversationId: conversation._id,
       userId,
       sender: 'user',
       content: message,
-      attachments,
+      attachments: userMessageAttachments,
     });
 
     sendEvent('start', {
@@ -236,6 +244,22 @@ export const streamMessage = async (req, res) => {
 
           await usageService.completeQuota(requestId);
 
+          await conversationContextEngine.updateConversationContext({
+            conversationId: conversation._id,
+            category: 'TRAVEL_PLANNING',
+            taskDoc: task,
+            userMessage: message,
+            aiResponse: aiMessageContent,
+          });
+
+          await conversationContextEngine.updateConversationContext({
+            conversationId: conversation._id,
+            category: 'TRAVEL_PLANNING',
+            taskDoc: task,
+            userMessage: message,
+            aiResponse: aiMessageContent,
+          });
+
           sendEvent('task_created', { aiMessage, task, locationData });
           sendEvent('done', {
             conversationId: conversation._id,
@@ -250,45 +274,6 @@ export const streamMessage = async (req, res) => {
       }
     }
 
-    // Fetch recent conversation history and prior attachments for contextual follow-ups
-    let historyContext = '';
-    let effectiveAttachments = [...attachments];
-    try {
-      const recentMessages = await Message.find({
-        conversationId: conversation._id,
-        _id: { $ne: userMessage._id },
-      })
-        .sort({ createdAt: -1 })
-        .limit(6)
-        .lean();
-
-      recentMessages.reverse();
-
-      if (recentMessages.length > 0) {
-        historyContext = recentMessages
-          .map((m) => `${m.sender === 'user' ? 'User' : 'DOERA'}: ${m.content.slice(0, 300)}`)
-          .join('\n');
-
-        if (effectiveAttachments.length === 0) {
-          const prevWithAttachments = recentMessages
-            .slice()
-            .reverse()
-            .find((m) => Array.isArray(m.attachments) && m.attachments.length > 0);
-          if (prevWithAttachments) {
-            const hasSpreadsheet = prevWithAttachments.attachments.some(a =>
-              /\.(csv|tsv|xlsx|xls)$/i.test(a.name || '') || a.type === 'text/csv'
-            );
-            const isFollowUpDataQuery = /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(message) ||
-              (hasSpreadsheet && /(chart|graph|trend|bar|line|pie|doughnut|donut|area|scatter|histogram|top|lowest|highest|average|mean|sum|total|percentage|expenses?|sales|revenue|profit|spending|transactions?|columns?|rows?|categories|unusual|missing|rank|growth)/i.test(message));
-
-            if (isFollowUpDataQuery) {
-              effectiveAttachments = prevWithAttachments.attachments;
-            }
-          }
-        }
-      }
-    } catch (_) {}
-
     // 2. Universal Request Understanding & Dynamic Agent Selection
     const intent = await universalIntentService.understandRequest(
       message,
@@ -296,6 +281,17 @@ export const streamMessage = async (req, res) => {
       memoryContext,
       historyContext
     );
+
+    // If contextEngine identified an ongoing continuation or follow-up, enforce category
+    if (contextPayload.isFollowUp && contextPayload.resolvedCategory) {
+      intent.primaryCategory = contextPayload.resolvedCategory;
+      if (!intent.categories.includes(contextPayload.resolvedCategory)) {
+        intent.categories.unshift(contextPayload.resolvedCategory);
+      }
+      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION') {
+        intent.isActionTask = true;
+      }
+    }
 
     // If concise clarification is strictly required
     if (intent.clarificationNeeded) {
@@ -350,6 +346,17 @@ export const streamMessage = async (req, res) => {
           steps: [],
           externalContacts: [],
           attachments: effectiveAttachments,
+          conversationId: conversation._id,
+          historyContext,
+          contextSummary: contextPayload.contextSummary,
+          isFollowUp: contextPayload.isFollowUp,
+          followUpType: contextPayload.followUpType,
+          lastChartConfig: contextPayload.lastChartConfig,
+          lastCalculation: contextPayload.lastCalculation,
+          lastPlan: contextPayload.lastPlan,
+          lastDraft: contextPayload.lastDraft,
+          lastResearchResults: contextPayload.lastResearchResults,
+          activeArtifacts: contextPayload.activeArtifacts,
           isApproved: false, // Enforce human approval gate before external outreach
           onEvent: async (evt) => {
             await AgentExecution.create({
@@ -412,6 +419,20 @@ export const streamMessage = async (req, res) => {
         locationData,
         chartConfig,
         status: 'complete',
+      });
+
+      await conversationContextEngine.updateConversationContext({
+        conversationId: conversation._id,
+        category: task.category,
+        taskDoc: task,
+        chartConfig,
+        calculation: resultState?.calculation || task.discoveredData?.dataAnalysis?.calculation || null,
+        plan: resultState?.plan || task.discoveredData?.planning || null,
+        draft: resultState?.emailDraft || resultState?.draft || null,
+        researchResults: resultState?.externalContacts || null,
+        artifacts: resultState?.activeArtifacts || [],
+        userMessage: message,
+        aiResponse: aiMessageContent,
       });
 
       await usageService.completeQuota(requestId);
@@ -507,6 +528,12 @@ ${memoryContext}`;
     aiMessage.status = abortController.signal.aborted ? 'interrupted' : 'complete';
     await aiMessage.save();
 
+    await conversationContextEngine.updateConversationContext({
+      conversationId: conversation._id,
+      userMessage: message,
+      aiResponse: fullText,
+    });
+
     await usageService.completeQuota(requestId);
 
     sendEvent('done', {
@@ -582,13 +609,38 @@ export const sendMessage = async (req, res, next) => {
       await conversation.save();
     }
 
-    // Save user message
+    // Resolve Centralized Universal Conversation Context
+    const contextPayload = await conversationContextEngine.resolveConversationContext({
+      conversationId: conversation?._id || conversationId,
+      userId,
+      message,
+      incomingAttachments: attachments,
+    });
+
+    conversation = contextPayload.conversation;
+    const effectiveAttachments = contextPayload.effectiveAttachments;
+    const historyContext = contextPayload.historyContext;
+
+    if (model && conversation.selectedModel !== model) {
+      conversation.selectedModel = model;
+      await conversation.save().catch(() => {});
+    }
+
+    // Save user message with secure disk references
+    const userMessageAttachments = effectiveAttachments.map((a) => ({
+      name: a.name,
+      type: a.type,
+      size: a.size,
+      storagePath: a.storagePath || null,
+      fileId: a.fileId || null,
+    }));
+
     const userMessage = await Message.create({
       conversationId: conversation._id,
       userId,
       sender: 'user',
       content: message,
-      attachments,
+      attachments: userMessageAttachments,
     });
 
     // 1. Check for Trip Planning / Route Request
@@ -661,6 +713,14 @@ export const sendMessage = async (req, res, next) => {
 
           await usageService.completeQuota(requestId);
 
+          await conversationContextEngine.updateConversationContext({
+            conversationId: conversation._id,
+            category: 'TRAVEL_PLANNING',
+            taskDoc: task,
+            userMessage: message,
+            aiResponse: aiMessageContent,
+          });
+
           return res.status(200).json({
             conversation,
             userMessage,
@@ -694,51 +754,23 @@ export const sendMessage = async (req, res, next) => {
       }
     } catch (_) {}
 
-    // Fetch recent conversation history and prior attachments for contextual follow-ups
-    let historyContext = '';
-    let effectiveAttachments = [...attachments];
-    try {
-      const recentMessages = await Message.find({
-        conversationId: conversation._id,
-        _id: { $ne: userMessage._id },
-      })
-        .sort({ createdAt: -1 })
-        .limit(6)
-        .lean();
-
-      recentMessages.reverse();
-
-      if (recentMessages.length > 0) {
-        historyContext = recentMessages
-          .map((m) => `${m.sender === 'user' ? 'User' : 'DOERA'}: ${m.content.slice(0, 300)}`)
-          .join('\n');
-
-        if (effectiveAttachments.length === 0) {
-          const prevWithAttachments = recentMessages
-            .slice()
-            .reverse()
-            .find((m) => Array.isArray(m.attachments) && m.attachments.length > 0);
-          if (prevWithAttachments) {
-            const hasSpreadsheet = prevWithAttachments.attachments.some(a =>
-              /\.(csv|tsv|xlsx|xls)$/i.test(a.name || '') || a.type === 'text/csv'
-            );
-            const isFollowUpDataQuery = /(same|that|the|this|those|previous|above|again)\s*(document|file|spreadsheet|csv|dataset|data|image|chart|table|numbers)/i.test(message) ||
-              (hasSpreadsheet && /(chart|graph|trend|bar|line|pie|doughnut|donut|area|scatter|histogram|top|lowest|highest|average|mean|sum|total|percentage|expenses?|sales|revenue|profit|spending|transactions?|columns?|rows?|categories|unusual|missing|rank|growth)/i.test(message));
-
-            if (isFollowUpDataQuery) {
-              effectiveAttachments = prevWithAttachments.attachments;
-            }
-          }
-        }
-      }
-    } catch (_) {}
-
     const intent = await universalIntentService.understandRequest(
       message,
       effectiveAttachments,
       memoryContext,
       historyContext
     );
+
+    // If contextEngine identified an ongoing continuation or follow-up, enforce category
+    if (contextPayload.isFollowUp && contextPayload.resolvedCategory) {
+      intent.primaryCategory = contextPayload.resolvedCategory;
+      if (!intent.categories.includes(contextPayload.resolvedCategory)) {
+        intent.categories.unshift(contextPayload.resolvedCategory);
+      }
+      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION') {
+        intent.isActionTask = true;
+      }
+    }
 
     // If concise clarification is strictly required
     if (intent.clarificationNeeded) {
@@ -804,6 +836,17 @@ export const sendMessage = async (req, res, next) => {
           steps: [],
           externalContacts: [],
           attachments: effectiveAttachments,
+          conversationId: conversation._id,
+          historyContext,
+          contextSummary: contextPayload.contextSummary,
+          isFollowUp: contextPayload.isFollowUp,
+          followUpType: contextPayload.followUpType,
+          lastChartConfig: contextPayload.lastChartConfig,
+          lastCalculation: contextPayload.lastCalculation,
+          lastPlan: contextPayload.lastPlan,
+          lastDraft: contextPayload.lastDraft,
+          lastResearchResults: contextPayload.lastResearchResults,
+          activeArtifacts: contextPayload.activeArtifacts,
           isApproved: false, // Enforce human approval gate before external outreach
           onEvent: async (evt) => {
             await AgentExecution.create({
@@ -868,6 +911,20 @@ export const sendMessage = async (req, res, next) => {
         status: 'complete',
       });
 
+      await conversationContextEngine.updateConversationContext({
+        conversationId: conversation._id,
+        category: task.category,
+        taskDoc: task,
+        chartConfig,
+        calculation: resultState?.calculation || task.discoveredData?.dataAnalysis?.calculation || null,
+        plan: resultState?.plan || task.discoveredData?.planning || null,
+        draft: resultState?.emailDraft || resultState?.draft || null,
+        researchResults: resultState?.externalContacts || null,
+        artifacts: resultState?.activeArtifacts || [],
+        userMessage: message,
+        aiResponse: aiMessageContent,
+      });
+
       await usageService.completeQuota(requestId);
     } else {
       // Direct General Knowledge & Technical Explanations
@@ -907,6 +964,12 @@ ${memoryContext}`;
         sender: 'assistant',
         content: llmAnswer || `Hello! I am DOERA AI, your personal autonomous assistant. I don't just chat—I get real-world tasks done for you: finding verified local professionals, scheduling appointments, comparing quotes, managing tasks, and verifying outcomes. What would you like to get done today?`,
         status: 'complete',
+      });
+
+      await conversationContextEngine.updateConversationContext({
+        conversationId: conversation._id,
+        userMessage: message,
+        aiResponse: aiMessage.content,
       });
 
       await usageService.completeQuota(requestId);

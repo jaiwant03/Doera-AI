@@ -1103,8 +1103,8 @@ const workflow = new StateGraph(TaskStateAnnotation)
     if (state.error) return 'recovery';
     const req = state.requiredAgents || [];
     if (req.includes('Vision')) return 'vision';
-    if (req.includes('Document')) return 'document';
     if (req.includes('DataAnalysis') && !req.includes('Research')) return 'data_analysis';
+    if (req.includes('Document')) return 'document';
     if (req.includes('LocalService') || req.includes('Discovery')) return 'local_service';
     if (req.includes('Location')) return 'location';
     if (req.includes('Research')) return 'research';

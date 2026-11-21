@@ -13,33 +13,30 @@ class CommunicationAgent {
    */
   async prepareOutreach(taskContext, primaryContact) {
     const startedAt = new Date();
-    logger.info(`[Communication Agent] Drafting communication for: ${primaryContact?.businessName}`);
+    const recipientName = primaryContact?.businessName || 'Recipient';
+    logger.info(`[Communication Agent] Drafting communication for: ${recipientName}`);
 
-    if (!primaryContact) {
-      return {
-        recipient: 'Service Provider',
-        subject: `Inquiry regarding: ${taskContext.userRequest}`,
-        message: `Hello, inquiring regarding: ${taskContext.userRequest}. Kindly provide your earliest availability and pricing estimate.`,
-        actionType: 'SEND_OUTREACH',
-        channel: 'Email / Direct Message',
-        requiresApproval: true,
-      };
-    }
+    const prevDraft = taskContext?.lastDraft || null;
+    const historySnippet = taskContext?.historyContext || '';
 
-    const systemPrompt = `You are DOERA AI's Communication Agent.
-Draft a concise, professional inquiry to the service provider or medical clinic on behalf of the client.
-Request availability, appointment slots, and consultation/service fees for the requested service.
+    const systemPrompt = `You are DOERA AI's Communication & Email Assistant.
+Draft or revise a professional email/message on behalf of the user.
+If revising an earlier draft, strictly incorporate the user's latest instructions (e.g. more professional tone, adding date, venue, requirements, agenda) while preserving context.
 Output JSON only:
 {
-  "subject": "Inquiry regarding service appointment - DOERA AI Client",
+  "subject": "Clear, professional subject line",
   "emailHtml": "<p>Professional HTML message body...</p>",
   "emailText": "Professional plain text message...",
-  "whatsappText": "Concise WhatsApp message text..."
+  "whatsappText": "Concise WhatsApp message text if relevant..."
 }`;
 
-    const userPrompt = `Client Request: "${taskContext.userRequest}"
+    const userPrompt = primaryContact
+      ? `Client Request: "${taskContext.userRequest}"
 Provider: "${primaryContact.businessName}"
-Address: "${primaryContact.address || 'Local'}"`;
+Address: "${primaryContact.address || 'Local'}"`
+      : `User Email Request: "${taskContext.userRequest}"
+Prior Draft Context: ${prevDraft ? JSON.stringify(prevDraft) : 'None'}
+Conversation History: ${historySnippet ? historySnippet.slice(-1500) : 'None'}`;
 
     let draft = {};
     try {
@@ -53,14 +50,16 @@ Address: "${primaryContact.address || 'Local'}"`;
       logger.warn('[Communication Agent] LLM draft generation notice, using safe template:', err.message);
     }
 
-    const recipientLabel = primaryContact.email || primaryContact.phone || primaryContact.businessName;
-    const subject = draft.subject || `Inquiry regarding service appointment - ${primaryContact.businessName}`;
+    const recipientLabel = primaryContact?.email || primaryContact?.phone || primaryContact?.businessName || prevDraft?.recipient || 'Intended Recipient';
+    const subject = draft.subject || (primaryContact ? `Inquiry regarding service appointment - ${primaryContact.businessName}` : (prevDraft?.subject || `Regarding: ${taskContext.userRequest.slice(0, 50)}`));
     const emailText =
       draft.emailText ||
-      `Dear ${primaryContact.businessName},\n\nWe are reaching out on behalf of our client regarding: ${taskContext.userRequest}. Kindly provide your earliest available appointment slot and fee details.\n\nThank you,\nDOERA AI Client Services`;
+      (primaryContact
+        ? `Dear ${primaryContact.businessName},\n\nWe are reaching out on behalf of our client regarding: ${taskContext.userRequest}. Kindly provide your earliest available appointment slot and fee details.\n\nThank you,\nDOERA AI Client Services`
+        : `Subject: ${subject}\n\nDear Sir/Madam,\n\nI am writing to formally request permission regarding: ${taskContext.userRequest}.\n\nThank you for your consideration.\n\nSincerely,\nDOERA AI User`);
     const whatsappText =
       draft.whatsappText ||
-      `Hello ${primaryContact.businessName}, inquiring regarding: ${taskContext.userRequest}. Could you please let us know your availability and estimated rate? Thank you!`;
+      `Hello, regarding: ${taskContext.userRequest}. Please let us know your earliest availability. Thank you!`;
 
     return {
       agentName: this.name,
@@ -68,13 +67,13 @@ Address: "${primaryContact.address || 'Local'}"`;
       status: 'drafted',
       actionType: 'SEND_OUTREACH',
       recipient: recipientLabel,
-      recipientName: primaryContact.businessName,
+      recipientName: primaryContact?.businessName || 'Recipient',
       subject,
       emailHtml: draft.emailHtml || `<p>${emailText.replace(/\n/g, '<br/>')}</p>`,
       emailText,
       whatsappText,
       message: emailText, // Summary for approval UI preview
-      channel: primaryContact.email ? 'Email' : (primaryContact.phone ? 'WhatsApp / SMS' : 'Direct Provider Inquiry'),
+      channel: primaryContact?.email ? 'Email' : (primaryContact?.phone ? 'WhatsApp / SMS' : 'Email (Personal OAuth)'),
       requiresApproval: true,
       startedAt,
       completedAt: new Date(),

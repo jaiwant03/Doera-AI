@@ -29,8 +29,34 @@ class SpreadsheetService {
     }
 
     let rawBuffer = buffer;
+
+    // Handle string inputs (data URL or raw base64 or CSV text)
     if (typeof rawBuffer === 'string') {
-      rawBuffer = Buffer.from(rawBuffer, 'utf8');
+      let clean = rawBuffer.trim();
+      if (clean.startsWith('data:')) {
+        const commaIdx = clean.indexOf(',');
+        if (commaIdx !== -1) {
+          clean = clean.substring(commaIdx + 1).trim();
+        }
+      }
+      const extCheck = (filename.split('.').pop() || '').toLowerCase();
+      const isBase64Binary = /^UEsDB/i.test(clean.slice(0, 30)) || extCheck === 'xlsx' || extCheck === 'xls';
+      if (isBase64Binary) {
+        rawBuffer = Buffer.from(clean, 'base64');
+      } else {
+        rawBuffer = Buffer.from(clean, 'utf8');
+      }
+    } else if (Buffer.isBuffer(rawBuffer)) {
+      // Check if buffer contains ASCII base64 string (starts with "UEsDB" or "data:")
+      const preview = rawBuffer.slice(0, 30).toString('utf8');
+      if (preview.startsWith('UEsDB') || preview.startsWith('data:')) {
+        let cleanStr = rawBuffer.toString('utf8').trim();
+        if (cleanStr.startsWith('data:')) {
+          const commaIdx = cleanStr.indexOf(',');
+          if (commaIdx !== -1) cleanStr = cleanStr.substring(commaIdx + 1).trim();
+        }
+        rawBuffer = Buffer.from(cleanStr, 'base64');
+      }
     }
 
     if (rawBuffer.length > this.MAX_FILE_SIZE_BYTES) {
@@ -487,9 +513,9 @@ class SpreadsheetService {
 
     // Filter out obvious unique IDs/URLs if alternatives exist
     const filteredCandidates = candidateDimensionCols.filter((col) => {
-      const isIdentifier = /(url|link|href|uuid|^id$|_id$|guid)/i.test(col.toLowerCase());
+      const isIdentifier = /(url|link|href|uuid|^id$|_id$|guid|transaction.*id|trans_id|invoice_id|record_id|reference|order_id)/i.test(col.toLowerCase());
       const isUniqueAll = columnSchema[col]?.uniqueCount === columnSchema[col]?.totalCount;
-      return !(isIdentifier && isUniqueAll && candidateDimensionCols.length > 1);
+      return !(isIdentifier && (isUniqueAll || columnSchema[col]?.uniqueCount > 50) && candidateDimensionCols.length > 1);
     });
 
     const finalCandidates = filteredCandidates.length > 0 ? filteredCandidates : candidateDimensionCols;
@@ -509,7 +535,7 @@ class SpreadsheetService {
       operation = 'TOP_N';
     } else if (/(lowest|bottom\s*(five|\d+)?|worst|minimum|least|trailing)/i.test(queryLower)) {
       operation = 'BOTTOM_N';
-    } else if (/(total|sum|overall\s*spending|all\s*expenses)/i.test(queryLower)) {
+    } else if (/(total|sum|overall\s*spending|all\s*expenses|total\s*expenses|number\s*of\s*transactions)/i.test(queryLower)) {
       operation = 'TOTAL';
     } else if (/(average|mean|monthly\s*sales|typical)/i.test(queryLower)) {
       operation = 'AVERAGE';

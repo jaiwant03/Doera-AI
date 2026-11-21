@@ -203,6 +203,7 @@ User Personalized Context: ${memoryContext || 'None'}`;
     }
     if (categories.includes(CATEGORIES.DATA_ANALYSIS) || hasSpreadsheetAttachment) {
       requiredAgents.add('DataAnalysis');
+      requiredAgents.delete('Document');
       // Strictly enforce pure data analytics workflow unless user explicitly asks for external outreach or booking
       const lowerText = text.toLowerCase();
       const hasExplicitOutreach = /send\s+email|email\s+this|dispatch\s+to|reach\s+out/i.test(lowerText);

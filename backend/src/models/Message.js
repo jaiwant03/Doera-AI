@@ -29,6 +29,15 @@ const MessageSchema = new mongoose.Schema(
         type: { type: String },
         url: String,
         size: Number,
+        fileId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'FileMetadata',
+          default: null,
+        },
+        storagePath: {
+          type: String,
+          default: null,
+        },
       },
     ],
     taskId: {
@@ -59,6 +68,18 @@ const MessageSchema = new mongoose.Schema(
       default: null,
     },
     chartConfig: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    calculation: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    artifacts: {
+      type: mongoose.Schema.Types.Mixed,
+      default: [],
+    },
+    intent: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
