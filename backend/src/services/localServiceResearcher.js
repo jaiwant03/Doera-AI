@@ -606,6 +606,7 @@ class LocalServiceResearcher {
 
     // 5. Resilient Fallback: Photon OpenStreetMap Geocoding & POI API (handles rate limits & Varnish 629 blocks)
     if (candidates.length < targetCount) {
+      const maxAllowedDist = center ? Math.max(radiusKm * 2.5, 35) : null;
       for (const term of searchTerms) {
         if (candidates.length >= targetCount + 5) break;
         try {
@@ -619,7 +620,7 @@ class LocalServiceResearcher {
           providerHttpStatus = 200;
           const feats = res.data?.features || [];
           for (const f of feats) {
-            const parsed = this.parsePhotonPlace(f, center, params.categoryTitle);
+            const parsed = this.parsePhotonPlace(f, center, params.categoryTitle, maxAllowedDist);
             if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
               seenNames.add(parsed.businessName.toLowerCase());
               candidates.push(parsed);
@@ -642,7 +643,7 @@ class LocalServiceResearcher {
             providerHttpStatus = 200;
             const feats = res.data?.features || [];
             for (const f of feats) {
-              const parsed = this.parsePhotonPlace(f, center, params.categoryTitle);
+              const parsed = this.parsePhotonPlace(f, center, params.categoryTitle, maxAllowedDist);
               if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
                 seenNames.add(parsed.businessName.toLowerCase());
                 candidates.push(parsed);
@@ -766,14 +767,14 @@ class LocalServiceResearcher {
   /**
    * Parse Photon OpenStreetMap JSON feature into clean provider object with Haversine distance
    */
-  parsePhotonPlace(feature, center, categoryTitle = null) {
+  parsePhotonPlace(feature, center, categoryTitle = null, maxDistanceKm = null) {
     if (!feature || !feature.geometry?.coordinates) return null;
     const [lng, lat] = feature.geometry.coordinates;
     if (isNaN(lat) || isNaN(lng)) return null;
 
     const props = feature.properties || {};
     const businessName = props.name;
-    if (!businessName) return null;
+    if (!businessName || businessName.toLowerCase() === 'undefined') return null;
 
     // Discard non-commercial public utilities or generic administrative boundaries
     if (props.osm_key === 'boundary' || props.osm_value === 'administrative' || props.type === 'administrative') return null;
@@ -805,6 +806,9 @@ class LocalServiceResearcher {
     let distanceKm = null;
     if (center && typeof center.lat === 'number' && typeof center.lng === 'number') {
       distanceKmNum = haversineDistance(center.lat, center.lng, lat, lng);
+      if (maxDistanceKm !== null && distanceKmNum !== null && distanceKmNum > maxDistanceKm) {
+        return null;
+      }
       distanceKm = distanceKmNum !== null ? `${distanceKmNum} km` : null;
     }
 
