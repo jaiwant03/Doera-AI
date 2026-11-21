@@ -444,6 +444,43 @@ ol.doera-prose-list {
   background: #08050B;
 }
 
+/* KaTeX Mathematical Equation Styling */
+.katex {
+  font-size: 1.08em;
+  color: #FFFFFF;
+  text-rendering: geometricPrecision;
+}
+
+.katex-display {
+  margin: 14px 0 !important;
+  padding: 14px 18px !important;
+  background: #110B15 !important;
+  border: 1px solid rgba(245, 47, 168, 0.25) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  text-align: center !important;
+}
+
+.katex-display > .katex {
+  font-size: 1.15em;
+  color: #FFFFFF;
+}
+
+/* Distinct Final Answer Highlighting (\boxed) */
+.katex .mord.boxed,
+.katex .boxed {
+  border: 2px solid #F52FA8 !important;
+  background: rgba(245, 47, 168, 0.12) !important;
+  padding: 5px 14px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 16px rgba(245, 47, 168, 0.25) !important;
+  display: inline-block !important;
+}
+
 /* Tables */
 .doera-table-wrap {
   overflow-x: auto;

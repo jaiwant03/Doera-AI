@@ -1,8 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { Copy, Check, Download } from 'lucide-react';
+
+/**
+ * Normalizes mathematical delimiters so KaTeX renders inline and block formulas seamlessly.
+ * - Converts \[ ... \] to block math $$ ... $$
+ * - Converts \( ... \) to inline math $ ... $
+ * - Resolves double-escaped backslashes in LaTeX macros
+ */
+function normalizeMathDelimiters(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  // 1. Resolve double-escaped backslashes for common LaTeX commands
+  let normalized = text.replace(/\\\\(frac|sum|sigma|mu|bar|sqrt|text|boxed|times|le|ge|alpha|beta|theta|cdot|approx|left|right|quad)/g, '\\$1');
+
+  // 2. Convert LaTeX block math \[ ... \] to \n\n$$\n...\n$$\n\n
+  normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
+    return `\n\n$$\n${formula.trim()}\n$$\n\n`;
+  });
+
+  // 3. Convert LaTeX inline math \( ... \) to $ ... $
+  normalized = normalized.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
+    return `$${formula.trim()}$`;
+  });
+
+  return normalized;
+}
 
 const CodeBlock = ({ children, className, ...props }) => {
   const [copied, setCopied] = useState(false);
@@ -79,11 +106,19 @@ const CodeBlock = ({ children, className, ...props }) => {
 const MarkdownRenderer = ({ content, isStreaming = false }) => {
   if (!content) return null;
 
+  const normalizedContent = useMemo(() => {
+    try {
+      return normalizeMathDelimiters(content);
+    } catch {
+      return content;
+    }
+  }, [content]);
+
   return (
     <div className="doera-markdown-body">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeRaw, [rehypeKatex, { throwOnError: false, strict: false }]]}
         components={{
           code: CodeBlock,
           table: ({ children, ...props }) => (
@@ -157,7 +192,7 @@ const MarkdownRenderer = ({ content, isStreaming = false }) => {
           ),
         }}
       >
-        {content}
+        {normalizedContent}
       </ReactMarkdown>
       {isStreaming && <span className="doera-streaming-cursor">▌</span>}
     </div>
