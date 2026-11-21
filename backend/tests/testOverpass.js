@@ -1,29 +1,33 @@
 import axios from 'axios';
 
-async function testPhotonSearch() {
-  try {
-    // 1. Search cinema / theatre around coordinates
-    const res = await axios.get('https://photon.komoot.io/api/?q=theatre&lat=11.0445&lon=76.9232&limit=5', {
-      headers: { 'User-Agent': 'DOERA-AI-Local-Research/3.0' },
-      timeout: 5000,
-    });
-    console.log('Photon search "theatre" status:', res.status, 'Features:', res.data.features?.length);
-    res.data.features?.forEach((f) => {
-      console.log(' - Name:', f.properties.name, 'City:', f.properties.city, 'Coords:', f.geometry.coordinates);
-    });
+async function testOverpassEndpoints() {
+  const endpoints = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  ];
 
-    // 2. Search mobile phone repair
-    const resMobile = await axios.get('https://photon.komoot.io/api/?q=mobile+repair&lat=11.0445&lon=76.9232&limit=5', {
-      headers: { 'User-Agent': 'DOERA-AI-Local-Research/3.0' },
-      timeout: 5000,
-    });
-    console.log('Photon search "mobile repair" status:', resMobile.status, 'Features:', resMobile.data.features?.length);
-    resMobile.data.features?.forEach((f) => {
-      console.log(' - Name:', f.properties.name, 'City:', f.properties.city, 'Coords:', f.geometry.coordinates);
-    });
-  } catch (err) {
-    console.error('Photon search error:', err.message);
+  // Search cinema / theatres within 15km of 11.0445, 76.9232 (Coimbatore)
+  const q = `[out:json][timeout:10];(node["amenity"="cinema"](around:15000,11.0445,76.9232);way["amenity"="cinema"](around:15000,11.0445,76.9232););out center 5;`;
+
+  for (const ep of endpoints) {
+    try {
+      const res = await axios.post(ep, 'data=' + encodeURIComponent(q), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'DOERA-Local-Research/1.0 (contact@doera.ai)',
+        },
+        timeout: 10000,
+      });
+      console.log(`Endpoint "${ep}" -> Status: ${res.status}, Elements: ${res.data.elements?.length}`);
+      res.data.elements?.forEach((e) => {
+        console.log('   - Name:', e.tags?.name, 'Coords:', e.lat || e.center?.lat, e.lon || e.center?.lon);
+      });
+      if (res.data.elements?.length > 0) return;
+    } catch (err) {
+      console.log(`Endpoint "${ep}" -> Error: ${err.message}`);
+    }
   }
 }
 
-testPhotonSearch();
+testOverpassEndpoints();

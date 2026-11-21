@@ -5,92 +5,151 @@ import { logger } from '../utils/logger.js';
 class LocationService {
   constructor() {
     this.nominatimBase = 'https://nominatim.openstreetmap.org';
+    this.photonBase = 'https://photon.komoot.io';
     this.osrmBase = 'https://router.project-osrm.org';
     this.userAgent = 'DOERA-AI-Autonomous-Agent/3.0 (contact@doera.ai)';
   }
 
   /**
-   * Geocode a place name or address using OpenStreetMap Nominatim
+   * Geocode a place name or address using OpenStreetMap Nominatim with Photon fallback
    */
   async geocode(query) {
     if (!query || typeof query !== 'string') return null;
 
+    const clean = query.trim().replace(/^in\s+|^near\s+|^around\s+/i, '');
+
+    // 1. Try OpenStreetMap Nominatim
     try {
-      const clean = query.trim().replace(/^in\s+|^near\s+|^around\s+/i, '');
       const url = `${this.nominatimBase}/search?format=json&q=${encodeURIComponent(clean)}&limit=1&addressdetails=1`;
       
       const res = await axios.get(url, {
         headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-        timeout: 8000,
+        timeout: 5000,
       });
 
-      if (!res.data || res.data.length === 0) {
-        return null;
+      if (res.data && res.data.length > 0) {
+        const place = res.data[0];
+        const address = place.address || {};
+        const cityName =
+          address.city ||
+          address.town ||
+          address.village ||
+          address.suburb ||
+          address.county ||
+          address.state_district ||
+          clean;
+
+        return {
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+          name: place.name || clean,
+          displayName: place.display_name,
+          city: cityName,
+          state: address.state || null,
+          country: address.country || null,
+        };
       }
-
-      const place = res.data[0];
-      const address = place.address || {};
-      const cityName =
-        address.city ||
-        address.town ||
-        address.village ||
-        address.suburb ||
-        address.county ||
-        address.state_district ||
-        clean;
-
-      return {
-        lat: parseFloat(place.lat),
-        lng: parseFloat(place.lon),
-        name: place.name || clean,
-        displayName: place.display_name,
-        city: cityName,
-        state: address.state || null,
-        country: address.country || null,
-      };
     } catch (err) {
-      logger.warn(`[Location Service] Geocoding failed for "${query}":`, err.message);
-      return null;
+      logger.warn(`[Location Service] Nominatim geocoding notice for "${query}":`, err.message);
     }
+
+    // 2. Resilient Fallback: Photon OpenStreetMap Geocoding API
+    try {
+      const photonUrl = `${this.photonBase}/api/?q=${encodeURIComponent(clean)}&limit=1`;
+      const res = await axios.get(photonUrl, { timeout: 5000 });
+      const feat = res.data?.features?.[0];
+      if (feat && feat.geometry?.coordinates) {
+        const props = feat.properties || {};
+        const [lng, lat] = feat.geometry.coordinates;
+        const cityName = props.city || props.district || props.county || props.state || clean;
+        const displayName = [props.name, props.street, cityName, props.state, props.country]
+          .filter(Boolean)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(', ');
+
+        return {
+          lat: parseFloat(lat),
+          lng: parseFloat(lng),
+          name: props.name || clean,
+          displayName: displayName || clean,
+          city: cityName,
+          state: props.state || null,
+          country: props.country || null,
+        };
+      }
+    } catch (err) {
+      logger.warn(`[Location Service] Photon geocoding fallback failed for "${query}":`, err.message);
+    }
+
+    return null;
   }
 
   /**
-   * Reverse geocode coordinates to get human-readable location
+   * Reverse geocode coordinates to get human-readable location with Photon fallback
    */
   async reverseGeocode(lat, lng) {
     if (lat === undefined || lng === undefined) return null;
 
+    // 1. Try OpenStreetMap Nominatim
     try {
       const url = `${this.nominatimBase}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`;
       const res = await axios.get(url, {
         headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-        timeout: 8000,
+        timeout: 5000,
       });
 
-      if (!res.data) return null;
+      if (res.data) {
+        const place = res.data;
+        const address = place.address || {};
+        const name =
+          address.city ||
+          address.town ||
+          address.suburb ||
+          address.village ||
+          place.display_name?.split(',')[0] ||
+          'Current Location';
 
-      const place = res.data;
-      const address = place.address || {};
-      const name =
-        address.city ||
-        address.town ||
-        address.suburb ||
-        address.village ||
-        place.display_name?.split(',')[0] ||
-        'Current Location';
-
-      return {
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
-        name,
-        displayName: place.display_name,
-        city: address.city || address.town || null,
-        state: address.state || null,
-      };
+        return {
+          lat: parseFloat(lat),
+          lng: parseFloat(lng),
+          name,
+          displayName: place.display_name,
+          city: address.city || address.town || null,
+          state: address.state || null,
+        };
+      }
     } catch (err) {
-      logger.warn(`[Location Service] Reverse geocoding failed for (${lat}, ${lng}):`, err.message);
-      return null;
+      logger.warn(`[Location Service] Nominatim reverse geocoding notice for (${lat}, ${lng}):`, err.message);
     }
+
+    // 2. Resilient Fallback: Photon OpenStreetMap Reverse Geocoding API
+    try {
+      const photonUrl = `${this.photonBase}/reverse?lat=${lat}&lon=${lng}`;
+      const res = await axios.get(photonUrl, { timeout: 5000 });
+      const feat = res.data?.features?.[0];
+      if (feat) {
+        const props = feat.properties || {};
+        const cityName = props.city || props.district || props.county || props.state || null;
+        const areaName = props.name || props.street || cityName || 'Current Location';
+        const displayName = [props.name, props.street, props.district, props.city, props.state, props.country]
+          .filter(Boolean)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(', ');
+
+        return {
+          lat: parseFloat(lat),
+          lng: parseFloat(lng),
+          name: areaName,
+          displayName: displayName || `${lat}, ${lng}`,
+          city: cityName,
+          state: props.state || null,
+        };
+      }
+    } catch (err) {
+      logger.warn(`[Location Service] Photon reverse geocoding fallback failed for (${lat}, ${lng}):`, err.message);
+    }
+
+    return null;
   }
 
   /**
