@@ -350,7 +350,19 @@ ${textSnippet}`;
         temperature: 0.1,
       });
 
-      if (parsed && (parsed.architectureAnalysis || parsed.summarization || parsed.datesExtraction || parsed.requirementsExtraction || parsed.slideExplanation || parsed.specificAnswer || parsed.summary)) {
+      if (
+        parsed &&
+        !parsed.error &&
+        !parsed.plan &&
+        !parsed.toolsRequired &&
+        (parsed.architectureAnalysis ||
+          parsed.summarization ||
+          parsed.datesExtraction ||
+          parsed.requirementsExtraction ||
+          parsed.slideExplanation ||
+          parsed.specificAnswer ||
+          (parsed.requestIntent && parsed.requestIntent !== 'GENERAL_EXECUTION'))
+      ) {
         return {
           requestIntent,
           ...parsed,

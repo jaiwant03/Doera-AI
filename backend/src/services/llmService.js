@@ -235,18 +235,31 @@ class LLMService {
       return `DOERA AI is processing your request: "${user.substring(0, 100)}..." with autonomous agent coordination.`;
     }
 
+    const sysLower = (system || '').toLowerCase();
+    const userLower = (user || '').toLowerCase();
+
+    // If request is from Document Intelligence or Data Analysis, do NOT inject scheduling/booking plans
+    if (
+      sysLower.includes('document intelligence') ||
+      sysLower.includes('document') ||
+      userLower.includes('document:') ||
+      sysLower.includes('data analysis') ||
+      sysLower.includes('dataset')
+    ) {
+      return { error: 'LLM_FALLBACK_ENGAGED', fallback: true };
+    }
+
     // Structured planning fallback
-    const lower = user.toLowerCase();
     let category = 'GENERAL_EXECUTION';
-    if (lower.includes('electrician') || lower.includes('plumber') || lower.includes('carpenter') || lower.includes('clean')) {
+    if (userLower.includes('electrician') || userLower.includes('plumber') || userLower.includes('carpenter') || userLower.includes('clean')) {
       category = 'LOCAL_SERVICE';
-    } else if (lower.includes('repair') || lower.includes('fix') || lower.includes('laptop') || lower.includes('phone')) {
+    } else if (userLower.includes('repair') || userLower.includes('fix') || userLower.includes('laptop') || userLower.includes('phone')) {
       category = 'REPAIR';
-    } else if (lower.includes('donate') || lower.includes('donation') || lower.includes('ngo')) {
+    } else if (userLower.includes('donate') || userLower.includes('donation') || userLower.includes('ngo')) {
       category = 'DONATION';
-    } else if (lower.includes('tutor') || lower.includes('class') || lower.includes('teach') || lower.includes('course')) {
+    } else if (userLower.includes('tutor') || userLower.includes('class') || userLower.includes('teach') || userLower.includes('course')) {
       category = 'EDUCATION';
-    } else if (lower.includes('complaint') || lower.includes('unresolved') || lower.includes('customer care')) {
+    } else if (userLower.includes('complaint') || userLower.includes('unresolved') || userLower.includes('customer care')) {
       category = 'COMPLAINT';
     }
 
