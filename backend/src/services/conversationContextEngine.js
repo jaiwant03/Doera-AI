@@ -220,7 +220,21 @@ class ConversationContextEngine {
       };
     }
 
-    // 1. Chart Follow-ups
+    // 1. Statistical & Chart Follow-ups (Phases 7, 8, 9)
+    const isStatFollowUp =
+      (activeCategory === 'DATA_ANALYSIS' || hasEffectiveAttachments || Boolean(lastCalculation)) &&
+      /(mean|median|mode|variance|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|range|quartile|quartiles|q1|q2|q3|iqr|interquartile|five[\s-]number|skew|skewness|kurtosis|outlier|outliers|correlation|spearman|pearson|covariance|statistical\s*summary|full\s*statistics|explain\s*(what\s*)?(this|the)?\s*cv|compare\s*(it\s*)?with\s*(the\s*)?previous\s*(standard\s*deviation|mean|median|variance)|give\s*me\s*a\s*complete\s*statistical\s*summary)/i.test(lower);
+
+    if (isStatFollowUp) {
+      return {
+        isFollowUp: true,
+        followUpType: 'STATISTICAL_INSPECTION',
+        resolvedCategory: 'DATA_ANALYSIS',
+        referencedArtifact: { calculation: lastCalculation, chart: lastChartConfig },
+        instructionType: 'STATISTICAL_CALCULATION',
+      };
+    }
+
     const isChartFollowUp =
       /(in this chart|interpret this chart|explain (the|this|that) chart|about this chart|this chart|the chart|change (it|the chart) to (a )?(pie|bar|line|doughnut|area)|convert (it|the chart)|switch to (pie|bar|line)|what does the chart show)/i.test(lower) ||
       (Boolean(lastChartConfig || lastCalculation) && /(which category|highest spending|lowest spending|compare monthly|contributes the highest percentage|highest percentage|total expenses|transactions)/i.test(lower));
@@ -446,4 +460,5 @@ class ConversationContextEngine {
 }
 
 const conversationContextEngine = new ConversationContextEngine();
+export { conversationContextEngine };
 export default conversationContextEngine;

@@ -232,6 +232,8 @@ Average: ${calc?.overallAverage !== undefined ? calc?.overallAverage : 'N/A'}`;
         calculation: calc,
         chartConfig,
         spreadsheetSummary: parsedSpreadsheet?.summary || null,
+        isStatisticalAnalysis: Boolean(analysisResult?.isStatisticalAnalysis || calc?.isStatisticalAnalysis),
+        statisticalResult: analysisResult?.statisticalResult || calc?.statisticalResult || null,
       };
 
       return {
@@ -261,6 +263,8 @@ Average: ${calc?.overallAverage !== undefined ? calc?.overallAverage : 'N/A'}`;
         calculation: calc,
         chartConfig,
         spreadsheetSummary: parsedSpreadsheet?.summary || null,
+        isStatisticalAnalysis: Boolean(analysisResult?.isStatisticalAnalysis || calc?.isStatisticalAnalysis),
+        statisticalResult: analysisResult?.statisticalResult || calc?.statisticalResult || null,
       };
 
       return {

@@ -662,7 +662,424 @@ function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
   return md;
 }
 
+function buildStatisticalResponse(statResult, chart, userRequest) {
+  const { dataset = 'dataset.xlsx', sheetName = 'Sheet1', targetColumn = 'Amount', seriesMetadata, results, primaryOperation, isMultiStat, activeOperations } = statResult;
+  const validCount = seriesMetadata?.validCount || 0;
+  const missingCount = seriesMetadata?.missingCount || 0;
+  const completeness = seriesMetadata?.completeness || 100;
+  const isCurrency = /(amount|expense|spending|cost|price|salary|revenue|profit|budget|balance|fee)/i.test(targetColumn);
+  const cur = isCurrency ? '$' : '';
+
+  const formatNum = (v, decimals = 2) => {
+    if (v === null || v === undefined) return 'N/A';
+    const n = Number(v);
+    if (isNaN(n)) return String(v);
+    return `${cur}${n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+  };
+
+  const formatRawNum = (v, decimals = 2) => {
+    if (v === null || v === undefined) return 'N/A';
+    const n = Number(v);
+    if (isNaN(n)) return String(v);
+    return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  };
+
+  let md = '';
+
+  // 1. Single Statistical Requests
+  if (!isMultiStat) {
+    switch (primaryOperation) {
+      case 'COEFFICIENT_OF_VARIATION': {
+        const cv = results?.coefficientOfVariation;
+        md += `## Coefficient of Variation\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()} (${completeness}% completeness, ${missingCount} missing)\n`;
+        md += `- **Mean**: ${formatNum(cv?.mean)}\n`;
+        md += `- **Population Standard Deviation**: ${formatNum(cv?.populationStandardDeviation)}\n`;
+        md += `- **Population Coefficient of Variation**: **${cv?.populationCV !== null && cv?.populationCV !== undefined ? `${cv.populationCV.toFixed(2)}%` : 'Undefined'}**\n`;
+        md += `- **Sample Standard Deviation**: ${formatNum(cv?.sampleStandardDeviation)}\n`;
+        md += `- **Sample Coefficient of Variation**: **${cv?.sampleCV !== null && cv?.sampleCV !== undefined ? `${cv.sampleCV.toFixed(2)}%` : 'Undefined'}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        if (cv?.isMeaningful) {
+          const cvVal = cv.sampleCV || cv.populationCV;
+          let dispersionDesc = 'low relative variability (highly consistent values)';
+          if (cvVal > 75) dispersionDesc = 'high relative variability (widely dispersed values relative to the mean)';
+          else if (cvVal > 30) dispersionDesc = 'moderate relative variability across transaction records';
+          md += `The calculated Coefficient of Variation is **${cvVal.toFixed(2)}%**, indicating **${dispersionDesc}**. On average, individual observations deviate from the mean of ${formatNum(cv.mean)} by ${cvVal.toFixed(2)}% of its average value.\n\n`;
+          if (/(explain|what.*means|meaning|interpretation)/i.test(userRequest || '')) {
+            md += `#### Practical Meaning of this CV:\n`;
+            md += `- **Scale-Free Measure**: Unlike standard deviation (which is in dollars), CV expresses dispersion as a standardized percentage ($$\\text{CV} = \\frac{s}{\\bar{x}} \\times 100$$).\n`;
+            md += `- **Relative Dispersion**: At **${cvVal.toFixed(2)}%**, individual transaction amounts show moderate spread across the expense spectrum, neither rigidly fixed nor wildly extreme.\n`;
+            md += `- **Comparability**: This percentage can be directly compared against other departments, quarters, or expense categories regardless of total budget size.\n\n`;
+          }
+        } else {
+          md += `The Coefficient of Variation is **not meaningful or mathematically undefined** for this dataset: *${cv?.reason || 'Non-positive mean'}*.\n\n`;
+        }
+
+        md += `### Calculation Method\n\n`;
+        md += `- **Formula**: $$\\text{CV} = \\left(\\frac{\\text{Standard Deviation}}{\\text{Mean}}\\right) \\times 100$$\n`;
+        md += `- **Conventions Reported**:\n`;
+        md += `  - **Population Convention**: Evaluated using population standard deviation ($\\sigma = \\sqrt{\\frac{\\sum (x_i - \\mu)^2}{N}}$) with denominator $N = ${validCount.toLocaleString()}$.\n`;
+        md += `  - **Sample Convention**: Evaluated using sample standard deviation ($s = \\sqrt{\\frac{\\sum (x_i - \\bar{x})^2}{n - 1}}$) with degrees of freedom $n - 1 = ${(Math.max(validCount - 1, 1)).toLocaleString()}$.\n\n`;
+        break;
+      }
+
+      case 'MEAN': {
+        const mean = results?.mean;
+        const totalSum = mean !== null && mean !== undefined ? mean * validCount : 0;
+        md += `## Mean (Arithmetic Average)\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()} (${completeness}% completeness)\n`;
+        md += `- **Sum of All Observations**: ${formatNum(totalSum)}\n`;
+        md += `- **Calculated Mean**: **${formatNum(mean)}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `The arithmetic mean of **${targetColumn}** across all ${validCount.toLocaleString()} valid observations is **${formatNum(mean)}**.\n\n`;
+
+        md += `### Calculation Method\n\n`;
+        md += `$$\\text{Mean} (\\bar{x}) = \\frac{\\sum_{i=1}^{n} x_i}{n} = \\frac{${totalSum.toLocaleString(undefined, { maximumFractionDigits: 2 })}}{${validCount.toLocaleString()}} = ${formatRawNum(mean)}$$\n\n`;
+        break;
+      }
+
+      case 'MEDIAN': {
+        const median = results?.median;
+        const mean = results?.mean;
+        md += `## Median\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()} (sorted observations)\n`;
+        md += `- **Calculated Median**: **${formatNum(median)}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `The median value is **${formatNum(median)}**, representing the 50th percentile rank. Exactly 50% of the recorded observations fall at or below ${formatNum(median)}, and 50% fall at or above this value. `;
+        if (mean !== null && Math.abs(median - mean) < (mean * 0.05)) {
+          md += `Because the median aligns closely with the mean (${formatNum(mean)}), the distribution exhibits balanced symmetry around its central tendency.\n\n`;
+        } else {
+          md += `The difference between median (${formatNum(median)}) and mean (${formatNum(mean)}) reflects skewness in the observed data.\n\n`;
+        }
+
+        md += `### Calculation Method\n\n`;
+        md += `All ${validCount.toLocaleString()} valid observations were sorted in ascending order. `;
+        if (validCount % 2 === 0) {
+          const mid1 = validCount / 2;
+          const mid2 = mid1 + 1;
+          md += `Because the sample size is even ($n = ${validCount.toLocaleString()}$), the median is computed as the average of the two middle elements at ranks ${mid1.toLocaleString()} and ${mid2.toLocaleString()}:\n\n`;
+          md += `$$\\text{Median} = \\frac{x_{(${mid1.toLocaleString()})} + x_{(${mid2.toLocaleString()})}}{2} = ${formatRawNum(median)}$$\n\n`;
+        } else {
+          const mid = Math.floor(validCount / 2) + 1;
+          md += `Because the sample size is odd ($n = ${validCount.toLocaleString()}$), the median is the exact middle value at rank ${mid.toLocaleString()}: $\\text{Median} = x_{(${mid.toLocaleString()})} = ${formatRawNum(median)}$.\n\n`;
+        }
+        break;
+      }
+
+      case 'MODE': {
+        const mode = results?.mode;
+        md += `## Mode\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
+        if (mode?.hasMode) {
+          const modesList = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatNum(m)).join(', ') : formatNum(mode.modeValue);
+          md += `- **Calculated Mode(s)**: **${modesList}**\n`;
+          md += `- **Frequency of Occurrence**: **${mode.frequency.toLocaleString()}** times (${((mode.frequency / validCount) * 100).toFixed(2)}% of observations)\n`;
+          md += `- **Modality**: ${mode.isMultimodal ? `Multimodal (${mode.modes.length} tied values)` : 'Unimodal (single unique mode)'}\n\n`;
+        } else {
+          md += `- **Calculated Mode**: **No Mode**\n`;
+          md += `- **Note**: ${mode?.note || 'All values appear only once; continuous series without repeated values.'}\n\n`;
+        }
+
+        md += `### Interpretation\n\n`;
+        if (mode?.hasMode) {
+          md += `The most frequent value in **${targetColumn}** is **${Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatNum(m)).join(', ') : formatNum(mode.modeValue)}**, appearing ${mode.frequency.toLocaleString()} times.\n\n`;
+        } else {
+          md += `Every numerical observation in **${targetColumn}** occurs uniquely. Continuous numeric datasets without repeated values do not possess a statistical mode.\n\n`;
+        }
+
+        md += `### Calculation Method\n\n`;
+        md += `Determined by exact frequency map aggregation across all valid observations without binning distortion.\n\n`;
+        break;
+      }
+
+      case 'VARIANCE': {
+        const variance = results?.variance;
+        const varTitle = activeOperations?.isPopulationVariance && !activeOperations?.isSampleVariance
+          ? 'Population Variance'
+          : activeOperations?.isSampleVariance && !activeOperations?.isPopulationVariance
+            ? 'Sample Variance'
+            : 'Variance';
+        md += `## ${varTitle}\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
+        md += `- **Mean**: ${formatNum(variance?.mean)}\n`;
+        md += `- **Sum of Squared Deviations**: ${formatRawNum(variance?.sumSquaredDiff, 2)}\n`;
+        md += `- **Population Variance ($\\sigma^2$)**: **${formatRawNum(variance?.populationVariance, 4)}**\n`;
+        md += `- **Sample Variance ($s^2$)**: **${formatRawNum(variance?.sampleVariance, 4)}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `Variance measures the mean squared deviation of observations from their central average. The population variance is **${formatRawNum(variance?.populationVariance, 2)}** and sample variance is **${formatRawNum(variance?.sampleVariance, 2)}** squared units.\n\n`;
+
+        md += `### Calculation Method\n\n`;
+        md += `- **Population Variance**: $$\\sigma^2 = \\frac{\\sum (x_i - \\mu)^2}{N} = \\frac{${formatRawNum(variance?.sumSquaredDiff, 2)}}{${validCount.toLocaleString()}} = ${formatRawNum(variance?.populationVariance, 4)}$$\n`;
+        md += `- **Sample Variance**: $$s^2 = \\frac{\\sum (x_i - \\bar{x})^2}{n - 1} = \\frac{${formatRawNum(variance?.sumSquaredDiff, 2)}}{${(Math.max(validCount - 1, 1)).toLocaleString()}} = ${formatRawNum(variance?.sampleVariance, 4)}$$\n\n`;
+        break;
+      }
+
+      case 'STANDARD_DEVIATION': {
+        const sd = results?.standardDeviation;
+        const sdTitle = activeOperations?.isPopulationStdDev && !activeOperations?.isSampleStdDev
+          ? 'Population Standard Deviation'
+          : activeOperations?.isSampleStdDev && !activeOperations?.isPopulationStdDev
+            ? 'Sample Standard Deviation'
+            : 'Standard Deviation';
+        md += `## ${sdTitle}\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
+        md += `- **Mean**: ${formatNum(sd?.mean)}\n`;
+        md += `- **Population Standard Deviation ($\\sigma$)**: **${formatNum(sd?.populationStandardDeviation)}**\n`;
+        md += `- **Sample Standard Deviation ($s$)**: **${formatNum(sd?.sampleStandardDeviation)}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `The standard deviation measures the typical dispersion of observations around the mean. On average, transaction amounts in **${targetColumn}** deviate from the mean of ${formatNum(sd?.mean)} by approximately **${formatNum(sd?.sampleStandardDeviation)}**.\n\n`;
+
+        md += `### Calculation Method\n\n`;
+        md += `- **Population**: $$\\sigma = \\sqrt{\\frac{\\sum (x_i - \\mu)^2}{N}} = ${formatRawNum(sd?.populationStandardDeviation, 4)}$$\n`;
+        md += `- **Sample**: $$s = \\sqrt{\\frac{\\sum (x_i - \\bar{x})^2}{n - 1}} = ${formatRawNum(sd?.sampleStandardDeviation, 4)}$$\n\n`;
+        break;
+      }
+
+      case 'RANGE': {
+        const r = results?.range;
+        md += `## Range and Extremes\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
+        md += `- **Minimum Value**: **${formatNum(r?.min)}**\n`;
+        md += `- **Maximum Value**: **${formatNum(r?.max)}**\n`;
+        md += `- **Range (Spread)**: **${formatNum(r?.range)}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `The spread between the lowest observation (${formatNum(r?.min)}) and the highest observation (${formatNum(r?.max)}) spans **${formatNum(r?.range)}**.\n\n`;
+
+        md += `### Calculation Method\n\n`;
+        md += `$$\\text{Range} = x_{\\max} - x_{\\min} = ${formatRawNum(r?.max)} - ${formatRawNum(r?.min)} = ${formatRawNum(r?.range)}$$\n\n`;
+        break;
+      }
+
+      case 'QUARTILES': {
+        const q = results?.quartiles;
+        md += `## Quartiles & Interquartile Range (IQR)\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
+        md += `- **Minimum**: ${formatNum(q?.min)}\n`;
+        md += `- **First Quartile (Q1 / 25th Percentile)**: **${formatNum(q?.q1)}**\n`;
+        md += `- **Second Quartile (Q2 / Median / 50th Percentile)**: **${formatNum(q?.q2)}**\n`;
+        md += `- **Third Quartile (Q3 / 75th Percentile)**: **${formatNum(q?.q3)}**\n`;
+        md += `- **Maximum**: ${formatNum(q?.max)}\n`;
+        md += `- **Interquartile Range (IQR = Q3 - Q1)**: **${formatNum(q?.iqr)}**\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `The middle 50% of all recorded values fall between **${formatNum(q?.q1)}** and **${formatNum(q?.q3)}**, yielding an Interquartile Range of **${formatNum(q?.iqr)}**.\n\n`;
+
+        md += `### Calculation Method\n\n`;
+        md += `$$\\text{IQR} = Q_3 - Q_1 = ${formatRawNum(q?.q3)} - ${formatRawNum(q?.q1)} = ${formatRawNum(q?.iqr)}$$\n\n`;
+        break;
+      }
+
+      case 'OUTLIERS': {
+        const o = results?.outliers;
+        md += `## Statistical Outlier Detection (Tukey IQR Method)\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **First Quartile (Q1)**: ${formatNum(o?.q1)}\n`;
+        md += `- **Third Quartile (Q3)**: ${formatNum(o?.q3)}\n`;
+        md += `- **Interquartile Range (IQR)**: ${formatNum(o?.iqr)}\n`;
+        md += `- **Lower Bound ($Q_1 - 1.5 \\times \\text{IQR}$)**: **${formatNum(o?.lowerBound)}**\n`;
+        md += `- **Upper Bound ($Q_3 + 1.5 \\times \\text{IQR}$)**: **${formatNum(o?.upperBound)}**\n`;
+        md += `- **Identified Outliers**: **${o?.outlierCount.toLocaleString()}** observations (${o?.outlierPercentage}% of total)\n\n`;
+
+        md += `### Interpretation\n\n`;
+        if (o?.outlierCount > 0) {
+          md += `Identified **${o.outlierCount.toLocaleString()}** records falling beyond the boundaries [${formatNum(o.lowerBound)}, ${formatNum(o.upperBound)}]. `;
+          md += `*Note: Statistical outliers reflect distribution tails and should not automatically be categorized as errors or fraudulent transactions without operational investigation.*\n\n`;
+        } else {
+          md += `Zero statistical outliers were identified. All ${validCount.toLocaleString()} observations reside within the theoretical envelope [${formatNum(o?.lowerBound)}, ${formatNum(o?.upperBound)}].\n\n`;
+        }
+        break;
+      }
+
+      case 'SKEWNESS':
+      case 'KURTOSIS': {
+        const dist = results?.distribution;
+        md += `## Distribution Shape: Skewness & Kurtosis\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Sample Skewness ($G_1$)**: **${formatRawNum(dist?.sampleSkewness, 4)}** (${dist?.skewnessDescription})\n`;
+        md += `- **Sample Excess Kurtosis ($G_2$)**: **${formatRawNum(dist?.sampleExcessKurtosis, 4)}** (${dist?.kurtosisDescription})\n`;
+        md += `- **Convention**: ${dist?.convention}\n\n`;
+
+        md += `### Interpretation\n\n`;
+        md += `- **Skewness**: The sample skewness of ${formatRawNum(dist?.sampleSkewness, 4)} indicates that the distribution is **${dist?.skewnessDescription.toLowerCase()}**.\n`;
+        md += `- **Kurtosis**: The sample excess kurtosis of ${formatRawNum(dist?.sampleExcessKurtosis, 4)} indicates a **${dist?.kurtosisDescription.toLowerCase()}** profile relative to a normal distribution.\n\n`;
+        break;
+      }
+
+      case 'CORRELATION': {
+        const corr = results?.correlation;
+        if (corr && corr.pearson) {
+          md += `## Correlation Analysis: ${corr.colA} vs ${corr.colB}\n\n`;
+          md += `- **Dataset**: \`${dataset}\`\n`;
+          md += `- **Variables**: **${corr.colA}** and **${corr.colB}**\n`;
+          md += `- **Sample Size**: ${corr.pearson.n.toLocaleString()} paired observations\n`;
+          md += `- **Pearson Correlation Coefficient ($r$)**: **${corr.pearson.pearsonR}**\n`;
+          md += `- **Coefficient of Determination ($r^2$)**: **${corr.pearson.rSquared}** (${(corr.pearson.rSquared * 100).toFixed(2)}% variance explained)\n`;
+          md += `- **Sample Covariance**: ${formatRawNum(corr.pearson.sampleCovariance, 4)}\n`;
+          md += `- **Relationship**: **${corr.pearson.relationshipSummary}**\n\n`;
+
+          md += `### Interpretation\n\n`;
+          md += `The linear correlation between ${corr.colA} and ${corr.colB} is **${corr.pearson.relationshipSummary}**. Approximately **${(corr.pearson.rSquared * 100).toFixed(2)}%** of the variability in ${corr.colA} can be linearly associated with variations in ${corr.colB}.\n\n`;
+          md += `> ℹ️ **Statistical Caution**: ${corr.pearson.caution}\n\n`;
+        } else {
+          md += `## Correlation Analysis\n\nUnable to compute correlation: two distinct numeric variables with paired observations could not be identified.\n\n`;
+        }
+        break;
+      }
+
+      case 'COMPARE_METRICS': {
+        const sd = results?.standardDeviation;
+        const cv = results?.coefficientOfVariation;
+        const mean = results?.mean;
+        md += `## Metric Comparison: Standard Deviation vs. Coefficient of Variation\n\n`;
+        md += `- **Dataset**: \`${dataset}\`\n`;
+        md += `- **Worksheet**: \`${sheetName}\`\n`;
+        md += `- **Analyzed Column**: **${targetColumn}**\n`;
+        md += `- **Arithmetic Mean ($\\bar{x}$)**: ${formatNum(mean)}\n`;
+        md += `- **Sample Standard Deviation ($s$)**: **${formatNum(sd?.sampleStandardDeviation)}** (Absolute Dispersion)\n`;
+        md += `- **Sample Coefficient of Variation ($CV$)**: **${cv?.sampleCVFormatted || `${cv?.sampleCV?.toFixed(2)}%`}** (Relative Dispersion)\n\n`;
+
+        md += `### Comparative Analysis\n\n`;
+        md += `1. **Absolute vs. Relative Measure**:\n`;
+        md += `   - **Standard Deviation ($s = ${formatNum(sd?.sampleStandardDeviation)}$)**: Measures **absolute dispersion** in dollar units ($). On average, any given transaction deviates from the mean by ${formatNum(sd?.sampleStandardDeviation)}.\n`;
+        md += `   - **Coefficient of Variation ($CV = ${cv?.sampleCVFormatted || `${cv?.sampleCV?.toFixed(2)}%`}$)**: Measures **relative dispersion** as a percentage ($$\\text{CV} = (s / \\bar{x}) \\times 100$$). It indicates that the standard deviation represents **${cv?.sampleCV?.toFixed(2)}%** of the average transaction size.\n\n`;
+        md += `2. **Scale Independence**:\n`;
+        md += `   - Standard deviation changes if monetary units scale (e.g., converting to cents or thousands of dollars).\n`;
+        md += `   - Coefficient of Variation is dimensionless and invariant to linear scale changes, enabling direct comparison of spending volatility across different categories or currencies.\n\n`;
+        md += `3. **Conclusion**:\n`;
+        md += `   - The standard deviation reveals the absolute dollar dispersion ($${formatRawNum(sd?.sampleStandardDeviation, 2)} spread around an average of $${formatRawNum(mean, 2)}), while the CV confirms moderate relative dispersion (${cv?.sampleCV?.toFixed(2)}%).\n\n`;
+        break;
+      }
+
+      default:
+        md += buildMultiStatTable(statResult, formatNum, formatRawNum);
+        break;
+    }
+  } else {
+    // Multi-Statistic Report / Full Summary
+    md += buildMultiStatTable(statResult, formatNum, formatRawNum);
+  }
+
+  // If a chart was explicitly generated, attach it cleanly
+  if (chart && Array.isArray(chart.data) && chart.data.length > 0) {
+    md += `### Visualization\n\n`;
+    md += `\`\`\`json:doera-chart\n${JSON.stringify(chart, null, 2)}\n\`\`\`\n\n`;
+  }
+
+  return md.trim();
+}
+
+function buildMultiStatTable(statResult, formatNum, formatRawNum) {
+  const { dataset = 'dataset.xlsx', sheetName = 'Sheet1', targetColumn = 'Amount', seriesMetadata, results } = statResult;
+  const validCount = seriesMetadata?.validCount || 0;
+  const cv = results?.coefficientOfVariation;
+  const sd = results?.standardDeviation;
+  const v = results?.variance;
+  const q = results?.quartiles;
+  const r = results?.range;
+  const dist = results?.distribution;
+  const mode = results?.mode;
+
+  let md = `## Statistical Analysis Report\n\n`;
+  md += `- **Dataset**: \`${dataset}\`\n`;
+  md += `- **Worksheet**: \`${sheetName}\`\n`;
+  md += `- **Analyzed Column**: **${targetColumn}**\n`;
+  md += `- **Total Valid Observations**: **${validCount.toLocaleString()}** (${seriesMetadata?.completeness || 100}% completeness)\n\n`;
+
+  md += `| Statistical Measure | Calculated Value | Definition / Convention |\n`;
+  md += `| :--- | :--- | :--- |\n`;
+  md += `| **Mean (Arithmetic Average)** | **${formatNum(results?.mean)}** | $\\sum x_i / N$ |\n`;
+  md += `| **Median (Q2 / 50th %ile)** | **${formatNum(results?.median)}** | Central sorted observation |\n`;
+  if (mode?.hasMode) {
+    const modeStr = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatNum(m)).join(', ') : formatNum(mode.modeValue);
+    md += `| **Mode** | **${modeStr}** | Most frequent (frequency: ${mode.frequency.toLocaleString()}) |\n`;
+  } else {
+    md += `| **Mode** | *No Mode* | All values unique in continuous series |\n`;
+  }
+  md += `| **Population Variance ($\\sigma^2$)** | **${formatRawNum(v?.populationVariance, 4)}** | Denominator $N = ${validCount.toLocaleString()}$ |\n`;
+  md += `| **Sample Variance ($s^2$)** | **${formatRawNum(v?.sampleVariance, 4)}** | Denominator $n - 1 = ${(Math.max(validCount - 1, 1)).toLocaleString()}$ |\n`;
+  md += `| **Population Standard Deviation ($\\sigma$)** | **${formatNum(sd?.populationStandardDeviation)}** | $\\sigma = \\sqrt{\\sigma^2}$ |\n`;
+  md += `| **Sample Standard Deviation ($s$)** | **${formatNum(sd?.sampleStandardDeviation)}** | $s = \\sqrt{s^2}$ |\n`;
+  md += `| **Population Coefficient of Variation** | **${cv?.populationCV !== null && cv?.populationCV !== undefined ? `${cv.populationCV.toFixed(2)}%` : 'Undefined'}** | $(\\sigma / \\mu) \\times 100$ |\n`;
+  md += `| **Sample Coefficient of Variation** | **${cv?.sampleCV !== null && cv?.sampleCV !== undefined ? `${cv.sampleCV.toFixed(2)}%` : 'Undefined'}** | $(s / \\bar{x}) \\times 100$ |\n`;
+  md += `| **Minimum** | **${formatNum(r?.min)}** | Lowest recorded value |\n`;
+  md += `| **First Quartile (Q1 / 25th %ile)** | **${formatNum(q?.q1)}** | 25th percentile rank |\n`;
+  md += `| **Third Quartile (Q3 / 75th %ile)** | **${formatNum(q?.q3)}** | 75th percentile rank |\n`;
+  md += `| **Maximum** | **${formatNum(r?.max)}** | Highest recorded value |\n`;
+  md += `| **Range (Spread)** | **${formatNum(r?.range)}** | $Max - Min$ |\n`;
+  md += `| **Interquartile Range (IQR)** | **${formatNum(q?.iqr)}** | $Q_3 - Q_1$ |\n`;
+  md += `| **Mean Absolute Deviation (MAD)** | **${formatNum(results?.meanAbsoluteDeviation)}** | $(1/n) \\sum |x_i - \\bar{x}|$ |\n`;
+  if (dist) {
+    md += `| **Sample Skewness ($G_1$)** | **${formatRawNum(dist.sampleSkewness, 4)}** | ${dist.skewnessDescription} |\n`;
+    md += `| **Sample Excess Kurtosis ($G_2$)** | **${formatRawNum(dist.sampleExcessKurtosis, 4)}** | ${dist.kurtosisDescription} |\n`;
+  }
+  md += `\n`;
+
+  md += `### Interpretation & Statistical Assessment\n\n`;
+  const meanVal = results?.mean;
+  const medVal = results?.median;
+  const cvVal = cv?.sampleCV || cv?.populationCV;
+  md += `1. **Central Tendency**: The arithmetic mean is **${formatNum(meanVal)}** and the median is **${formatNum(medVal)}**. `;
+  if (meanVal !== null && medVal !== null && Math.abs(meanVal - medVal) < 1) {
+    md += `The close agreement between mean and median indicates an approximately symmetrical distribution.\n`;
+  } else {
+    md += `The difference between mean and median reflects skewness in the observed values.\n`;
+  }
+
+  if (cvVal !== null && cvVal !== undefined) {
+    md += `2. **Relative Dispersion**: The coefficient of variation of **${cvVal.toFixed(2)}%** demonstrates a moderate relative spread of observations around the central location.\n`;
+  }
+
+  if (results?.outliers && results.outliers.outlierCount > 0) {
+    md += `3. **Outliers**: Identified ${results.outliers.outlierCount.toLocaleString()} potential statistical outliers (${results.outliers.outlierPercentage}%) using Tukey's 1.5×IQR method.\n`;
+  } else {
+    md += `3. **Outliers**: Zero outliers detected; all observations reside within the 1.5×IQR envelope.\n`;
+  }
+  md += `\n`;
+
+  return md;
+}
+
 function buildDataAnalysisResponse(analysis, task, userRequest) {
+  // If this was a statistical analysis, route directly to the clean dedicated statistical response
+  const statResult = analysis?.statisticalResult || analysis?.calculation?.statisticalResult || task?.statisticalResult || null;
+  if (statResult || analysis?.isStatisticalAnalysis) {
+    return buildStatisticalResponse(statResult || analysis?.calculation?.statisticalResult, task?.chartConfig || analysis?.chartConfig, userRequest);
+  }
+
   const calc = analysis?.calculation || null;
   const chart = task?.chartConfig || analysis?.chartConfig || null;
   const summary = analysis?.spreadsheetSummary || {};
@@ -1203,5 +1620,16 @@ function buildMissionPlanningSection(planningWrapper, budgetWrapper, commWrapper
 
   return md;
 }
+
+export {
+  buildDataAnalysisResponse,
+  buildStatisticalResponse,
+};
+
+export const universalResponseBuilder = {
+  buildUniversalResponse,
+  buildDataAnalysisResponse,
+  buildStatisticalResponse,
+};
 
 export default buildUniversalResponse;

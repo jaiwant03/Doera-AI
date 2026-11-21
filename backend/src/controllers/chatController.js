@@ -288,7 +288,7 @@ export const streamMessage = async (req, res) => {
       if (!intent.categories.includes(contextPayload.resolvedCategory)) {
         intent.categories.unshift(contextPayload.resolvedCategory);
       }
-      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION') {
+      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' || contextPayload.followUpType === 'STATISTICAL_INSPECTION') {
         intent.isActionTask = true;
       }
     }
@@ -767,7 +767,7 @@ export const sendMessage = async (req, res, next) => {
       if (!intent.categories.includes(contextPayload.resolvedCategory)) {
         intent.categories.unshift(contextPayload.resolvedCategory);
       }
-      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION') {
+      if (contextPayload.followUpType === 'CHART_INSPECTION' || contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' || contextPayload.followUpType === 'STATISTICAL_INSPECTION') {
         intent.isActionTask = true;
       }
     }

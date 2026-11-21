@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import statisticalService from './statisticalService.js';
 import { logger } from '../utils/logger.js';
 
 class SpreadsheetService {
@@ -469,13 +470,18 @@ class SpreadsheetService {
   /**
    * 2. Natural-Language Question Answering & Deterministic Calculations
    */
-  executeAnalysis(parsedSpreadsheet, userQuery = '') {
+  executeAnalysis(parsedSpreadsheetOrObj, userQueryArg = '') {
+    const parsedSpreadsheet = parsedSpreadsheetOrObj?.parsedSpreadsheet || parsedSpreadsheetOrObj;
+    const userQuery = parsedSpreadsheetOrObj?.userQuery || userQueryArg || '';
     const query = (userQuery || '').trim();
     const queryLower = query.toLowerCase();
 
     // Select target sheet
-    let targetSheet = parsedSpreadsheet.primarySheet;
-    for (const sheet of parsedSpreadsheet.sheets) {
+    const sheets = Array.isArray(parsedSpreadsheet?.sheets)
+      ? parsedSpreadsheet.sheets
+      : (parsedSpreadsheet?.primarySheet ? [parsedSpreadsheet.primarySheet] : []);
+    let targetSheet = parsedSpreadsheet?.primarySheet || sheets[0];
+    for (const sheet of sheets) {
       if (queryLower.includes(sheet.name.toLowerCase())) {
         targetSheet = sheet;
         break;
@@ -492,6 +498,63 @@ class SpreadsheetService {
     }
 
     const { headers, rows, columnSchema } = targetSheet;
+
+    // Check for Specific Statistical Query (Phase 7 Exact Intent Routing)
+    const isStatisticalQuery = /(mean|median|mode|variance|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|range|quartile|quartiles|q1|q2|q3|iqr|interquartile|five[\s-]number|skew|skewness|kurtosis|outlier|outliers|correlation|spearman|pearson|covariance|statistical\s*summary|full\s*statistics)/i.test(queryLower) &&
+      !/(bar\s*chart|pie\s*chart|highest\s*spending\s*category|lowest\s*spending\s*category)/i.test(queryLower);
+
+    if (isStatisticalQuery) {
+      const statResult = statisticalService.executeStatisticalAnalysis({
+        rows,
+        headers,
+        columnSchema,
+        query,
+        filename: parsedSpreadsheet.filename,
+        sheetName: targetSheet.name,
+      });
+
+      let chartConfig = null;
+      const userWantsChart = /(chart|plot|graph|visualize|histogram|scatter)/i.test(queryLower);
+      if (userWantsChart) {
+        chartConfig = this.buildDynamicChartConfig({
+          userQuery: query,
+          calcResult: {
+            items: statResult.results?.quartiles?.fiveNumberSummary
+              ? Object.entries(statResult.results.quartiles.fiveNumberSummary).map(([k, v]) => ({ label: k.toUpperCase(), value: v }))
+              : [{ label: statResult.targetColumn, value: statResult.results?.mean || 0 }],
+            totalRowsAnalyzed: rows.length,
+            operation: `Statistical Metrics: ${statResult.targetColumn}`,
+          },
+          rows,
+          metricCol: statResult.targetColumn,
+          dimensionCol: statResult.targetColumn,
+          columnSchema,
+          targetSheet,
+        });
+      }
+
+      return {
+        success: true,
+        sheetName: targetSheet.name,
+        rowCount: targetSheet.rowCount,
+        columnCount: targetSheet.columnCount,
+        headers,
+        columnSchema,
+        isStatisticalAnalysis: true,
+        statisticalResult: statResult,
+        calculation: {
+          operation: statResult.primaryOperation,
+          targetColumns: [statResult.targetColumn],
+          totalRowsAnalyzed: statResult.seriesMetadata.validCount,
+          totalTransactions: rows.length,
+          totalSum: statResult.results.mean !== null ? Number((statResult.results.mean * statResult.seriesMetadata.validCount).toFixed(2)) : 0,
+          overallAverage: statResult.results.mean,
+          statisticalResult: statResult,
+          summary: `Calculated ${statResult.primaryOperation} for column "${statResult.targetColumn}" across ${statResult.seriesMetadata.validCount} valid observations.`,
+        },
+        chartConfig,
+      };
+    }
 
     // Detect numeric, categorical, and date columns
     const numericCols = headers.filter((h) => columnSchema[h]?.type === 'numeric');
