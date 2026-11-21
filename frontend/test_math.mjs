@@ -22,30 +22,24 @@ function normalizeMathDelimiters(text) {
   return normalized;
 }
 
-const rawText = `
-Formula:
+const badMath = `
+Here is a broken formula:
 
 \\[
-\\sigma^2 = \\frac{\\sum (x_i-\\mu)^2}{N}
-\\]
-
-Inline \\(x_i\\) and boxed answer:
-
-\\[
-\\boxed{\\sigma^2 = 2,076,422.7042}
+\\frac{1}{
 \\]
 `;
 
-const processed = normalizeMathDelimiters(rawText);
-
-const html = ReactDOMServer.renderToStaticMarkup(
-  React.createElement(ReactMarkdown, {
-    remarkPlugins: [remarkGfm, remarkMath],
-    rehypePlugins: [rehypeRaw, rehypeKatex],
-    children: processed
-  })
-);
-
-console.log("KaTeX rendered:", html.includes("katex"));
-console.log("Boxed rendered:", html.includes("boxed"));
-console.log("Sample KaTeX HTML:\n", html.substring(html.indexOf('<span class="katex">'), html.indexOf('<span class="katex">') + 300));
+try {
+  const html = ReactDOMServer.renderToStaticMarkup(
+    React.createElement(ReactMarkdown, {
+      remarkPlugins: [remarkGfm, remarkMath],
+      rehypePlugins: [rehypeRaw, [rehypeKatex, { throwOnError: false }]],
+      children: normalizeMathDelimiters(badMath)
+    })
+  );
+  console.log("Rendered with throwOnError: false without throwing!");
+  console.log("Output has katex error span:", html.includes("katex-error"));
+} catch (e) {
+  console.error("Threw error:", e.message);
+}
