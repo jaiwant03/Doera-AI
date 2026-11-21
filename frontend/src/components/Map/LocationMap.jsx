@@ -264,8 +264,8 @@ const LocationMap = ({ locationData, userLocation, defaultTileMode = 'standard' 
       {/* Leaflet Map Viewport */}
       <div ref={mapContainerRef} className="doera-map-viewport" />
 
-      {/* Places Cards Grid beneath map */}
-      {places.length > 0 && !hasRoute && (
+      {/* Places Cards Grid beneath map (Rendered when business list presentation is enabled) */}
+      {places.length > 0 && !hasRoute && locationData?.showBusinessList !== false && (
         <NearbyPlaces
           places={places}
           selectedPlaceId={selectedPlaceId}

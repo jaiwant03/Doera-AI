@@ -55,50 +55,32 @@ const MessageItem = ({ message, activeTask }) => {
     (typeof message.taskId === 'object' && message.taskId !== null ? message.taskId : null) ||
     (activeTask && (String(activeTask._id) === String(message.taskId) || activeTask.taskId === message.taskId) ? activeTask : null);
 
-  // Compute location intelligence & interactive map payload
+  // Compute location intelligence & interactive map payload per message
   const activeLocationData = useMemo(() => {
-    if (message.locationData && typeof message.locationData === 'object') {
-      return message.locationData;
+    // 1. If message explicitly disables map, do NOT show map under any circumstances
+    if (message.showMap === false) {
+      return null;
+    }
+
+    // 2. If message has explicit locationData property:
+    // If it is null or empty, respect that this message has NO map (do NOT fall back to attachedTask!)
+    if (message.locationData !== undefined) {
+      if (!message.locationData) return null;
+      if (typeof message.locationData === 'object' && (message.locationData.places?.length > 0 || message.locationData.route)) {
+        return message.locationData;
+      }
+      return null;
+    }
+
+    // 3. Fallback for older messages without message.showMap or message.locationData
+    if (attachedTask?.showMap === false) {
+      return null;
     }
     if (attachedTask?.locationData && typeof attachedTask.locationData === 'object') {
       return attachedTask.locationData;
     }
-    if (
-      attachedTask?.externalContacts &&
-      Array.isArray(attachedTask.externalContacts) &&
-      attachedTask.externalContacts.some((c) => c.location?.lat)
-    ) {
-      const placesWithCoords = attachedTask.externalContacts
-        .filter((c) => c.location?.lat && c.location?.lng)
-        .map((c, i) => ({
-          id: c._id || `contact-${i + 1}`,
-          index: i + 1,
-          name: c.businessName || c.name || `Provider ${i + 1}`,
-          address: c.address || 'Verified Address',
-          phone: c.phone || null,
-          rating: c.rating || null,
-          reviewsCount: c.reviewsCount || null,
-          lat: c.location.lat,
-          lng: c.location.lng,
-          source: c.source || 'OpenStreetMap Nominatim',
-          sourceUrl: c.sourceUrl || null,
-          distanceKm: c.distanceKm || null,
-          travelTime: c.travelTime || null,
-        }));
-
-      if (placesWithCoords.length > 0) {
-        return {
-          type: 'places',
-          places: placesWithCoords,
-          center: {
-            lat: placesWithCoords[0].lat,
-            lng: placesWithCoords[0].lng,
-          },
-        };
-      }
-    }
     return null;
-  }, [message.locationData, attachedTask]);
+  }, [message.locationData, message.showMap, attachedTask]);
 
   // Compute active spreadsheet chart configuration
   const activeChartConfig = useMemo(() => {

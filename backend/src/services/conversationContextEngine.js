@@ -383,23 +383,25 @@ class ConversationContextEngine {
           /(which|show|give|compare|tell me|details|directions|address|phone|contact|map)/i.test(lower)))
     ) {
       let instructionType = 'CLOSEST';
-      if (/(second|2nd)\s+closest/i.test(lower)) instructionType = 'SECOND_CLOSEST';
-      else if (/(third|3rd)\s+closest/i.test(lower)) instructionType = 'THIRD_CLOSEST';
-      else if (/(closely\s*near|closest|nearest|closer\b|which.*near)/i.test(lower)) instructionType = 'CLOSEST';
-      else if (/(highest\s*rating|best\s*rating|rating|reviews?)/i.test(lower)) instructionType = 'RATING';
-      else if (/(cheapest|lowest\s*cost|pricing|fees?|affordable|cost)/i.test(lower)) instructionType = 'PRICE';
-      else if (/(within\s+\d+|less\s+than\s+\d+|centres?\s+within)/i.test(lower)) instructionType = 'FILTER_DISTANCE';
-      else if (/(compare|versus|vs\b|difference)/i.test(lower)) instructionType = 'COMPARE';
-      else if (/(directions?|how\s+to\s+get|navigation|route)/i.test(lower)) instructionType = 'DIRECTIONS';
-      else if (/(map|locations?)/i.test(lower)) instructionType = 'MAP_VIEW';
-      else if (/(address)/i.test(lower)) instructionType = 'ORDINAL_ADDRESS';
-      else if (/(phone|contact|number|call)/i.test(lower)) instructionType = 'ORDINAL_CONTACT';
-      else if (/(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)/i.test(lower)) instructionType = 'ORDINAL_DETAILS';
-      else if (/(best\s*based\s*on|best\s*option|which\s*is\s*best)/i.test(lower)) instructionType = 'BEST_AVAILABLE';
+      let responseType = 'NEAREST_BUSINESS_ANSWER';
+      if (/(second|2nd)\s+closest/i.test(lower)) { instructionType = 'SECOND_CLOSEST'; responseType = 'NEAREST_BUSINESS_ANSWER'; }
+      else if (/(third|3rd)\s+closest/i.test(lower)) { instructionType = 'THIRD_CLOSEST'; responseType = 'NEAREST_BUSINESS_ANSWER'; }
+      else if (/(map|locations?|where.*located)/i.test(lower)) { instructionType = 'MAP_VIEW'; responseType = 'MAP_REQUEST'; }
+      else if (/(closely\s*near|closest|nearest|closer\b|which.*near)/i.test(lower)) { instructionType = 'CLOSEST'; responseType = 'NEAREST_BUSINESS_ANSWER'; }
+      else if (/(highest\s*rating|best\s*rating|rating|reviews?)/i.test(lower)) { instructionType = 'RATING'; responseType = 'RATING_INQUIRY'; }
+      else if (/(cheapest|lowest\s*cost|pricing|fees?|affordable|cost)/i.test(lower)) { instructionType = 'PRICE'; responseType = 'PRICE_INQUIRY'; }
+      else if (/(within\s+\d+|less\s+than\s+\d+|centres?\s+within|theatres?\s+within)/i.test(lower)) { instructionType = 'FILTER_DISTANCE'; responseType = 'DISTANCE_FILTER_ANSWER'; }
+      else if (/(compare|versus|vs\b|difference)/i.test(lower)) { instructionType = 'COMPARE'; responseType = 'BUSINESS_COMPARISON'; }
+      else if (/(directions?|how\s+to\s+get|navigation|route)/i.test(lower)) { instructionType = 'DIRECTIONS'; responseType = 'DIRECTIONS_REQUEST'; }
+      else if (/(address)/i.test(lower)) { instructionType = 'ORDINAL_ADDRESS'; responseType = 'SINGLE_BUSINESS_DETAILS'; }
+      else if (/(phone|contact|number|call)/i.test(lower)) { instructionType = 'ORDINAL_CONTACT'; responseType = 'SINGLE_BUSINESS_DETAILS'; }
+      else if (/(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)/i.test(lower)) { instructionType = 'ORDINAL_DETAILS'; responseType = 'SINGLE_BUSINESS_DETAILS'; }
+      else if (/(best\s*based\s*on|best\s*option|which\s*is\s*best)/i.test(lower)) { instructionType = 'BEST_AVAILABLE'; responseType = 'GENERAL_INFORMATION_FOLLOW_UP'; }
 
       return {
         isFollowUp: true,
         followUpType: 'LOCAL_RESEARCH_FOLLOW_UP',
+        responseType,
         resolvedCategory: 'LOCATION_DISCOVERY',
         referencedArtifact: { places: lastResearchResults, researchResults: lastResearchResults },
         instructionType,

@@ -1556,7 +1556,12 @@ class LocalServiceResearcher {
     }
 
     // Conditional Map Data: Populated ONLY when current request explicitly requires a map (e.g. MAP_REQUEST)
-    const activeLocationData = presentationMode.showMap ? (lastResearchResults.locationData || null) : null;
+    const activeLocationData = presentationMode.showMap && lastResearchResults.locationData
+      ? {
+          ...lastResearchResults.locationData,
+          showBusinessList: presentationMode.showBusinessList,
+        }
+      : null;
 
     // Section 10 Diagnostic Logging
     logger.info(`[Local Service Researcher] Diagnostics:`, {
