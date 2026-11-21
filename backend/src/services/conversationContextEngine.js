@@ -121,6 +121,7 @@ class ConversationContextEngine {
     // 4. Extract Prior Artifacts & Structured State
     const lastChartConfig = conversation.lastChartConfig || this.extractLatestFromMessages(rawMessages, 'chartConfig');
     const lastCalculation = conversation.lastCalculation || this.extractLatestFromMessages(rawMessages, 'calculation');
+    const lastDocumentAnalysis = conversation.lastDocumentAnalysis || null;
     const lastPlan = conversation.lastPlan || null;
     const lastDraft = conversation.lastDraft || null;
     const lastResearchResults = conversation.lastResearchResults || this.extractLatestFromMessages(rawMessages, 'locationData');
