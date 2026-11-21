@@ -65,6 +65,37 @@ class UniversalIntentService {
     const isTechnical = /(code|script|function|debug|algorithm|architecture|transformer|api|database|sql|python|javascript|react|node|docker|kubernetes)/i.test(lower) && !isOutreach && !isBooking;
     const isFollowUp = /(second|first|third|previous|that|those|the other|again|same|furthermore|elaborate|details on|tell me more about (it|them))/i.test(lower);
 
+    // Fast-path: Immediate deterministic bypass for unambiguous requests with strong keyword signatures
+    if (
+      hasSpreadsheetAttachment ||
+      (isStatisticalCalculation && !isOutreach && !isBooking) ||
+      isMissionPlanning ||
+      isBooking ||
+      isOutreach ||
+      isComparison ||
+      isLocation ||
+      isTravel ||
+      isDocAnalysis ||
+      hasImageAttachment
+    ) {
+      return this.deterministicClassify(text, {
+        hasAttachments,
+        hasSpreadsheetAttachment,
+        hasImageAttachment,
+        isDocAnalysis,
+        isDataAnalysis: hasSpreadsheetAttachment || isStatisticalCalculation,
+        isMissionPlanning,
+        isTravel,
+        isOutreach,
+        isBooking,
+        isComparison,
+        isLocation,
+        isGeneralKnowledge,
+        isTechnical,
+        isFollowUp,
+      });
+    }
+
     // 2. Structured LLM prompt for rich semantic understanding
     const systemPrompt = `You are DOERA AI's Universal Intent Understanding Engine.
 Analyze the user request and classify it precisely into one or more categories:
