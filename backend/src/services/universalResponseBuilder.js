@@ -42,6 +42,12 @@ export const buildUniversalResponse = (taskOrPayload) => {
     category === 'PLANNING' ||
     Boolean(planningData || budgetData);
 
+  const isLocalResearch =
+    category === 'LOCATION_DISCOVERY' ||
+    category === 'LOCAL_SERVICE_RESEARCH' ||
+    category === 'LOCAL_SERVICE' ||
+    Boolean(task.discoveredData?.localService);
+
   const isConfirmed = Boolean(
     booking &&
     booking.bookingStatus === 'CONFIRMED' &&
