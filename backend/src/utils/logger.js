@@ -8,3 +8,14 @@ export const logger = {
     }
   }
 };
+
+// Guarantee global availability across all execution contexts, callbacks, and dynamically loaded modules
+if (typeof global !== 'undefined') {
+  global.logger = logger;
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.logger = logger;
+}
+
+export default logger;
+

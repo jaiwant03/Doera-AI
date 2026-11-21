@@ -13,10 +13,14 @@ import { Copy, Check, Download } from 'lucide-react';
 function cleanMathBlock(formula) {
   if (!formula || typeof formula !== 'string') return '';
   let clean = formula.replace(/\\n/g, '\n').trim();
-  // Escape unescaped dollar signs inside math mode so KaTeX parses without error
-  clean = clean.replace(/(^|[^\\])\$/g, '$1\\$');
-  // Escape unescaped percent signs inside math mode so KaTeX does not treat them as LaTeX comments
-  clean = clean.replace(/(^|[^\\])%/g, '$1\\%');
+  // Repeatedly escape unescaped dollar signs inside math mode so KaTeX parses without error
+  while (/(^|[^\\])\$/.test(clean)) {
+    clean = clean.replace(/(^|[^\\])\$/g, '$1\\$');
+  }
+  // Repeatedly escape unescaped percent signs inside math mode so KaTeX does not treat them as LaTeX comments
+  while (/(^|[^\\])%/.test(clean)) {
+    clean = clean.replace(/(^|[^\\])%/g, '$1\\%');
+  }
   return clean;
 }
 
@@ -26,6 +30,7 @@ function cleanMathBlock(formula) {
  * - Converts \( ... \) to inline math $ ... $
  * - Resolves double-escaped backslashes in LaTeX macros
  * - Safely escapes unescaped currency symbols ($) and % inside math blocks
+ * - Automatically wraps standalone \boxed{...} expressions
  */
 function normalizeMathDelimiters(text) {
   if (!text || typeof text !== 'string') return text;
@@ -49,7 +54,12 @@ function normalizeMathDelimiters(text) {
     return `$${clean}$`;
   });
 
-  // 5. Clean excessive blank lines around math blocks
+  // 5. Wrap any standalone \boxed{...} that wasn't already wrapped in $$ or $
+  normalized = normalized.replace(/(^|[^\$])(\s*\\boxed\{[\s\S]*?\}\s*)(?!\$)/g, (match, prefix, boxed) => {
+    return `${prefix}\n\n$$\n${cleanMathBlock(boxed)}\n$$\n\n`;
+  });
+
+  // 6. Clean excessive blank lines around math blocks
   normalized = normalized.replace(/\n{3,}/g, '\n\n');
 
   return normalized;

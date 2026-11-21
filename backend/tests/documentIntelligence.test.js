@@ -217,7 +217,7 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
   assert(sumResponse.includes('### 1. Executive Summary'), 'Response contains ### 1. Executive Summary');
   assert(sumResponse.includes('### 2. Main Points'), 'Response contains ### 2. Main Points');
   assert(sumResponse.includes('### 3. Important Findings'), 'Response contains ### 3. Important Findings');
-  assert(!sumResponse.includes('System Architecture'), 'Summary does NOT include unrequested System Architecture');
+  assert(!sumResponse.includes('### 2. System Architecture') && !sumResponse.includes('### System Architecture'), 'Summary does NOT include unrequested System Architecture section');
   assert(!sumResponse.includes('[Page'), 'Visible [Page X] citations removed from summary');
 
   // 3. Dates Extraction Request

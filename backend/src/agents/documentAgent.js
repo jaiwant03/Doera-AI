@@ -421,6 +421,22 @@ ${textSnippet}`;
     const text = processed.extractedText || '';
     const slidesOrPages = processed.pages || [];
 
+    // Scan text for matching components with slide/page citations
+    const findWithCitation = (keywords) => {
+      for (const sp of slidesOrPages) {
+        const spText = sp.text || '';
+        for (const kw of keywords) {
+          if (new RegExp(`\\b${kw}\\b`, 'i').test(spText)) {
+            const cit = processed.fileType.includes('PPT') ? `[Slide ${sp.pageNumber}]` : `[Page ${sp.pageNumber}]`;
+            // Extract the relevant sentence or line
+            const line = spText.split('\n').find((l) => new RegExp(`\\b${kw}\\b`, 'i').test(l)) || `${kw} component`;
+            return { match: line.trim(), citation: cit };
+          }
+        }
+      }
+      return null;
+    };
+
     if (requestIntent === 'ARCHITECTURE_ANALYSIS') {
       const arch = {
         summary: `The proposal defines a system architecture across ${processed.metadata?.pageCount || 1} slide(s)/page(s).`,
@@ -431,22 +447,6 @@ ${textSnippet}`;
         communication: null,
         workflow: null,
         citations: [],
-      };
-
-      // Scan text for architecture components
-      const findWithCitation = (keywords) => {
-        for (const sp of slidesOrPages) {
-          const spText = sp.text || '';
-          for (const kw of keywords) {
-            if (new RegExp(`\\b${kw}\\b`, 'i').test(spText)) {
-              const cit = processed.fileType.includes('PPT') ? `[Slide ${sp.pageNumber}]` : `[Page ${sp.pageNumber}]`;
-              // Extract the relevant sentence or line
-              const line = spText.split('\n').find((l) => new RegExp(`\\b${kw}\\b`, 'i').test(l)) || `${kw} component`;
-              return { match: line.trim(), citation: cit };
-            }
-          }
-        }
-        return null;
       };
 
       const fe = findWithCitation(['frontend', 'react', 'next\\.js', 'vue', 'angular', 'web client', 'mobile app', 'ui']);

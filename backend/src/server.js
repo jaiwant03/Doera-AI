@@ -10,6 +10,14 @@ import realtimeServer from './websocket/wsServer.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 
+// Guarantee global availability of logger across all asynchronous and event contexts
+if (typeof global !== 'undefined') {
+  global.logger = logger;
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.logger = logger;
+}
+
 // Route imports
 import authRoutes from './routes/authRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';

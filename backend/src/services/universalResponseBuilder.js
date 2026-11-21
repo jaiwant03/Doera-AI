@@ -1131,7 +1131,7 @@ function buildSingleMathResponse({
       md += 'Substitute the actual calculated values:\n\n';
       md += `\\[\n\\bar{x} = \\frac{${formatRaw(totalSum, 2)}}{${validCountFormatted}}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\bar{x} = ${formatCurrency(mean)}}\n\\]\n`;
+      md += `\\[\n\\boxed{\\bar{x} = ${formatMathCurrency(mean)}}\n\\]\n`;
       break;
     }
 
@@ -1150,7 +1150,7 @@ function buildSingleMathResponse({
         md += `For $N = ${validCountFormatted}$ (odd), the median is the observation at rank ${mid.toLocaleString()}:\n\n\\[\n\\text{Median} = x_{(${mid.toLocaleString()})}\n\\]\n\n`;
       }
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{Median} = ${formatCurrency(median)}}\n\\]\n`;
+      md += `\\[\n\\boxed{\\text{Median} = ${formatMathCurrency(median)}}\n\\]\n`;
       break;
     }
 
@@ -1161,7 +1161,7 @@ function buildSingleMathResponse({
       md += 'The mode represents the value that occurs with the highest frequency in the dataset.\n\n';
       md += 'Calculation:\n\n';
       if (mode?.hasMode) {
-        const modeVal = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatCurrency(m)).join(', ') : formatCurrency(mode.modeValue);
+        const modeVal = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatMathCurrency(m)).join(', ') : formatMathCurrency(mode.modeValue);
         md += `The value **${modeVal}** occurs with the highest frequency (**${mode.frequency.toLocaleString()}** times).\n\n`;
         md += '**Final Answer:**\n\n';
         md += `\\[\n\\boxed{\\text{Mode} = ${modeVal} \\quad (\\text{Frequency: } ${mode.frequency.toLocaleString()})}\n\\]\n`;
@@ -1228,7 +1228,7 @@ function buildSingleMathResponse({
         md += 'Substitute the actual calculated values:\n\n';
         md += `\\[\n\\sigma = \\sqrt{\\frac{${formatRaw(sumSq, 2)}}{${validCountFormatted}}} = \\sqrt{${formatRaw(popVar, 4)}}\n\\]\n\n`;
         md += '**Final Answer:**\n\n';
-        md += `\\[\n\\boxed{\\sigma = ${formatCurrency(popSD)}}\n\\]\n\n`;
+        md += `\\[\n\\boxed{\\sigma = ${formatMathCurrency(popSD)}}\n\\]\n\n`;
       }
 
       if (!isPopOnly) {
@@ -1238,7 +1238,7 @@ function buildSingleMathResponse({
         md += 'Substitute the actual calculated values:\n\n';
         md += `\\[\ns = \\sqrt{\\frac{${formatRaw(sumSq, 2)}}{${dofFormatted}}} = \\sqrt{${formatRaw(sampleVar, 4)}}\n\\]\n\n`;
         md += '**Final Answer:**\n\n';
-        md += `\\[\n\\boxed{s = ${formatCurrency(sampleSD)}}\n\\]\n\n`;
+        md += `\\[\n\\boxed{s = ${formatMathCurrency(sampleSD)}}\n\\]\n\n`;
       }
 
       if (!isPopOnly && !isSampleOnly) {
@@ -1273,7 +1273,7 @@ function buildSingleMathResponse({
       md += 'Substitute actual values:\n\n';
       md += `\\[\n\\text{Range} = ${formatRaw(r?.max)} - ${formatRaw(r?.min)}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{Range} = ${formatCurrency(r?.range)}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{\\text{Range} = ${formatMathCurrency(r?.range)}}\n\\]\n\n`;
       md += `*Note: Minimum observation is ${formatCurrency(r?.min)} and maximum observation is ${formatCurrency(r?.max)}.*\n`;
       break;
     }
@@ -1286,7 +1286,7 @@ function buildSingleMathResponse({
       md += 'Substitute actual calculated values:\n\n';
       md += `\\[\n\\text{IQR} = ${formatRaw(q?.q3)} - ${formatRaw(q?.q1)}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{\\text{IQR} = ${formatMathCurrency(q?.iqr)}}\n\\]\n\n`;
       md += `*Note: First Quartile ($Q_1$) is ${formatCurrency(q?.q1)}, Second Quartile ($Q_2$ / Median) is ${formatCurrency(q?.q2)}, and Third Quartile ($Q_3$) is ${formatCurrency(q?.q3)}.*\n`;
       break;
     }
@@ -1439,7 +1439,7 @@ function buildMultiMathResponse({
     md += 'Substitute the actual calculated values:\n\n';
     md += `\\[\n\\bar{x} = \\frac{${formatRaw(totalSum, 2)}}{${validCountFormatted}}\n\\]\n\n`;
     md += '**Final Answer:**\n\n';
-    md += `\\[\n\\boxed{\\bar{x} = ${formatCurrency(mean)}}\n\\]\n\n`;
+    md += `\\[\n\\boxed{\\bar{x} = ${formatMathCurrency(mean)}}\n\\]\n\n`;
     step++;
   }
 
@@ -1458,7 +1458,7 @@ function buildMultiMathResponse({
       md += `For $N = ${validCountFormatted}$, the median is the observation at rank ${mid.toLocaleString()}:\n\n\\[\n\\text{Median} = x_{(${mid.toLocaleString()})}\n\\]\n\n`;
     }
     md += '**Final Answer:**\n\n';
-    md += `\\[\n\\boxed{\\text{Median} = ${formatCurrency(median)}}\n\\]\n\n`;
+    md += `\\[\n\\boxed{\\text{Median} = ${formatMathCurrency(median)}}\n\\]\n\n`;
     step++;
   }
 
@@ -1469,7 +1469,7 @@ function buildMultiMathResponse({
     md += 'Frequency-based calculation identifying the value occurring with highest repetition.\n\n';
     md += 'Calculation:\n\n';
     if (mode?.hasMode) {
-      const modeVal = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatCurrency(m)).join(', ') : formatCurrency(mode.modeValue);
+      const modeVal = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatMathCurrency(m)).join(', ') : formatMathCurrency(mode.modeValue);
       md += `The value **${modeVal}** occurs with the highest frequency (**${mode.frequency.toLocaleString()}** times).\n\n`;
       md += '**Final Answer:**\n\n';
       md += `\\[\n\\boxed{\\text{Mode} = ${modeVal} \\quad (\\text{Frequency: } ${mode.frequency.toLocaleString()})}\n\\]\n\n`;
@@ -1506,7 +1506,7 @@ function buildMultiMathResponse({
     md += `\\[\n\\sigma = \\sqrt{\\sigma^2} = \\sqrt{${formatRaw(sd?.populationVariance, 4)}}\n\\]\n`;
     md += `\\[\ns = \\sqrt{s^2} = \\sqrt{${formatRaw(sd?.sampleVariance, 4)}}\n\\]\n\n`;
     md += '**Final Answer:**\n\n';
-    md += `\\[\n\\boxed{\\sigma = ${formatCurrency(popSD)} \\quad | \\quad s = ${formatCurrency(sampleSD)}}\n\\]\n\n`;
+    md += `\\[\n\\boxed{\\sigma = ${formatMathCurrency(popSD)} \\quad | \\quad s = ${formatMathCurrency(sampleSD)}}\n\\]\n\n`;
     step++;
   }
 
@@ -1526,7 +1526,7 @@ function buildMultiMathResponse({
     md += 'Formula:\n\n';
     md += `\\[\n\\text{Range} = x_{\\max} - x_{\\min} = ${formatRaw(r?.max)} - ${formatRaw(r?.min)}\n\\]\n\n`;
     md += '**Final Answer:**\n\n';
-    md += `\\[\n\\boxed{\\text{Range} = ${formatCurrency(r?.range)}}\n\\]\n\n`;
+    md += `\\[\n\\boxed{\\text{Range} = ${formatMathCurrency(r?.range)}}\n\\]\n\n`;
     step++;
   }
 
@@ -1535,16 +1535,16 @@ function buildMultiMathResponse({
     if (allowlist.has('iqr') && !allowlist.has('quartiles') && !allowlist.has('q1') && !allowlist.has('q3')) {
       md += `**${step}. Interquartile Range (IQR)**\n\n`;
       md += 'Formula & Substitution:\n\n';
-      md += `\\[\n\\text{IQR} = Q_3 - Q_1 = ${formatCurrency(q?.q3)} - ${formatCurrency(q?.q1)}\n\\]\n\n`;
+      md += `\\[\n\\text{IQR} = Q_3 - Q_1 = ${formatMathCurrency(q?.q3)} - ${formatMathCurrency(q?.q1)}\n\\]\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{\\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{\\text{IQR} = ${formatMathCurrency(q?.iqr)}}\n\\]\n\n`;
     } else {
       md += `**${step}. Quartiles & Interquartile Range**\n\n`;
       md += `- First Quartile ($Q_1$): **${formatCurrency(q?.q1)}**\n`;
       md += `- Third Quartile ($Q_3$): **${formatCurrency(q?.q3)}**\n`;
       md += `- Interquartile Range ($\\text{IQR} = Q_3 - Q_1$): **${formatCurrency(q?.iqr)}**\n\n`;
       md += '**Final Answer:**\n\n';
-      md += `\\[\n\\boxed{Q_1 = ${formatCurrency(q?.q1)} \\quad | \\quad Q_3 = ${formatCurrency(q?.q3)} \\quad | \\quad \\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n\n`;
+      md += `\\[\n\\boxed{Q_1 = ${formatMathCurrency(q?.q1)} \\quad | \\quad Q_3 = ${formatMathCurrency(q?.q3)} \\quad | \\quad \\text{IQR} = ${formatMathCurrency(q?.iqr)}}\n\\]\n\n`;
     }
     step++;
   }

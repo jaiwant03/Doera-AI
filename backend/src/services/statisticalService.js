@@ -935,20 +935,29 @@ class StatisticalService {
     // Handle Covariance request between two columns
     let covarianceResult = null;
     if (isCovarianceRequested) {
+      const hasSchema = columnSchema && Object.keys(columnSchema).length > 0;
       let eligibleCols = headers.filter((h) => {
         const isId = /(^id$|_id$|^uuid$|^guid$|transaction.*id|user.*id|customer.*id|order.*id|invoice.*id)/i.test(h);
-        const hasSchema = columnSchema && Object.keys(columnSchema).length > 0 && columnSchema[h];
-        const isNumericInSchema = hasSchema ? columnSchema[h]?.type === 'numeric' : true;
-        return !isId && isNumericInSchema;
+        if (isId) return false;
+        if (hasSchema) {
+          return columnSchema[h]?.type === 'numeric';
+        }
+        return true;
       });
 
-      // Verify numeric suitability across sample rows if no schema
-      if (eligibleCols.length <= 1 && rows.length > 0) {
+      // Verify numeric suitability across sample rows if no schema or needed
+      if ((!hasSchema || eligibleCols.length <= 1) && rows.length > 0) {
         eligibleCols = headers.filter((h) => {
           const isId = /(^id$|_id$|^uuid$|^guid$|transaction.*id|user.*id|customer.*id|order.*id|invoice.*id)/i.test(h);
           if (isId) return false;
+          const isDateOrCat = /(date|time|timestamp|category|method|status|name|description|type)/i.test(h);
+          if (isDateOrCat) return false;
           const sample = rows.slice(0, 10).map((r) => r[h]).filter((v) => v !== null && v !== undefined && v !== '');
-          return sample.some((v) => !isNaN(parseFloat(String(v).replace(/[$,₹€£%\s,]/g, ''))));
+          return sample.length > 0 && sample.every((v) => {
+            const s = String(v).trim();
+            if (/^\d{4}[-/.]\d{1,2}/.test(s)) return false; // Date string
+            return !isNaN(Number(s.replace(/[$,₹€£%\s,]/g, '')));
+          });
         });
       }
 
