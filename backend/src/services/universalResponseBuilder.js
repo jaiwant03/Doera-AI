@@ -48,6 +48,16 @@ export const buildUniversalResponse = (taskOrPayload) => {
     booking.providerConfirmationId
   );
 
+  const isDataAnalysis =
+    category === 'DATA_ANALYSIS' ||
+    Boolean(dataAnalysis) ||
+    Boolean(task.chartConfig);
+
+  // Dedicated clean, uncontaminated response for Spreadsheet / Data Analytics
+  if (isDataAnalysis) {
+    return buildDataAnalysisResponse(dataAnalysis || task.discoveredData?.dataAnalysis, task, userRequest);
+  }
+
   let md = '';
 
   // ==========================================
