@@ -60,8 +60,8 @@ const ChatPage = () => {
     setPrefilledInput(promptText);
   };
 
-  const handleSendMessage = (content, attachments) => {
-    sendMessage(content, attachments);
+  const handleSendMessage = (content, attachments, overrideLocation) => {
+    sendMessage(content, attachments, overrideLocation);
     setPrefilledInput('');
   };
 

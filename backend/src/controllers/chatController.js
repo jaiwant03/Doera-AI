@@ -85,7 +85,7 @@ export const getModels = async (req, res) => {
 
 // 2. SERVER-SENT EVENTS (SSE) STREAMING ENDPOINT
 export const streamMessage = async (req, res) => {
-  const { conversationId, message, model, attachments = [] } = req.body;
+  const { conversationId, message, model, attachments = [], userLocation } = req.body;
   const userId = req.user._id;
 
   if (!message && attachments.length === 0) {
@@ -342,6 +342,7 @@ export const streamMessage = async (req, res) => {
         currentAgent: 'Orchestrator',
         currentAction: `Coordinating specialized agents for ${intent.primaryCategory.toLowerCase().replace('_', ' ')}...`,
         intentAnalysis: intent,
+        userLocation: userLocation || null,
         assignedAgents: intent.requiredAgents || ['Planner', 'Research', 'Verification'],
       });
 
@@ -353,6 +354,7 @@ export const streamMessage = async (req, res) => {
           taskDocId: task._id,
           userId,
           userRequest: message,
+          userLocation: userLocation || null,
           category: intent.primaryCategory,
           status: 'EXECUTING',
           currentAgent: 'Orchestrator',
@@ -592,7 +594,7 @@ ${memoryContext}`;
 
 // 3. STANDARD REST SEND MESSAGE (RETAINED FOR ZERO-REGRESSION TEST & BACKWARD COMPATIBILITY)
 export const sendMessage = async (req, res, next) => {
-  const { conversationId, message, model, attachments = [] } = req.body;
+  const { conversationId, message, model, attachments = [], userLocation } = req.body;
   const userId = req.user._id;
 
   if (!message && attachments.length === 0) {
@@ -856,6 +858,7 @@ export const sendMessage = async (req, res, next) => {
         currentAgent: 'Orchestrator',
         currentAction: `Coordinating specialized agents for ${intent.primaryCategory.toLowerCase().replace('_', ' ')}...`,
         intentAnalysis: intent,
+        userLocation: userLocation || null,
         assignedAgents: intent.requiredAgents || ['Planner', 'Research', 'Verification'],
       });
 
@@ -867,6 +870,7 @@ export const sendMessage = async (req, res, next) => {
           taskDocId: task._id,
           userId,
           userRequest: message,
+          userLocation: userLocation || null,
           category: intent.primaryCategory,
           status: 'EXECUTING',
           currentAgent: 'Orchestrator',

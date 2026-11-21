@@ -236,7 +236,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   // Send message
-  const sendMessage = async (content, attachments = []) => {
+  const sendMessage = async (content, attachments = [], overrideLocation = null) => {
     if ((!content || !content.trim()) && attachments.length === 0) return;
     if (isSending) return;
 
@@ -252,12 +252,14 @@ export const ChatProvider = ({ children }) => {
       };
       setMessages(prev => [...prev, optimisticMsg]);
 
+      const effectiveLocation = overrideLocation !== null ? overrideLocation : (userLocation || null);
+
       const res = await api.post('/chat/message', {
         conversationId: currentConversation ? (currentConversation._id || currentConversation.id) : null,
         message: content,
         model: selectedModel,
         attachments,
-        userLocation: userLocation || null,
+        userLocation: effectiveLocation,
       });
 
       const data = res.data || {};

@@ -239,6 +239,43 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
     }
     baseInputRef.current = '';
 
+    const isNearMe = /\b(near me|nearby|closest|nearest|around me|within \d+\s*(?:km|miles?)|near here)\b/i.test(trimmed);
+
+    // If query is location-dependent ("near me") and userLocation is not yet set, request browser geolocation
+    if (isNearMe && !userLocation && typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            name: 'Detected Location',
+            source: 'precise',
+          };
+          setUserLocation(loc);
+          onSendMessage(trimmed, attachments, loc);
+          setInput('');
+          setAttachments([]);
+          if (textareaRef.current) textareaRef.current.style.height = 'auto';
+        },
+        (err) => {
+          // Permission denied (code 1), position unavailable (code 2), timeout (code 3)
+          const locDenied = {
+            denied: err.code === 1,
+            unavailable: err.code === 2 || err.code === 3,
+            error: err.message,
+            source: 'denied',
+          };
+          onSendMessage(trimmed, attachments, locDenied);
+          setInput('');
+          setAttachments([]);
+          if (textareaRef.current) textareaRef.current.style.height = 'auto';
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+      return;
+    }
+
     onSendMessage(trimmed, attachments);
     setInput('');
     setAttachments([]);

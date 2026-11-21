@@ -79,6 +79,11 @@ export const buildUniversalResponse = (taskOrPayload) => {
     );
   }
 
+  // Dedicated clean, query-specific response for Local Service Research (Section 7 format)
+  if (isLocalResearch && !isMissionPlanning && !isDocAnalysis && !isDataAnalysis) {
+    return buildLocalServiceResearchResponse(task, userRequest);
+  }
+
   let md = '';
 
   // ==========================================
@@ -260,6 +265,129 @@ function buildProvidersSection(contacts, category) {
     md += `\n`;
   });
   return md;
+}
+
+/**
+ * Dedicated Query-Specific Local Service Research Response Builder (Section 7 format)
+ * - Specific title e.g. # 5 Cinema Theatres Near You
+ * - Real geographic location used
+ * - Full provider details (Address, Distance, Rating/Reviews, Contact, Website, Directions, Source)
+ * - Concise, honest recommendation without fabricated ranking
+ * - Research-only guarantee note
+ * - Strictly zero Evidence & Verification Dimensions contamination
+ */
+export function buildLocalServiceResearchResponse(task, userRequest) {
+  const localServiceData = task.discoveredData?.localService || {};
+  const providers = (Array.isArray(localServiceData.providers) && localServiceData.providers.length > 0)
+    ? localServiceData.providers
+    : (Array.isArray(task.externalContacts) && task.externalContacts.length > 0 ? task.externalContacts : []);
+
+  const params = localServiceData.params || {};
+
+  // Case 1: Location required prompt (e.g. Test F)
+  if (localServiceData.locationRequired || task.status === 'LOCATION_REQUIRED') {
+    return 'DOERA needs your location to find nearby places accurately. Please enable location access or enter your area or city.';
+  }
+
+  const categoryTitle = params.categoryTitle || 'Local Services';
+  const targetLocation = params.targetLocation || (task.locationData?.places?.[0]?.address ? task.locationData.places[0].address.split(',')[0] : 'your location');
+  const requestedCount = params.targetCount || providers.length || 5;
+  const isNearMe = params.isNearMe !== false;
+
+  // Header Title
+  let title = '';
+  if (params.brandQuery) {
+    title = `# ${params.brandQuery} Near You`;
+  } else if (isNearMe) {
+    title = `# ${requestedCount} ${categoryTitle} Near You`;
+  } else {
+    title = `# ${requestedCount} ${categoryTitle} in ${targetLocation}`;
+  }
+
+  // Case 2: Zero results found
+  if (providers.length === 0) {
+    let emptyMd = `${title}\n\n`;
+    emptyMd += `**Location:** ${targetLocation}\n\n`;
+    emptyMd += `I couldn't find any verified ${categoryTitle.toLowerCase()} within the search radius of **${targetLocation}**.\n\n`;
+    emptyMd += `Please try expanding your search radius or entering a different city or area.\n\n`;
+    emptyMd += `*Research completed. No business was contacted and no booking or transaction was made.*`;
+    return emptyMd.trim();
+  }
+
+  let md = `${title}\n\n`;
+
+  // Short introduction confirming geographic reference actually used
+  if (params.brandNotFoundNotice) {
+    md += `${params.brandNotFoundNotice}\n\n`;
+  } else if (params.brandQuery) {
+    md += `I conducted verified local research using your location coordinates to find **${params.brandQuery}**.\n\n`;
+  } else if (isNearMe) {
+    md += `I conducted verified local research using your location coordinates to find the nearest **${categoryTitle.toLowerCase()}**.\n\n`;
+  } else {
+    md += `I conducted verified research for **${categoryTitle.toLowerCase()}** in **${targetLocation}**.\n\n`;
+  }
+
+  md += `**Location:** ${targetLocation}\n\n`;
+
+  // Search results
+  md += `### Search results\n\n`;
+
+  providers.forEach((c, idx) => {
+    md += `${idx + 1}. **${c.businessName || c.name || 'Provider'}**\n`;
+    if (c.address) {
+      md += `   - **Address**: ${c.address}\n`;
+    }
+    if (c.distanceKm) {
+      md += `   - **Distance from user**: ${c.distanceKm}\n`;
+    }
+    const ratingStr = c.rating
+      ? `★ ${c.rating}${c.reviewsCount ? ` (${c.reviewsCount} reviews)` : ''}`
+      : 'Rating not publicly listed in open directory';
+    md += `   - **Rating & Reviews**: ${ratingStr}\n`;
+
+    const phoneStr = c.phone ? c.phone : 'Contact number not publicly listed in open directory';
+    md += `   - **Contact Number**: ${phoneStr}\n`;
+
+    if (c.website) {
+      md += `   - **Website**: [${c.website.replace(/^https?:\/\//, '')}](${c.website})\n`;
+    } else {
+      md += `   - **Website**: Website not available in public directory\n`;
+    }
+
+    if (c.directionsUrl) {
+      md += `   - **Directions**: [Get Directions](${c.directionsUrl})\n`;
+    }
+
+    if (c.sourceUrl) {
+      md += `   - **Source**: [${c.source || 'OpenStreetMap Nominatim'}](${c.sourceUrl})\n`;
+    } else {
+      md += `   - **Source**: ${c.source || 'OpenStreetMap Nominatim'}\n`;
+    }
+
+    md += `\n`;
+  });
+
+  // Recommendation
+  md += `### Recommendation\n\n`;
+  if (localServiceData.recommendation?.rationale) {
+    md += `${localServiceData.recommendation.rationale}\n\n`;
+  } else if (providers.length > 0) {
+    const top = providers[0];
+    if (top.distanceKm) {
+      md += `**${top.businessName}** is the closest verified option (${top.distanceKm} away) based on your coordinates.\n\n`;
+    } else {
+      md += `**${top.businessName}** is verified with confirmed street address records in ${targetLocation}.\n\n`;
+    }
+  }
+
+  if (providers.length < requestedCount && !params.brandQuery) {
+    md += `*Note: Only ${providers.length} verified ${categoryTitle.toLowerCase()} could be authenticated within the search radius of ${targetLocation}.*\n\n`;
+  }
+
+  // Anti-transaction guarantee note
+  md += `*Research completed. No business was contacted and no booking or transaction was made.*`;
+
+  return md.trim();
 }
 
 function buildLocalServiceSection(contacts, localServiceData, userRequest) {
@@ -2345,6 +2473,7 @@ export const universalResponseBuilder = {
   buildUniversalResponse,
   buildDataAnalysisResponse,
   buildStatisticalResponse,
+  buildLocalServiceResearchResponse,
 };
 
 export default buildUniversalResponse;

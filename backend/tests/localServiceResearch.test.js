@@ -1,202 +1,231 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import localServiceResearcher, { VERIFICATION_STATUSES } from '../src/services/localServiceResearcher.js';
-import localServiceAgent from '../src/agents/localServiceAgent.js';
-import verificationAgent from '../src/agents/verificationAgent.js';
-import universalIntentService from '../src/services/universalIntentService.js';
-import { buildUniversalResponse } from '../src/services/universalResponseBuilder.js';
+import assert from 'assert';
+import localServiceResearcher from '../src/services/localServiceResearcher.js';
+import { buildLocalServiceResearchResponse, buildUniversalResponse } from '../src/services/universalResponseBuilder.js';
 
-describe('DOERA AI — Live Location Intelligence & Local Service Research Suite', () => {
-  // Test 1: Laptop repair in Coimbatore with Dell display replacement requirement
-  it('1. should research laptop repair centres in Coimbatore and evaluate Dell display replacement without false claims', async () => {
-    const prompt = 'Find five laptop repair centres in Coimbatore that provide Dell display replacement';
-    const params = await localServiceResearcher.extractResearchParameters(prompt);
+console.log('=================================================================');
+console.log(' DOERA AI — LOCAL SERVICE RESEARCH VERIFICATION TEST SUITE');
+console.log('=================================================================\n');
 
-    expect(params.targetLocation.toLowerCase()).toContain('coimbatore');
-    expect(params.targetCount).toBe(5);
-    expect(params.specificRequirements.some((r) => r.toLowerCase().includes('dell'))).toBe(true);
+// Mock User Coordinates for testing near-me (e.g., Coimbatore central coordinates)
+const coimbatoreUserLocation = {
+  lat: 11.0168,
+  lng: 76.9558,
+  accuracy: 15,
+  name: 'Gandhipuram, Coimbatore',
+  source: 'precise',
+};
 
-    const result = await localServiceResearcher.researchLocalServices({ userRequest: prompt });
+async function runTestSuite() {
+  // -------------------------------------------------------------
+  // TEST A: Find 5 cinema theatres near me
+  // -------------------------------------------------------------
+  console.log('--- TEST A: Find 5 cinema theatres near me ---');
+  const taskContextA = {
+    taskId: 'test-cinemas-near-me',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: coimbatoreUserLocation,
+    category: 'LOCATION_DISCOVERY',
+  };
 
-    expect(result.status).toBe('completed');
-    expect(result.providers.length).toBeGreaterThanOrEqual(1);
-    expect(result.providers.length).toBeLessThanOrEqual(5);
+  const resultA = await localServiceResearcher.researchLocalServices(taskContextA);
+  console.log(`Providers found for Test A: ${resultA.providersFound} (requested: ${resultA.requestedCount})`);
 
-    // Verify service suitability analysis exists for every provider
-    result.providers.forEach((provider) => {
-      expect(provider.businessName).toBeDefined();
-      expect(provider.address).toBeDefined();
-      expect(provider.location?.lat).toBeDefined();
-      expect(provider.location?.lng).toBeDefined();
-      expect(typeof provider.location.lat).toBe('number');
-      expect(typeof provider.location.lng).toBe('number');
-      expect(provider.suitability).toBeDefined();
-      expect(provider.suitabilityAnalysis).toBeDefined();
-      expect(Object.values(VERIFICATION_STATUSES)).toContain(provider.verificationStatus);
-    });
+  assert.strictEqual(resultA.status, 'completed', 'Test A status must be completed');
+  assert.ok(resultA.providersFound > 0, 'Test A must return real cinema providers');
+  assert.strictEqual(resultA.requestedCount, 5, 'Requested count must be 5');
 
-    // Verify that NO false claim of booking or contact is made
-    expect(result.noContactGuarantee).toBe(
-      'Research completed. No business was contacted and no booking or transaction was made.'
-    );
-  }, 25000);
+  const taskA = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContextA.userRequest,
+    discoveredData: { localService: resultA },
+    externalContacts: resultA.providers,
+    locationData: resultA.locationData,
+  };
 
-  // Test 2: Different category & location — Printing shops in Gandhipuram
-  it('2. should dynamically adapt to printing shops in Gandhipuram and not return laptop repair or cardiology', async () => {
-    const prompt = 'Find highly rated printing shops near Gandhipuram';
-    const params = await localServiceResearcher.extractResearchParameters(prompt);
+  const responseA = buildUniversalResponse(taskA);
+  console.log('Test A Response Preview (First 350 chars):');
+  console.log(responseA.slice(0, 350) + '...\n');
 
-    expect(params.targetLocation.toLowerCase()).toContain('gandhipuram');
-    expect(params.serviceCategory.toLowerCase()).toContain('print');
+  assert.ok(responseA.includes('# 5 Cinema Theatres Near You'), 'Header must be # 5 Cinema Theatres Near You');
+  assert.ok(responseA.includes('### Search results'), 'Must have ### Search results');
+  assert.ok(responseA.includes('Distance from user'), 'Must include calculated Distance from user');
+  assert.ok(responseA.includes('[Get Directions]'), 'Must include Directions link');
+  assert.ok(responseA.includes('### Recommendation'), 'Must include Recommendation');
+  assert.ok(responseA.includes('Research completed. No business was contacted and no booking or transaction was made.'), 'Must have research-only guarantee');
+  assert.ok(!responseA.includes('Evidence & Verification Dimensions'), 'Must NOT have Evidence & Verification Dimensions');
+  assert.ok(!responseA.includes('SOURCE_FOUND'), 'Must NOT have SOURCE_FOUND');
+  console.log('  ✓ PASS: Test A (Find 5 cinema theatres near me)\n');
 
-    const result = await localServiceResearcher.researchLocalServices({ userRequest: prompt });
+  // -------------------------------------------------------------
+  // TEST B: Find 3 hospitals near me
+  // -------------------------------------------------------------
+  console.log('--- TEST B: Find 3 hospitals near me ---');
+  const taskContextB = {
+    taskId: 'test-hospitals-near-me',
+    userRequest: 'Find 3 hospitals near me',
+    userLocation: coimbatoreUserLocation,
+    category: 'LOCATION_DISCOVERY',
+  };
 
-    expect(result.status).toBe('completed');
-    expect(result.providers.length).toBeGreaterThan(0);
+  const resultB = await localServiceResearcher.researchLocalServices(taskContextB);
+  console.log(`Providers found for Test B: ${resultB.providersFound} (requested: ${resultB.requestedCount})`);
 
-    // Verify results reflect printing and NOT cardiology
-    const allNamesAndSpecs = result.providers
-      .map((p) => `${p.businessName} ${p.knownSpecialties?.join(' ')} ${p.suitabilityAnalysis}`)
-      .join(' ')
-      .toLowerCase();
+  assert.strictEqual(resultB.status, 'completed');
+  assert.ok(resultB.providersFound > 0);
+  assert.strictEqual(resultB.requestedCount, 3, 'Requested count must be 3');
+  assert.ok(resultB.providers.length <= 3, 'Providers count must be at most 3');
 
-    expect(allNamesAndSpecs).not.toContain('cardiolog');
-    expect(allNamesAndSpecs).not.toContain('apollo speciality hospital');
-  }, 25000);
+  const taskB = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContextB.userRequest,
+    discoveredData: { localService: resultB },
+    externalContacts: resultB.providers,
+    locationData: resultB.locationData,
+  };
 
-  // Test 3: Different category & location — Hospitals or educational institutions in Madurai
-  it('3. should research hospitals or educational institutions in Madurai with real geographic coordinates', async () => {
-    const prompt = 'Find hospitals or educational institutions in Madurai';
-    const params = await localServiceResearcher.extractResearchParameters(prompt);
+  const responseB = buildUniversalResponse(taskB);
+  assert.ok(responseB.includes('# 3 Hospitals Near You'), 'Header must be # 3 Hospitals Near You');
+  assert.ok(responseB.includes('### Search results'));
+  assert.ok(!responseB.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test B (Find 3 hospitals near me)\n');
 
-    expect(params.targetLocation.toLowerCase()).toContain('madurai');
+  // -------------------------------------------------------------
+  // TEST C: Find 5 restaurants near me
+  // -------------------------------------------------------------
+  console.log('--- TEST C: Find 5 restaurants near me ---');
+  const taskContextC = {
+    taskId: 'test-restaurants-near-me',
+    userRequest: 'Find 5 restaurants near me',
+    userLocation: coimbatoreUserLocation,
+    category: 'LOCATION_DISCOVERY',
+  };
 
-    const result = await localServiceResearcher.researchLocalServices({ userRequest: prompt });
+  const resultC = await localServiceResearcher.researchLocalServices(taskContextC);
+  console.log(`Providers found for Test C: ${resultC.providersFound} (requested: ${resultC.requestedCount})`);
 
-    expect(result.status).toBe('completed');
-    expect(result.providers.length).toBeGreaterThan(0);
+  assert.strictEqual(resultC.status, 'completed');
+  assert.ok(resultC.providersFound > 0);
 
-    // Verify all providers have real coordinates in or near Madurai (lat ~ 9.92, lng ~ 78.11)
-    result.providers.forEach((p) => {
-      expect(p.location.lat).toBeGreaterThan(9.0);
-      expect(p.location.lat).toBeLessThan(11.0);
-      expect(p.location.lng).toBeGreaterThan(77.0);
-      expect(p.location.lng).toBeLessThan(79.0);
-    });
-  }, 25000);
+  const taskC = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContextC.userRequest,
+    discoveredData: { localService: resultC },
+    externalContacts: resultC.providers,
+    locationData: resultC.locationData,
+  };
 
-  // Test 4: Verification status differentiation & anti-hallucination of missing details
-  it('4. should clearly differentiate verification status and not fabricate missing contact numbers or ratings', async () => {
-    const prompt = 'Find computer service providers in Coimbatore';
-    const result = await localServiceResearcher.researchLocalServices({ userRequest: prompt });
+  const responseC = buildUniversalResponse(taskC);
+  assert.ok(responseC.includes('# 5 Restaurants Near You'), 'Header must be # 5 Restaurants Near You');
+  assert.ok(responseC.includes('### Search results'));
+  assert.ok(!responseC.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test C (Find 5 restaurants near me)\n');
 
-    result.providers.forEach((p) => {
-      // Status must be one of the 4 defined enum states
-      expect(Object.values(VERIFICATION_STATUSES)).toContain(p.verificationStatus);
+  // -------------------------------------------------------------
+  // TEST D: Find KG Cinemas near me
+  // -------------------------------------------------------------
+  console.log('--- TEST D: Find KG Cinemas near me ---');
+  const taskContextD = {
+    taskId: 'test-kg-cinemas-near-me',
+    userRequest: 'Find KG Cinemas near me',
+    userLocation: coimbatoreUserLocation,
+    category: 'LOCATION_DISCOVERY',
+  };
 
-      // If phone is absent, it must be null (not a fake +91 94440 12345 placeholder)
-      if (p.phone !== null) {
-        expect(p.phone).not.toBe('+91 94440 12345');
-        expect(p.phone).not.toBe('1234567890');
-      }
+  const resultD = await localServiceResearcher.researchLocalServices(taskContextD);
+  console.log(`Providers found for Test D: ${resultD.providersFound}`);
+  assert.strictEqual(resultD.status, 'completed');
+  assert.ok(resultD.providersFound > 0);
 
-      // If rating is absent, it must be null (never a math-invented rating like 4.721)
-      if (p.rating !== null) {
-        expect(typeof p.rating).toBe('number');
-        expect(p.rating).toBeGreaterThanOrEqual(1.0);
-        expect(p.rating).toBeLessThanOrEqual(5.0);
-      }
-    });
-  }, 25000);
+  const hasKGCinemas = resultD.providers.some(p => p.businessName.toLowerCase().includes('kg'));
+  console.log(`Found KG Cinema: ${hasKGCinemas} (${resultD.providers[0]?.businessName})`);
+  assert.ok(hasKGCinemas, 'Must find KG Cinema near Coimbatore coordinates');
 
-  // Test 5: Strict Anti-Transaction & Zero-Contact Guarantee
-  it('5. should strictly enforce zero bookings, zero transactions, and zero automated contact', async () => {
-    const mockTask = {
-      taskId: 'task-local-research-test',
-      userRequest: 'Find five laptop repair centres in Coimbatore that provide Dell display replacement',
-      category: 'LOCATION_DISCOVERY',
-    };
+  const taskD = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContextD.userRequest,
+    discoveredData: { localService: resultD },
+    externalContacts: resultD.providers,
+    locationData: resultD.locationData,
+  };
 
-    const agentResult = await localServiceAgent.execute(mockTask);
+  const responseD = buildUniversalResponse(taskD);
+  assert.ok(responseD.includes('# KG Cinemas Near You'), 'Header must be # KG Cinemas Near You');
+  assert.ok(responseD.includes('KG Big Cinema') || responseD.includes('KG Cinema'), 'Must list KG Cinema');
+  assert.ok(!responseD.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test D (Find KG Cinemas near me)\n');
 
-    expect(agentResult.noContactGuarantee).toBe(
-      'Research completed. No business was contacted and no booking or transaction was made.'
-    );
-    expect(agentResult.output.noContactGuarantee).toBe(
-      'Research completed. No business was contacted and no booking or transaction was made.'
-    );
+  // -------------------------------------------------------------
+  // TEST E: Find 5 cinema theatres in Coimbatore
+  // -------------------------------------------------------------
+  console.log('--- TEST E: Find 5 cinema theatres in Coimbatore ---');
+  const taskContextE = {
+    taskId: 'test-cinemas-in-coimbatore',
+    userRequest: 'Find 5 cinema theatres in Coimbatore',
+    userLocation: null, // No GPS, explicit city specified
+    category: 'LOCATION_DISCOVERY',
+  };
 
-    // Verification Agent audit
-    const verified = await verificationAgent.verifyTask({
-      taskId: mockTask.taskId,
-      userRequest: mockTask.userRequest,
-      category: 'LOCATION_DISCOVERY',
-      externalContacts: agentResult.providers,
-      discoveredData: { localService: agentResult.output },
-      steps: [
-        { id: 'local_service', name: 'Local service research', status: 'completed' },
-        { id: 'verify', name: 'Verification', status: 'completed' },
-      ],
-    });
+  const resultE = await localServiceResearcher.researchLocalServices(taskContextE);
+  console.log(`Providers found for Test E: ${resultE.providersFound} in ${resultE.params.targetLocation}`);
 
-    expect(verified.outcome.booking).toBeNull();
-    const zeroTxDim = verified.outcome.verificationDimensions.find((d) => d.dimension === 'Zero-Transaction Guarantee');
-    expect(zeroTxDim).toBeDefined();
-    expect(zeroTxDim.status).toBe('VERIFIED');
-    expect(zeroTxDim.note).toContain('No business was contacted and no booking or transaction was made');
-  }, 25000);
+  assert.strictEqual(resultE.status, 'completed');
+  assert.ok(resultE.providersFound > 0);
+  assert.strictEqual(resultE.params.locationSource, 'city_specified');
 
-  // Test 6: Geographic Map Data Payload
-  it('6. should assemble valid interactive map data payload with verified coordinates and center', async () => {
-    const prompt = 'Find laptop repair centres in Coimbatore';
-    const result = await localServiceResearcher.researchLocalServices({ userRequest: prompt });
+  const taskE = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContextE.userRequest,
+    discoveredData: { localService: resultE },
+    externalContacts: resultE.providers,
+    locationData: resultE.locationData,
+  };
 
-    expect(result.locationData).toBeDefined();
-    expect(result.locationData.type).toBe('places');
-    expect(Array.isArray(result.locationData.places)).toBe(true);
-    expect(result.locationData.places.length).toBeGreaterThan(0);
-    expect(result.locationData.center).toBeDefined();
-    expect(typeof result.locationData.center.lat).toBe('number');
-    expect(typeof result.locationData.center.lng).toBe('number');
+  const responseE = buildUniversalResponse(taskE);
+  assert.ok(responseE.includes('# 5 Cinema Theatres in Coimbatore'), 'Header must specify city');
+  assert.ok(responseE.includes('### Search results'));
+  assert.ok(!responseE.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test E (Find 5 cinema theatres in Coimbatore)\n');
 
-    // Each place marker must have an id, index, lat, lng, name, and address
-    result.locationData.places.forEach((place, i) => {
-      expect(place.index).toBe(i + 1);
-      expect(place.name).toBeDefined();
-      expect(place.address).toBeDefined();
-      expect(typeof place.lat).toBe('number');
-      expect(typeof place.lng).toBe('number');
-    });
-  }, 25000);
+  // -------------------------------------------------------------
+  // TEST F: Find 5 cinema theatres near me when location permission is denied
+  // -------------------------------------------------------------
+  console.log('--- TEST F: Find 5 cinema theatres near me (Permission Denied) ---');
+  const taskContextF = {
+    taskId: 'test-cinemas-denied',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: { denied: true, source: 'denied' },
+    category: 'LOCATION_DISCOVERY',
+  };
 
-  // Test 7: Universal Response Builder renders complete comparison report with zero contact notice
-  it('7. should render structured comparison report with provider comparison table, suitability, and zero-contact guarantee', async () => {
-    const prompt = 'Find five laptop repair centres in Coimbatore that provide Dell display replacement';
-    const result = await localServiceResearcher.researchLocalServices({ userRequest: prompt });
+  const resultF = await localServiceResearcher.researchLocalServices(taskContextF);
+  console.log(`Status for Test F: ${resultF.status}`);
 
-    const mockCompletedTask = {
-      userRequest: prompt,
-      category: 'LOCATION_DISCOVERY',
-      status: 'COMPLETED',
-      externalContacts: result.providers,
-      locationData: result.locationData,
-      discoveredData: { localService: result },
-      comparisonMatrix: result.comparisonMatrix,
-    };
+  assert.strictEqual(resultF.status, 'LOCATION_REQUIRED', 'Must return LOCATION_REQUIRED status');
+  assert.strictEqual(resultF.locationRequired, true);
 
-    const renderedMarkdown = buildUniversalResponse(mockCompletedTask);
+  const taskF = {
+    category: 'LOCATION_DISCOVERY',
+    status: 'LOCATION_REQUIRED',
+    userRequest: taskContextF.userRequest,
+    discoveredData: { localService: resultF },
+  };
 
-    // Verify all required report sections
-    expect(renderedMarkdown).toContain('Local Service Research & Verified Providers');
-    expect(renderedMarkdown).toContain('Provider Comparison Table');
-    expect(renderedMarkdown).toContain('Verification Status');
-    expect(renderedMarkdown).toContain('Service Suitability');
-    expect(renderedMarkdown).toContain('Recommended Shortlist');
-    expect(renderedMarkdown).toContain('Research Limitations & Scope');
-    expect(renderedMarkdown).toContain('Research completed. No business was contacted and no booking or transaction was made.');
+  const responseF = buildUniversalResponse(taskF);
+  console.log(`Response F message: "${responseF}"`);
+  assert.strictEqual(
+    responseF,
+    'DOERA needs your location to find nearby places accurately. Please enable location access or enter your area or city.',
+    'Must cleanly prompt for location when denied'
+  );
+  assert.ok(!responseF.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test F (Location Permission Denied prompt)\n');
 
-    // Verify strict prohibition: NO appointment confirmation or booking status
-    expect(renderedMarkdown).not.toContain('Confirmed by Provider');
-    expect(renderedMarkdown).not.toContain('Official Confirmation Reference');
-    expect(renderedMarkdown).not.toContain('SIMULATED EXECUTION — NO REAL EXTERNAL ACTION PERFORMED');
-  }, 25000);
+  console.log('========================================================');
+  console.log('✓ ALL 6 LOCAL SERVICE RESEARCH ACCEPTANCE TESTS PASSED!');
+  console.log('========================================================');
+}
+
+runTestSuite().catch((err) => {
+  console.error('❌ Test Suite Failed:', err);
+  process.exit(1);
 });

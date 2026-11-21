@@ -284,6 +284,7 @@ const TaskSchema = new mongoose.Schema(
         responseSummary: mongoose.Schema.Types.Mixed,
       },
     ],
+    userLocation: mongoose.Schema.Types.Mixed,
     outcome: {
       actionsPerformed: [String],
       contacted: [mongoose.Schema.Types.Mixed],
