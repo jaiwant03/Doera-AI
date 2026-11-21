@@ -704,10 +704,18 @@ class StatisticalService {
   detectTargetNumericColumn(rows, headers, columnSchema, queryLower = '') {
     if (!headers || headers.length === 0) return null;
 
-    // Detect numeric columns based on columnSchema and data sampling
+    // Detect numeric columns based on columnSchema and data sampling fallback
     const numericCandidates = headers.filter((h) => {
       if (columnSchema && columnSchema[h]) {
         return columnSchema[h].type === 'numeric';
+      }
+      if (rows && rows.length > 0) {
+        const sampleVal = rows[0][h];
+        if (typeof sampleVal === 'number') return true;
+        if (typeof sampleVal === 'string') {
+          const clean = sampleVal.replace(/[$,₹€£%\s]/g, '').replace(/,/g, '');
+          return !isNaN(parseFloat(clean)) && isFinite(clean);
+        }
       }
       return false;
     });
