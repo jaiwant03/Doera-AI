@@ -472,16 +472,33 @@ class SpreadsheetService {
     const categoricalCols = headers.filter((h) => columnSchema[h]?.type === 'categorical');
     const dateCols = headers.filter((h) => columnSchema[h]?.type === 'date');
 
-    // Identify primary metric and dimension columns
+    // Identify primary metric column
     const metricCol = this.findBestColumnMatch(queryLower, numericCols, [
       'amount', 'expense', 'expenses', 'spending', 'cost', 'sales', 'revenue', 'profit', 'price',
       'salary', 'score', 'units', 'quantity', 'total', 'val', 'growth', 'budget', 'balance',
     ]) || numericCols[0] || null;
 
-    const dimensionCol = this.findBestColumnMatch(queryLower, categoricalCols.concat(dateCols).concat(headers), [
-      'category', 'product', 'item', 'department', 'name', 'region', 'city', 'month', 'date',
-      'year', 'quarter', 'vendor', 'service', 'type', 'group', 'channel', 'source', 'country',
-    ]) || categoricalCols[0] || (dateCols.length > 0 ? dateCols[0] : headers[0]);
+    // Dimension candidates: avoid picking metricCol when other candidates exist
+    const nonMetricHeaders = headers.filter((h) => h !== metricCol);
+    const candidateDimensionCols = categoricalCols.filter((c) => c !== metricCol)
+      .concat(dateCols.filter((c) => c !== metricCol))
+      .concat(nonMetricHeaders)
+      .filter((c, idx, arr) => arr.indexOf(c) === idx);
+
+    // Filter out obvious unique IDs/URLs if alternatives exist
+    const filteredCandidates = candidateDimensionCols.filter((col) => {
+      const isIdentifier = /(url|link|href|uuid|^id$|_id$|guid)/i.test(col.toLowerCase());
+      const isUniqueAll = columnSchema[col]?.uniqueCount === columnSchema[col]?.totalCount;
+      return !(isIdentifier && isUniqueAll && candidateDimensionCols.length > 1);
+    });
+
+    const finalCandidates = filteredCandidates.length > 0 ? filteredCandidates : candidateDimensionCols;
+
+    const dimensionCol = this.findBestColumnMatch(queryLower, finalCandidates, [
+      'category', 'product', 'item', 'department', 'label', 'status', 'type', 'name',
+      'class', 'region', 'city', 'month', 'date', 'year', 'quarter', 'vendor', 'service',
+      'group', 'channel', 'source', 'country', 'target', 'result'
+    ]) || finalCandidates[0] || (dateCols.length > 0 ? dateCols[0] : headers[0]);
 
     // Secondary metric for two-column comparisons / scatter
     const secondaryMetricCol = numericCols.find((c) => c !== metricCol && queryLower.includes(c.toLowerCase())) || null;
@@ -566,16 +583,29 @@ class SpreadsheetService {
   findBestColumnMatch(queryLower, candidateColumns, keywordPreferences = []) {
     if (!candidateColumns || candidateColumns.length === 0) return null;
 
-    // 1. Direct match in query
+    // 1. Direct match in query (full column name)
     for (const col of candidateColumns) {
       if (queryLower.includes(col.toLowerCase())) {
         return col;
       }
     }
 
-    // 2. Preference keywords match
+    // 2. Tokenized partial match (e.g. "category" matches "Category_Code", "cost" matches "Total_Cost")
+    for (const col of candidateColumns) {
+      const parts = col.toLowerCase().split(/[^a-z0-9]+/);
+      for (const part of parts) {
+        if (part.length >= 3 && queryLower.includes(part)) {
+          return col;
+        }
+      }
+    }
+
+    // 3. Preference keywords match
     for (const pref of keywordPreferences) {
-      const found = candidateColumns.find((c) => c.toLowerCase().includes(pref));
+      const found = candidateColumns.find((c) => {
+        const lower = c.toLowerCase();
+        return lower === pref || lower.includes(pref) || pref.includes(lower);
+      });
       if (found) return found;
     }
 
