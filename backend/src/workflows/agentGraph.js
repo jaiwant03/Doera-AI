@@ -812,6 +812,9 @@ const dataAnalysisNode = async (state) => {
     chartConfig: dataResult.chartConfig || dataResult.analysis?.chartConfig || null,
     currentAgent: 'Verification',
     currentAction: 'Data analysis complete.',
+    bookingDetails: null,
+    pendingApproval: null,
+    externalContacts: [],
   };
 };
 

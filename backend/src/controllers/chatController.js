@@ -386,6 +386,14 @@ export const streamMessage = async (req, res) => {
         task.chartConfig = resultState.chartConfig || resultState.discoveredData?.dataAnalysis?.chartConfig || task.chartConfig || null;
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
+
+        if (task.category === 'DATA_ANALYSIS' || task.discoveredData?.dataAnalysis || task.chartConfig) {
+          task.bookingDetails = null;
+          task.pendingApproval = null;
+          task.externalContacts = [];
+          task.status = 'COMPLETED';
+        }
+
         await task.save().catch(() => {});
       }
 
@@ -832,6 +840,14 @@ export const sendMessage = async (req, res, next) => {
         task.chartConfig = resultState.chartConfig || resultState.discoveredData?.dataAnalysis?.chartConfig || task.chartConfig || null;
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
+
+        if (task.category === 'DATA_ANALYSIS' || task.discoveredData?.dataAnalysis || task.chartConfig) {
+          task.bookingDetails = null;
+          task.pendingApproval = null;
+          task.externalContacts = [];
+          task.status = 'COMPLETED';
+        }
+
         await task.save().catch(() => {});
       }
 

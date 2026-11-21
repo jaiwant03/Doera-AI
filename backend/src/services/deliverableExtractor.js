@@ -167,8 +167,8 @@ export const extractAndRegisterDeliverables = async (task, resultState, userId, 
     }).catch(() => {});
   }
 
-  // 8. Executive Mission Dossier Deliverable
-  if (finalContent && !existingIds.has(`deliv_report_${task.taskId}`)) {
+  // 8. Executive Mission Dossier Deliverable (Omit for pure Data Analytics)
+  if (finalContent && task.category !== 'DATA_ANALYSIS' && !existingIds.has(`deliv_report_${task.taskId}`)) {
     deliverables.push({
       id: `deliv_report_${task.taskId}`,
       title: `DOERA Executive Mission Synthesis Dossier: ${task.title || 'Mission Summary'}`,

@@ -89,9 +89,10 @@ Output pure JSON:
       }
     }
 
-    // Ensure scheduling agent step exists ONLY if appointment/booking is explicitly requested and NOT research-only
+    // Ensure scheduling agent step exists ONLY if appointment/booking is explicitly requested and NOT research-only or data analysis
     if (
       !isLocalResearch &&
+      !requiredAgents.includes('DataAnalysis') &&
       (requiredAgents.includes('Scheduling') || /book\s+an?\s+appointment|reserve\s+slot/i.test(userRequest)) &&
       !subtasks.some((st) => st.agent === 'Scheduling')
     ) {
@@ -170,23 +171,23 @@ Output pure JSON:
     if (requiredAgents.includes('Comparison')) {
       list.push({ id: 'compare', title: 'Comparing options against key criteria', agent: 'Comparison', status: 'pending', dependencies: ['research'] });
     }
-    if (requiredAgents.includes('Communication')) {
+    if (requiredAgents.includes('Communication') && !requiredAgents.includes('DataAnalysis')) {
       const commTitle = requiredAgents.includes('Planning')
         ? 'Drafting institutional approval, sponsor outreach & participant onboarding communications'
         : 'Drafting message & awaiting human approval';
       const commDeps = requiredAgents.includes('Budget') ? ['budget'] : (requiredAgents.includes('Planning') ? ['planning'] : ['compare']);
       list.push({ id: 'communicate', title: commTitle, agent: 'Communication', status: 'pending', dependencies: commDeps });
     }
-    if (requiredAgents.includes('Execution') && !requiredAgents.includes('Planning')) {
+    if (requiredAgents.includes('Execution') && !requiredAgents.includes('Planning') && !requiredAgents.includes('DataAnalysis')) {
       list.push({ id: 'execute', title: 'Dispatching authorized external operations', agent: 'Execution', status: 'pending', dependencies: ['communicate'] });
     }
-    if (!requiredAgents.includes('Planning') && (requiredAgents.includes('Scheduling') || requiredAgents.includes('Communication') || /appointment|book|schedule/i.test(request))) {
+    if (!requiredAgents.includes('Planning') && !requiredAgents.includes('DataAnalysis') && (requiredAgents.includes('Scheduling') || requiredAgents.includes('Communication') || /appointment|book|schedule/i.test(request))) {
       list.push({ id: 'schedule', title: 'Coordinating appointment slot', agent: 'Scheduling', status: 'pending', dependencies: ['execute'] });
     }
     if (requiredAgents.includes('Verification')) {
-      list.push({ id: 'verify', title: 'Auditing execution proof & verification dimensions', agent: 'Verification', status: 'pending', dependencies: [] });
+      list.push({ id: 'verify', title: 'Auditing dataset computations and statistical accuracy', agent: 'Verification', status: 'pending', dependencies: [] });
     }
-    if (requiredAgents.includes('FollowUp')) {
+    if (requiredAgents.includes('FollowUp') && !requiredAgents.includes('DataAnalysis')) {
       list.push({ id: 'followup', title: 'Registering background response tracker', agent: 'FollowUp', status: 'pending', dependencies: ['verify'] });
     }
 
