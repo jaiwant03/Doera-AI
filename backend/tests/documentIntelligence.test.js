@@ -175,11 +175,15 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
   const archResponse = buildUniversalResponse(mockTaskArch);
 
   assert(archResponse.includes('## Project Proposal Analysis'), 'Response contains ## Project Proposal Analysis');
-  assert(archResponse.includes('### 1. System Architecture'), 'Response contains ### 1. System Architecture');
-  assert(archResponse.includes('### 2. Identified Weaknesses'), 'Response contains ### 2. Identified Weaknesses');
-  assert(archResponse.includes('### 3. Recommended Improvements'), 'Response contains ### 3. Recommended Improvements');
-  assert(archResponse.includes('### 4. Overall Assessment'), 'Response contains ### 4. Overall Assessment');
-  assert(archResponse.includes('[Slide'), 'Response includes exact [Slide X] citations');
+  assert(archResponse.includes('### Document Analysis'), 'Response contains ### Document Analysis');
+  assert(archResponse.includes('### 1. Executive Summary'), 'Response contains ### 1. Executive Summary');
+  assert(archResponse.includes('### 2. System Architecture'), 'Response contains ### 2. System Architecture');
+  assert(archResponse.includes('### 3. Identified Weaknesses'), 'Response contains ### 3. Identified Weaknesses');
+  assert(archResponse.includes('### 4. Recommended Improvements'), 'Response contains ### 4. Recommended Improvements');
+  assert(archResponse.includes('### 5. Overall Assessment'), 'Response contains ### 5. Overall Assessment');
+  assert(!archResponse.includes('[Slide'), 'Visible [Slide X] citations removed from response');
+  assert(!archResponse.includes('[Page'), 'Visible [Page X] citations removed from response');
+  assert(archResult.architectureAnalysis.citations?.length > 0 || archResult.identifiedWeaknesses.some(w => w.citation), 'Internal citations preserved in document metadata');
 
   // ZERO CONTAMINATION AUDIT
   assert(!archResponse.includes('Appointment Status'), 'AUDIT: Zero Appointment Status in response');
@@ -214,7 +218,8 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
   assert(sumResponse.includes('### 2. Important Points'), 'Response contains ### 2. Important Points');
   assert(sumResponse.includes('### 3. Key Findings'), 'Response contains ### 3. Key Findings');
   assert(sumResponse.includes('### 4. Conclusion'), 'Response contains ### 4. Conclusion');
-  assert(!sumResponse.includes('### 1. System Architecture'), 'Summary does NOT include unrequested System Architecture');
+  assert(!sumResponse.includes('System Architecture'), 'Summary does NOT include unrequested System Architecture');
+  assert(!sumResponse.includes('[Page'), 'Visible [Page X] citations removed from summary');
 
   // 3. Dates Extraction Request
   const datesResult = await documentAgent.extractDocumentIntelligence(
@@ -237,7 +242,8 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
   const datesResponse = buildUniversalResponse(mockTaskDates);
   assert(datesResponse.includes('## Important Dates & Deadlines'), 'Response contains ## Important Dates & Deadlines');
   assert(datesResponse.includes('October 15, 2026') || datesResponse.includes('November 1, 2026'), 'Extracted real dates from Slide 5');
-  assert(datesResponse.includes('[Slide 5]'), 'Dates correctly cited with [Slide 5]');
+  assert(!datesResponse.includes('[Slide 5]'), 'Visible citations removed from dates table');
+  assert(datesResult.datesExtraction.dates.some(d => d.citation?.includes('Slide 5')), 'Internal citation preserved in dates metadata');
 
   // 4. Slide 5 Explanation Request
   const slideResult = await documentAgent.extractDocumentIntelligence(
@@ -294,7 +300,40 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
   assert(comparison.comparisonMatrix?.length > 0, 'Comparative matrix generated');
   const compResponse = buildDocumentAnalysisResponse([mockProcessed, doc2], comparison, null, 'Compare these two project proposal documents.');
   assert(compResponse.includes('## Document Comparison'), 'Response contains ## Document Comparison');
-  assert(compResponse.includes('Comparative Matrix'), 'Response contains Comparative Matrix');
+  assert(compResponse.includes('Comparative Matrix') || compResponse.includes('Side-by-Side Comparison'), 'Response contains Comparative Matrix');
+
+  // 7. Dynamic User Request: "Examine the system architecture and identify weaknesses."
+  const archWeakResponse = buildDocumentAnalysisResponse(
+    [{ ...mockProcessed, ...archResult }],
+    null,
+    null,
+    'Examine the system architecture and identify weaknesses.'
+  );
+  assert(archWeakResponse.includes('System Architecture'), 'Dynamic Architecture & Weaknesses: System Architecture present');
+  assert(archWeakResponse.includes('Identified Weaknesses'), 'Dynamic Architecture & Weaknesses: Identified Weaknesses present');
+  assert(!archWeakResponse.includes('Recommended Improvements'), 'Dynamic Architecture & Weaknesses: STRICT - Recommended Improvements excluded');
+
+  // 8. Dynamic User Request: "Recommend improvements for this project."
+  const impResult = await documentAgent.extractDocumentIntelligence(mockProcessed, 'Recommend improvements for this project.');
+  const impResponse = buildDocumentAnalysisResponse(
+    [{ ...mockProcessed, ...impResult }],
+    null,
+    null,
+    'Recommend improvements for this project.'
+  );
+  assert(impResponse.includes('Recommended Improvements'), 'Dynamic Improvements: Recommended Improvements present');
+  assert(!impResponse.includes('### 1. System Architecture'), 'Dynamic Improvements: STRICT - System Architecture excluded');
+
+  // 9. Dynamic User Request: "Explain the database design."
+  const dbResult = await documentAgent.extractDocumentIntelligence(mockProcessed, 'Explain the database design.');
+  const dbResponse = buildDocumentAnalysisResponse(
+    [{ ...mockProcessed, ...dbResult }],
+    null,
+    null,
+    'Explain the database design.'
+  );
+  assert(dbResponse.includes('Database Overview'), 'Dynamic Database: Database Overview present');
+  assert(dbResponse.includes('Data Organization'), 'Dynamic Database: Data Organization present');
 
   // ========================================================
   // TEST GROUP 4: Same-Chat Multi-Turn File Context Memory
