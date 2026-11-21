@@ -323,20 +323,74 @@ class ConversationContextEngine {
       };
     }
 
-    // 5. Local Service Follow-ups (Compare first three, show locations, contact info)
-    const isLocalResearchFollowUp =
-      activeCategory === 'LOCATION_DISCOVERY' ||
-      activeCategory === 'LOCAL_SERVICE_RESEARCH' ||
-      activeCategory === 'LOCAL_SERVICE' ||
-      /(compare the first (three|two|\d+)|which one has (the most|verified) contact|show their locations on (the )?map|show locations|which is closer|give me phone numbers)/i.test(lower);
+    // 5. Local Service Follow-ups (Closest, ordinal, ratings, distance filter, compare, directions, map)
+    const hasPreviousLocalResults = Boolean(
+      lastResearchResults &&
+      (Array.isArray(lastResearchResults.providers)
+        ? lastResearchResults.providers.length > 0
+        : Array.isArray(lastResearchResults)
+          ? lastResearchResults.length > 0
+          : false)
+    );
 
-    if (isLocalResearchFollowUp && (activeCategory === 'LOCATION_DISCOVERY' || lastResearchResults)) {
+    // Check if user is asking for a brand new search in another category
+    const prevCategory = (lastResearchResults?.serviceCategory || lastResearchResults?.categoryTitle || '').toLowerCase();
+    const isNewCategorySearch =
+      (/\b(laptop|computer)\b/i.test(lower) && !/laptop|computer/i.test(prevCategory)) ||
+      (/\b(cinema|theatre|theater|multiplex|movie)\b/i.test(lower) && !/cinema|theatre|theater|movie/i.test(prevCategory)) ||
+      (/\b(hospital|clinic|doctor)\b/i.test(lower) && !/hospital|clinic/i.test(prevCategory)) ||
+      (/\b(restaurant|cafe|food)\b/i.test(lower) && !/restaurant|cafe/i.test(prevCategory)) ||
+      (/\b(mobile|phone)\s*(?:repair|service|centre|center|shop)?/i.test(lower) && !/mobile|phone/i.test(prevCategory));
+
+    // Check if user explicitly requests more or another search
+    const isExplicitNewSearch =
+      /^(?:find|search|look for|locate)\s+(?:\d+|more|other|another|new)\s+/i.test(lower) ||
+      /\b(?:find|search\s+for|show\s+me)\s+(?:5|five|10|ten|\d+)\s+more\b/i.test(lower) ||
+      /\b(?:in|at)\s+(?:chennai|bangalore|bengaluru|mumbai|delhi|hyderabad|kolkata|pune|ooty|tirupur|salem|madurai|calicut|kochi)\b/i.test(lower);
+
+    // Check for explicit follow-up indicators
+    const isLocalFollowUpPattern =
+      /(?:among\s+(?:all\s+)?(?:these|the|those)|which\s+(?:one|centre|center|theatre|theater|cinema|hospital|restaurant|shop|place)\s+is|which\s+(?:is|one\s+is)\s+(?:closely\s*near|closest|closer|nearest|second\s*closest|third\s*closest|cheapest|best|highest|top)|which\s+of\s+these\s+is|which\s+(?:ones?\s+)?are\s+within|closest\s+(?:one|to\s+me)|nearest\s+(?:one|to\s+me)|second\s+closest|third\s+closest)/i.test(lower) ||
+      /(?:(?:address|phone|contact|directions?|details)\s+of\s+(?:the\s+)?(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th|that|closest)|show\s+me\s+its\s+address|give\s+me\s+its\s+address|give\s+me\s+directions\s+to\s+that)/i.test(lower) ||
+      /(?:highest\s*rating|best\s*rating|which\s+has\s+the\s+highest\s*rating|cheapest|lowest\s*cost|within\s+\d+\s*(?:km|kilometers?)|less\s+than\s+\d+\s*(?:km|kilometers?)|centres?\s+within\s+\d+)/i.test(lower) ||
+      /(?:compare\s+(?:the\s+)?(?:first|second|third|1st|2nd|3rd|these|all|both)|compare\s+.*and\s+.*)/i.test(lower) ||
+      /(?:give\s+me\s+directions\s+to\s+(?:that|the\s+closest|the\s+first|the\s+second|the\s+third)|show\s+me\s+directions\s+to\s+the\s+closest|directions\s+to\s+that\s+centre)/i.test(lower) ||
+      /(?:can\s+you\s+show\s+those\s+locations\s+on\s+the\s+map|show\s+(?:those\s+|these\s+)?locations\s+on\s+map)/i.test(lower) ||
+      /(?:which\s+(?:one\s+)?is\s+best\s+based\s+on\s+(?:the\s+)?available\s+information|which\s+is\s+the\s+best\s+option)/i.test(lower) ||
+      Boolean(
+        lastResearchResults?.providers &&
+        Array.isArray(lastResearchResults.providers) &&
+        lastResearchResults.providers.some((p) => p.businessName && lower.includes(p.businessName.toLowerCase()))
+      );
+
+    if (
+      !isNewCategorySearch &&
+      !isExplicitNewSearch &&
+      (isLocalFollowUpPattern ||
+        (hasPreviousLocalResults &&
+          /(which|show|give|compare|tell me|details|directions|address|phone|contact|map)/i.test(lower)))
+    ) {
+      let instructionType = 'CLOSEST';
+      if (/(second|2nd)\s+closest/i.test(lower)) instructionType = 'SECOND_CLOSEST';
+      else if (/(third|3rd)\s+closest/i.test(lower)) instructionType = 'THIRD_CLOSEST';
+      else if (/(closely\s*near|closest|nearest|closer\b|which.*near)/i.test(lower)) instructionType = 'CLOSEST';
+      else if (/(highest\s*rating|best\s*rating|rating|reviews?)/i.test(lower)) instructionType = 'RATING';
+      else if (/(cheapest|lowest\s*cost|pricing|fees?|affordable|cost)/i.test(lower)) instructionType = 'PRICE';
+      else if (/(within\s+\d+|less\s+than\s+\d+|centres?\s+within)/i.test(lower)) instructionType = 'FILTER_DISTANCE';
+      else if (/(compare|versus|vs\b|difference)/i.test(lower)) instructionType = 'COMPARE';
+      else if (/(directions?|how\s+to\s+get|navigation|route)/i.test(lower)) instructionType = 'DIRECTIONS';
+      else if (/(map|locations?)/i.test(lower)) instructionType = 'MAP_VIEW';
+      else if (/(address)/i.test(lower)) instructionType = 'ORDINAL_ADDRESS';
+      else if (/(phone|contact|number|call)/i.test(lower)) instructionType = 'ORDINAL_CONTACT';
+      else if (/(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)/i.test(lower)) instructionType = 'ORDINAL_DETAILS';
+      else if (/(best\s*based\s*on|best\s*option|which\s*is\s*best)/i.test(lower)) instructionType = 'BEST_AVAILABLE';
+
       return {
         isFollowUp: true,
-        followUpType: 'LOCAL_RESEARCH_CONTINUATION',
+        followUpType: 'LOCAL_RESEARCH_FOLLOW_UP',
         resolvedCategory: 'LOCATION_DISCOVERY',
-        referencedArtifact: { places: lastResearchResults },
-        instructionType: /(map|locations)/i.test(lower) ? 'SHOW_MAP_LOCATIONS' : 'COMPARE_TOP_PROVIDERS',
+        referencedArtifact: { places: lastResearchResults, researchResults: lastResearchResults },
+        instructionType,
       };
     }
 
