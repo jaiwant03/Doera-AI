@@ -214,10 +214,9 @@ January 20, 2027: Enterprise Production Rollout & High-Availability Verification
   };
   const sumResponse = buildUniversalResponse(mockTaskSum);
   assert(sumResponse.includes('## Document Summary'), 'Response contains ## Document Summary');
-  assert(sumResponse.includes('### 1. Main Subject'), 'Response contains ### 1. Main Subject');
-  assert(sumResponse.includes('### 2. Important Points'), 'Response contains ### 2. Important Points');
-  assert(sumResponse.includes('### 3. Key Findings'), 'Response contains ### 3. Key Findings');
-  assert(sumResponse.includes('### 4. Conclusion'), 'Response contains ### 4. Conclusion');
+  assert(sumResponse.includes('### 1. Executive Summary'), 'Response contains ### 1. Executive Summary');
+  assert(sumResponse.includes('### 2. Main Points'), 'Response contains ### 2. Main Points');
+  assert(sumResponse.includes('### 3. Important Findings'), 'Response contains ### 3. Important Findings');
   assert(!sumResponse.includes('System Architecture'), 'Summary does NOT include unrequested System Architecture');
   assert(!sumResponse.includes('[Page'), 'Visible [Page X] citations removed from summary');
 

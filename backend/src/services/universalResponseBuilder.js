@@ -848,7 +848,7 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     }
     md += `\n`;
 
-    md += `### 3. Key Findings\n`;
+    md += `### 3. Important Findings\n`;
     const findings = summ.keyFindings || primaryDoc.keyRequirements || [];
     if (findings.length > 0) {
       findings.slice(0, 5).forEach((f) => {
@@ -858,10 +858,8 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
     } else {
       md += `- Key metrics and specifications catalogued without discrepancies.\n`;
     }
-    md += `\n`;
 
-    md += `### 4. Conclusion\n`;
-    md += `${stripPageReferences(summ.conclusion || 'The document establishes structured specifications with verified baseline requirements.')}\n`;
+    return md.trim();
 
     return md.trim();
   }
