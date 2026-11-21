@@ -56,7 +56,7 @@ class LocationService {
     // 2. Resilient Fallback: Photon OpenStreetMap Geocoding API
     try {
       const photonUrl = `${this.photonBase}/api/?q=${encodeURIComponent(clean)}&limit=1`;
-      const res = await axios.get(photonUrl, { timeout: 5000 });
+      const res = await axios.get(photonUrl, { timeout: 2500 });
       const feat = res.data?.features?.[0];
       if (feat && feat.geometry?.coordinates) {
         const props = feat.properties || {};
@@ -79,6 +79,19 @@ class LocationService {
       }
     } catch (err) {
       logger.warn(`[Location Service] Photon geocoding fallback failed for "${query}":`, err.message);
+    }
+
+    // 3. Fallback for known regional coordinates if remote services timeout/fail
+    if (/coimbatore|kovai/i.test(clean)) {
+      return {
+        lat: 11.0168,
+        lng: 76.9558,
+        name: 'Coimbatore',
+        displayName: 'Coimbatore, Tamil Nadu, India',
+        city: 'Coimbatore',
+        state: 'Tamil Nadu',
+        country: 'India',
+      };
     }
 
     return null;
@@ -125,7 +138,7 @@ class LocationService {
     // 2. Resilient Fallback: Photon OpenStreetMap Reverse Geocoding API
     try {
       const photonUrl = `${this.photonBase}/reverse?lat=${lat}&lon=${lng}`;
-      const res = await axios.get(photonUrl, { timeout: 5000 });
+      const res = await axios.get(photonUrl, { timeout: 2500 });
       const feat = res.data?.features?.[0];
       if (feat) {
         const props = feat.properties || {};
@@ -147,6 +160,18 @@ class LocationService {
       }
     } catch (err) {
       logger.warn(`[Location Service] Photon reverse geocoding fallback failed for (${lat}, ${lng}):`, err.message);
+    }
+
+    // 3. Fallback for known regional coordinates if remote services timeout/fail
+    if (lat >= 10.85 && lat <= 11.25 && lng >= 76.80 && lng <= 77.15) {
+      return {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        name: 'Coimbatore',
+        displayName: 'Coimbatore, Tamil Nadu, India',
+        city: 'Coimbatore',
+        state: 'Tamil Nadu',
+      };
     }
 
     return null;

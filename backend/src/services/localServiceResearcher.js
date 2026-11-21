@@ -2,6 +2,7 @@ import axios from 'axios';
 import { logger } from '../utils/logger.js';
 import { config } from '../config/env.js';
 import locationService from './locationService.js';
+import { getOsmVerifiedPlaces } from '../config/osmVerifiedDirectory.js';
 
 export const VERIFICATION_STATUSES = {
   CONFIRMED: 'CONFIRMED',
