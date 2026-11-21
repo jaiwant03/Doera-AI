@@ -295,12 +295,21 @@ export const streamMessage = async (req, res) => {
         contextPayload.followUpType === 'CHART_INSPECTION' ||
         contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' ||
         contextPayload.followUpType === 'STATISTICAL_INSPECTION' ||
-        contextPayload.followUpType === 'DOCUMENT_INSPECTION'
+        contextPayload.followUpType === 'DOCUMENT_INSPECTION' ||
+        contextPayload.followUpType === 'LOCAL_RESEARCH_FOLLOW_UP' ||
+        contextPayload.followUpType === 'LOCAL_RESEARCH_CONTINUATION'
       ) {
         intent.isActionTask = true;
       }
       if (contextPayload.followUpType === 'DOCUMENT_INSPECTION') {
         if (!intent.requiredAgents.includes('Document')) intent.requiredAgents.push('Document');
+        if (!intent.requiredAgents.includes('Verification')) intent.requiredAgents.push('Verification');
+      }
+      if (
+        contextPayload.followUpType === 'LOCAL_RESEARCH_FOLLOW_UP' ||
+        contextPayload.followUpType === 'LOCAL_RESEARCH_CONTINUATION'
+      ) {
+        if (!intent.requiredAgents.includes('LocalService')) intent.requiredAgents.push('LocalService');
         if (!intent.requiredAgents.includes('Verification')) intent.requiredAgents.push('Verification');
       }
     }
@@ -802,12 +811,21 @@ export const sendMessage = async (req, res, next) => {
         contextPayload.followUpType === 'CHART_INSPECTION' ||
         contextPayload.followUpType === 'MISSION_PLANNING_CONTINUATION' ||
         contextPayload.followUpType === 'STATISTICAL_INSPECTION' ||
-        contextPayload.followUpType === 'DOCUMENT_INSPECTION'
+        contextPayload.followUpType === 'DOCUMENT_INSPECTION' ||
+        contextPayload.followUpType === 'LOCAL_RESEARCH_FOLLOW_UP' ||
+        contextPayload.followUpType === 'LOCAL_RESEARCH_CONTINUATION'
       ) {
         intent.isActionTask = true;
       }
       if (contextPayload.followUpType === 'DOCUMENT_INSPECTION') {
         if (!intent.requiredAgents.includes('Document')) intent.requiredAgents.push('Document');
+        if (!intent.requiredAgents.includes('Verification')) intent.requiredAgents.push('Verification');
+      }
+      if (
+        contextPayload.followUpType === 'LOCAL_RESEARCH_FOLLOW_UP' ||
+        contextPayload.followUpType === 'LOCAL_RESEARCH_CONTINUATION'
+      ) {
+        if (!intent.requiredAgents.includes('LocalService')) intent.requiredAgents.push('LocalService');
         if (!intent.requiredAgents.includes('Verification')) intent.requiredAgents.push('Verification');
       }
     }
