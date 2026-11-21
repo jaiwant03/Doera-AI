@@ -36,6 +36,7 @@ class LocalServiceResearcher {
     this.photonBase = 'https://photon.komoot.io';
     this.googlePlacesApiKey = config.googlePlacesApiKey || '';
     this.userAgent = 'DOERA-AI-Local-Research/3.0 (contact@doera.ai)';
+    this.conversationResultsCache = new Map();
   }
 
   /**
@@ -49,11 +50,36 @@ class LocalServiceResearcher {
     const userRequest = taskContext.userRequest || '';
     const userLocation = taskContext.userLocation || null;
     const requestId = taskContext.requestId || `req-${Date.now().toString(36)}`;
+    const conversationId = taskContext.conversationId || taskContext.conversation?._id?.toString() || 'default-conv';
     const startedAt = new Date();
 
     // Diagnostics Point 5 & Point 6
     logger.info(`[DIAGNOSTICS][Point 5] Local Service Research location object [${requestId}]: ${JSON.stringify(userLocation || null)}`);
     logger.info(`[DIAGNOSTICS][Point 6] n8n input [${requestId}]: N/A (Local Service Research operates under strict zero-transaction guarantee; no external automation dispatch).`);
+
+    // 0. Intelligent Conversation Memory & Follow-up Routing
+    const lastResearchResults =
+      taskContext.lastResearchResults ||
+      taskContext.previousResults ||
+      this.conversationResultsCache.get(conversationId) ||
+      null;
+
+    const isFollowUp = Boolean(
+      taskContext.isFollowUp ||
+      taskContext.followUpType === 'LOCAL_RESEARCH_FOLLOW_UP' ||
+      this.isFollowUpQuery(userRequest, lastResearchResults)
+    );
+
+    if (isFollowUp) {
+      logger.info(`[Local Service Researcher] Follow-up detected for "${userRequest}". Answering from conversation memory without external API call.`);
+      return this.processFollowUp({
+        ...taskContext,
+        requestId,
+        conversationId,
+        userRequest,
+        lastResearchResults,
+      });
+    }
 
     logger.info(`[Local Service Researcher] Initiating verified research for: "${userRequest}"`);
 
