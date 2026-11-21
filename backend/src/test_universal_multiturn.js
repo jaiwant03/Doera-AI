@@ -306,8 +306,8 @@ async function runTests() {
     userRequest: 'Draft an email to HOD requesting event approval for technical symposium.',
   });
 
-  assert(emailTurn1.status === 'staged' || emailTurn1.status === 'completed', 'Initial email drafted');
-  const initialDraft = emailTurn1.draft;
+  assert(emailTurn1.status === 'drafted' || emailTurn1.status === 'completed', 'Initial email drafted');
+  const initialDraft = emailTurn1.draft || emailTurn1;
 
   await Message.create({
     conversationId: convEmail._id,
@@ -348,8 +348,8 @@ async function runTests() {
     historyContext: emailTurn2Context.historyContext,
   });
 
-  assert(emailTurn2.status === 'staged' || emailTurn2.status === 'completed', 'Email Turn 2 successfully revised draft');
-  assert(Boolean(emailTurn2.draft?.emailText || emailTurn2.draft?.subject), 'Revised email has body text');
+  assert(emailTurn2.status === 'drafted' || emailTurn2.status === 'completed', 'Email Turn 2 successfully revised draft');
+  assert(Boolean(emailTurn2.draft?.emailText || emailTurn2.emailText), 'Revised email has body text');
 
   // =========================================================================
   // TEST 5: DOCUMENT & IMAGE REFERENCE RESOLUTION

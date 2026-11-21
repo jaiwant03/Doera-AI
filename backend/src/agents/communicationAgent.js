@@ -61,6 +61,14 @@ Conversation History: ${historySnippet ? historySnippet.slice(-1500) : 'None'}`;
       draft.whatsappText ||
       `Hello, regarding: ${taskContext.userRequest}. Please let us know your earliest availability. Thank you!`;
 
+    const draftObj = {
+      subject,
+      emailHtml: draft.emailHtml || `<p>${emailText.replace(/\n/g, '<br/>')}</p>`,
+      emailText,
+      whatsappText,
+      recipient: recipientLabel,
+    };
+
     return {
       agentName: this.name,
       taskId: taskContext.taskId,
@@ -69,9 +77,10 @@ Conversation History: ${historySnippet ? historySnippet.slice(-1500) : 'None'}`;
       recipient: recipientLabel,
       recipientName: primaryContact?.businessName || 'Recipient',
       subject,
-      emailHtml: draft.emailHtml || `<p>${emailText.replace(/\n/g, '<br/>')}</p>`,
+      emailHtml: draftObj.emailHtml,
       emailText,
       whatsappText,
+      draft: draftObj,
       message: emailText, // Summary for approval UI preview
       channel: primaryContact?.email ? 'Email' : (primaryContact?.phone ? 'WhatsApp / SMS' : 'Email (Personal OAuth)'),
       requiresApproval: true,
