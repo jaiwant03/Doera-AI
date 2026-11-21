@@ -83,6 +83,18 @@ const MessageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
+    showMap: {
+      type: Boolean,
+      default: null,
+    },
+    responseType: {
+      type: String,
+      default: null,
+    },
+    presentationMode: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: true,
