@@ -499,9 +499,18 @@ class SpreadsheetService {
 
     const { headers, rows, columnSchema } = targetSheet;
 
+    // Check if query is naming two column headers (e.g. "Amount and Day") for covariance/correlation
+    const matchingHeaders = headers.filter((h) => {
+      const reg = new RegExp(`\\b${h.toLowerCase().replace(/[^a-z0-9]/g, '[_\\s]?')}\\b`, 'i');
+      return reg.test(queryLower);
+    });
+    const isTwoColumnQuery = matchingHeaders.length >= 2 && /(and|vs|with|,)/i.test(queryLower);
+
     // Check for Specific Statistical Query (Phase 7 Exact Intent Routing)
-    const isStatisticalQuery = /(mean|median|mode|average|avg|middle\s*value|most\s*frequent|occurs?\s*most|variance|\bvar\b|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|range|spread|quartile|quartiles|q1|q2|q3|iqr|interquartile|five[\s-]number|skew|skewness|kurtosis|outlier|outliers|anomalies|anomalous|correlation|spearman|pearson|covariance|statistical\s*(summary|analysis|profile|measures?|results?)|full\s*statistics|all\s*statistics)/i.test(queryLower) &&
-      !/(bar\s*chart|pie\s*chart|highest\s*spending\s*category|lowest\s*spending\s*category)/i.test(queryLower);
+    const isStatisticalQuery = (
+      /(mean|median|mode|average|avg|middle\s*value|most\s*frequent|occurs?\s*most|variance|\bvar\b|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|range|spread|quartile|quartiles|q1|q2|q3|iqr|interquartile|five[\s-]number|skew|skewness|kurtosis|outlier|outliers|anomalies|anomalous|correlation|spearman|pearson|covariance|statistical\s*(summary|analysis|profile|measures?|results?)|full\s*statistics|all\s*statistics)/i.test(queryLower) ||
+      isTwoColumnQuery
+    ) && !/(bar\s*chart|pie\s*chart|highest\s*spending\s*category|lowest\s*spending\s*category)/i.test(queryLower);
 
     if (isStatisticalQuery) {
       const statResult = statisticalService.executeStatisticalAnalysis({
