@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger.js';
+import { config } from '../config/env.js';
 import locationService from './locationService.js';
 
 export const VERIFICATION_STATUSES = {
@@ -31,6 +32,8 @@ class LocalServiceResearcher {
   constructor() {
     this.name = 'LocalServiceResearcher';
     this.nominatimBase = 'https://nominatim.openstreetmap.org';
+    this.photonBase = 'https://photon.komoot.io';
+    this.googlePlacesApiKey = config.googlePlacesApiKey || '';
     this.userAgent = 'DOERA-AI-Local-Research/3.0 (contact@doera.ai)';
   }
 
@@ -177,7 +180,7 @@ class LocalServiceResearcher {
     // Parse requested result count
     let targetCount = 5;
     const countMatch = text.match(
-      /\b(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:top|best|nearby|verified|different)?\s*(?:cinema|theatre|theater|movie|multiplex|hospital|clinic|doctor|restaurant|cafe|laptop|computer|repair|service|provider|business|shop)s?\b/i
+      /\b(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:top|best|nearby|verified|different)?\s*(?:cinema|theatre|theater|movie|multiplex|hospital|clinic|doctor|restaurant|cafe|laptop|computer|mobile|phone|repair|service|provider|business|shop)s?\b/i
     );
     if (countMatch && countMatch[1]) {
       const wordMap = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
@@ -225,6 +228,10 @@ class LocalServiceResearcher {
       serviceCategory = 'Laptop Repair Centres';
       categoryTitle = 'Laptop Repair Centres';
       searchTerms = ['laptop repair', 'computer repair', 'computer shop', 'computer service', 'laptop store'];
+    } else if (/mobile|phone|smartphone|iphone|android|cell\s*phone/i.test(lower)) {
+      serviceCategory = 'Mobile Phone Service Centres';
+      categoryTitle = 'Mobile Phone Service Centres';
+      searchTerms = ['mobile phone repair', 'mobile service center', 'phone repair', 'mobile repair', 'electronics repair'];
     } else if (/electrician|electrical/i.test(lower)) {
       serviceCategory = 'Electricians';
       categoryTitle = 'Electricians';
