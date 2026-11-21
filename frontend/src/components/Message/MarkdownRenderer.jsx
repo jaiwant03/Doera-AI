@@ -20,12 +20,16 @@ function normalizeMathDelimiters(text) {
 
   // 2. Convert LaTeX block math \[ ... \] to \n\n$$\n...\n$$\n\n
   normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
-    return `\n\n$$\n${formula.trim()}\n$$\n\n`;
+    let cleanFormula = formula.replace(/\\n/g, '\n').trim();
+    cleanFormula = cleanFormula.replace(/(^|[^\\])\$/g, '$1\\$');
+    return `\n\n$$\n${cleanFormula}\n$$\n\n`;
   });
 
   // 3. Convert LaTeX inline math \( ... \) to $ ... $
   normalized = normalized.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
-    return `$${formula.trim()}$`;
+    let cleanFormula = formula.replace(/\\n/g, ' ').trim();
+    cleanFormula = cleanFormula.replace(/(^|[^\\])\$/g, '$1\\$');
+    return `$${cleanFormula}$`;
   });
 
   return normalized;
