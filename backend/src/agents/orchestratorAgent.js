@@ -69,6 +69,7 @@ Output pure JSON:
 
     // Ensure local service / discovery agent step exists for search & discovery tasks
     if (
+      !requiredAgents.includes('DataAnalysis') &&
       (isLocalResearch || requiredAgents.includes('Location') || requiredAgents.includes('Research')) &&
       !subtasks.some((st) => st.agent === 'LocalService' || st.agent === 'Discovery')
     ) {
