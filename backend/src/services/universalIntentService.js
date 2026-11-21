@@ -44,7 +44,9 @@ class UniversalIntentService {
 
     const isStatisticalCalculation = /\b(range|interquartile|interquartile\s*range|iqr|covariance|mean|median|mode|variance|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|skewness|kurtosis|quartiles?|percentiles?|z-score|sum|total|correlation)\b/i.test(lower);
 
-    const isDocAnalysis = (hasAttachments && !hasSpreadsheetAttachment) || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
+    const isDocAnalysis = (hasAttachments && !hasSpreadsheetAttachment) ||
+      /(summarize|analyze|review|extract|read|explain|examine)\s+(this|the|my)?\s*(pdf|document|file|doc|docx|ppt|pptx|presentation|slides?|deck|report|invoice|paper|proposal|architecture)/i.test(lower) ||
+      /(examine\s+system\s+architecture|system\s+architecture|identify\s+weaknesses|recommend\s+improvements|technical\s+requirements\s+mentioned|extract\s+all\s+important\s+dates|explain\s+slide\s*\d+|project\s+proposal\s+ppt)/i.test(lower);
 
     const isDataAnalysis = hasSpreadsheetAttachment || (!isDocAnalysis && isStatisticalCalculation) || (
       !isDocAnalysis &&
