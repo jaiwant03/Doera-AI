@@ -47,6 +47,10 @@ class LocalServiceResearcher {
     const requestId = taskContext.requestId || `req-${Date.now().toString(36)}`;
     const startedAt = new Date();
 
+    // Diagnostics Point 5 & Point 6
+    logger.info(`[DIAGNOSTICS][Point 5] Local Service Research location object [${requestId}]: ${JSON.stringify(userLocation || null)}`);
+    logger.info(`[DIAGNOSTICS][Point 6] n8n input [${requestId}]: N/A (Local Service Research operates under strict zero-transaction guarantee; no external automation dispatch).`);
+
     logger.info(`[Local Service Researcher] Initiating verified research for: "${userRequest}"`);
 
     // 1. Understand request entities, location, requirements, and target count
@@ -220,7 +224,7 @@ class LocalServiceResearcher {
     } else if (/laptop|computer|dell\s*repair|pc\s*repair/i.test(lower)) {
       serviceCategory = 'Laptop Repair Centres';
       categoryTitle = 'Laptop Repair Centres';
-      searchTerms = ['laptop repair', 'computer service'];
+      searchTerms = ['laptop repair', 'computer repair', 'computer shop', 'computer service', 'laptop store'];
     } else if (/electrician|electrical/i.test(lower)) {
       serviceCategory = 'Electricians';
       categoryTitle = 'Electricians';
@@ -276,7 +280,7 @@ class LocalServiceResearcher {
       }
       targetLocationLabel = `${targetLocation} (User Specified)`;
     } else if (isNearMe) {
-      // 2. "near me" requested: requires device coordinates
+      // 2. "near me" requested
       if (userLocation?.denied || userLocation?.source === 'denied') {
         return {
           isLocationRequired: true,
@@ -292,7 +296,42 @@ class LocalServiceResearcher {
         };
       }
 
-      if (!userLocation || (!userLocation.lat && !userLocation.lng)) {
+      const hasCoords = userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number';
+      const hasLocName = userLocation?.name && !/detected location|current location|your location|live gps position|unknown/i.test(userLocation.name);
+
+      if (hasCoords) {
+        center = { lat: Number(userLocation.lat), lng: Number(userLocation.lng) };
+        locationSource = userLocation.source || 'browser_geolocation';
+        locationSourceLabel = userLocation.source === 'manual_entry' || userLocation.source === 'user_selected' || userLocation.source === 'manual'
+          ? 'User Specified'
+          : (locationSource === 'approximate' ? 'Approximate' : 'Device Location');
+
+        if (hasLocName) {
+          targetLocation = userLocation.name;
+        } else {
+          try {
+            const rev = await locationService.reverseGeocode(center.lat, center.lng);
+            targetLocation = rev?.displayName ? rev.displayName.split(',').slice(0, 3).join(',').trim() : (rev?.city || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
+          } catch (_) {
+            targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+          }
+        }
+        targetLocationLabel = `${targetLocation} (${locationSourceLabel})`;
+      } else if (hasLocName) {
+        // Section 5: Support city/area location even if GPS coordinates are missing
+        targetLocation = userLocation.name;
+        locationSource = userLocation.source || 'user_selected';
+        locationSourceLabel = 'Selected Area';
+        try {
+          const geo = await locationService.geocode(userLocation.name);
+          if (geo && typeof geo.lat === 'number' && typeof geo.lng === 'number') {
+            center = { lat: geo.lat, lng: geo.lng };
+            targetLocation = geo.displayName ? geo.displayName.split(',').slice(0, 3).join(',').trim() : userLocation.name;
+            if (geo.city) targetCity = geo.city;
+          }
+        } catch (_) {}
+        targetLocationLabel = `${targetLocation} (${locationSourceLabel})`;
+      } else {
         return {
           isLocationRequired: true,
           searchState: 'LOCATION_REQUIRED',
@@ -306,30 +345,6 @@ class LocalServiceResearcher {
           searchTerms,
         };
       }
-
-      center = { lat: Number(userLocation.lat), lng: Number(userLocation.lng) };
-      locationSource = userLocation.source || 'precise';
-      locationSourceLabel = locationSource === 'approximate' ? 'Approximate' : 'Device Location';
-
-      // Reverse geocode to get human-readable locality
-      try {
-        const rev = await locationService.reverseGeocode(center.lat, center.lng);
-        if (rev && rev.city) targetCity = rev.city;
-        else if (rev && rev.name) targetCity = rev.name;
-
-        if (rev && rev.displayName) {
-          targetLocation = rev.displayName.split(',').slice(0, 3).join(',').trim();
-        } else if (rev && rev.city) {
-          targetLocation = rev.city;
-        } else if (userLocation.name && !/your location|detected location|current location/i.test(userLocation.name)) {
-          targetLocation = userLocation.name;
-        } else {
-          targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
-        }
-      } catch (_) {
-        targetLocation = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
-      }
-      targetLocationLabel = `${targetLocation} (${locationSourceLabel})`;
     } else if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
       // 3. Fall back to active userLocation if available in session
       center = { lat: Number(userLocation.lat), lng: Number(userLocation.lng) };
@@ -427,6 +442,9 @@ class LocalServiceResearcher {
       const minLat = center.lat - delta;
       viewboxStr = `${minLng},${maxLat},${maxLng},${minLat}`;
     }
+
+    // Diagnostics Point 7: Business search request parameters
+    logger.info(`[DIAGNOSTICS][Point 7] Business search request parameters: center=${JSON.stringify(center || null)}, targetLocation="${targetLocation}", searchTerms=${JSON.stringify(searchTerms)}, radiusKm=${radiusKm}`);
 
     let networkSuccess = false;
 
@@ -558,6 +576,9 @@ class LocalServiceResearcher {
 
     // Slice to requested count
     const retained = candidates.slice(0, targetCount);
+
+    // Diagnostics Point 8: Business search result count
+    logger.info(`[DIAGNOSTICS][Point 8] Business search result count: ${retained.length} providers found (candidates: ${candidates.length}, requested: ${targetCount})`);
 
     let searchState = 'RESULTS_FOUND';
     if (retained.length === 0) {

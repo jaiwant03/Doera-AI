@@ -33,8 +33,171 @@ export const ChatProvider = ({ children }) => {
   // DOERA Live Location Intelligence
   const [userLocation, setUserLocation] = useState(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
   const watchIdRef = useRef(null);
+
+  /**
+   * Genuine location detection: requests browser GPS coordinates and reverse geocodes to readable locality
+   */
+  const detectLocation = useCallback(async () => {
+    if (typeof window === 'undefined') return null;
+
+    if (!navigator.geolocation) {
+      const errLoc = {
+        status: 'error',
+        lat: null,
+        lng: null,
+        name: 'Unable to detect location',
+        error: 'Geolocation is not supported by your browser.',
+        source: 'unavailable',
+      };
+      setUserLocation(errLoc);
+      return errLoc;
+    }
+
+    setIsDetectingLocation(true);
+    setUserLocation({
+      status: 'detecting',
+      lat: null,
+      lng: null,
+      name: 'Detecting location...',
+      source: 'detecting',
+    });
+
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = pos.coords.accuracy;
+
+          // Reverse geocode coordinates via backend API for human-readable locality
+          let resolvedName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          let displayName = null;
+
+          try {
+            const revRes = await api.get(`/location/reverse?lat=${lat}&lng=${lng}`);
+            if (revRes.data) {
+              const d = revRes.data;
+              if (d.city && d.state) {
+                resolvedName = `${d.city}, ${d.state}`;
+              } else if (d.city) {
+                resolvedName = d.city;
+              } else if (d.displayName) {
+                resolvedName = d.displayName.split(',').slice(0, 2).join(',').trim();
+              }
+              displayName = d.displayName || resolvedName;
+            }
+          } catch (_) {
+            // Keep coordinates as fallback if reverse geocoding is unavailable
+          }
+
+          const loc = {
+            status: 'resolved',
+            lat,
+            lng,
+            accuracy,
+            name: resolvedName,
+            displayName,
+            source: 'precise',
+          };
+
+          setUserLocation(loc);
+          setIsDetectingLocation(false);
+          resolve(loc);
+        },
+        (err) => {
+          setIsDetectingLocation(false);
+          let errLoc;
+          if (err.code === 1) {
+            // Permission denied
+            errLoc = {
+              status: 'denied',
+              denied: true,
+              lat: null,
+              lng: null,
+              name: 'Location access denied',
+              error: 'Location permission was denied in browser.',
+              source: 'denied',
+            };
+          } else {
+            // Position unavailable or timeout
+            errLoc = {
+              status: 'error',
+              unavailable: true,
+              lat: null,
+              lng: null,
+              name: 'Unable to detect location',
+              error: err.message || 'Unable to retrieve location.',
+              source: 'error',
+            };
+          }
+          setUserLocation(errLoc);
+          resolve(errLoc);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    });
+  }, []);
+
+  /**
+   * Set user location manually with backend geocoding validation
+   */
+  const setManualLocation = useCallback(async (query) => {
+    if (!query || !query.trim()) return null;
+    const clean = query.trim();
+
+    setIsDetectingLocation(true);
+    setUserLocation({
+      status: 'detecting',
+      lat: null,
+      lng: null,
+      name: `Resolving: ${clean}...`,
+      source: 'manual',
+    });
+
+    try {
+      const geoRes = await api.get(`/location/geocode?q=${encodeURIComponent(clean)}`);
+      if (geoRes.data && typeof geoRes.data.lat === 'number' && typeof geoRes.data.lng === 'number') {
+        const g = geoRes.data;
+        const resolvedName = g.city && g.state ? `${g.city}, ${g.state}` : (g.name || clean);
+        const loc = {
+          status: 'manual',
+          lat: g.lat,
+          lng: g.lng,
+          accuracy: null,
+          name: resolvedName,
+          displayName: g.displayName || clean,
+          source: 'manual',
+        };
+        setUserLocation(loc);
+        setIsDetectingLocation(false);
+        return loc;
+      }
+    } catch (_) {}
+
+    // Fallback if geocoding fails: save query with manual status
+    const manualLoc = {
+      status: 'manual',
+      lat: null,
+      lng: null,
+      name: clean,
+      displayName: clean,
+      source: 'manual',
+    };
+    setUserLocation(manualLoc);
+    setIsDetectingLocation(false);
+    return manualLoc;
+  }, []);
+
+  /**
+   * Clear active location state
+   */
+  const clearLocation = useCallback(() => {
+    setUserLocation(null);
+    setIsDetectingLocation(false);
+  }, []);
 
   const toggleLiveTracking = useCallback(() => {
     if (isTrackingActive) {
@@ -47,12 +210,22 @@ export const ChatProvider = ({ children }) => {
       if (!navigator.geolocation) return;
       setIsTrackingActive(true);
       watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          let resolvedName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          try {
+            const revRes = await api.get(`/location/reverse?lat=${lat}&lng=${lng}`);
+            if (revRes.data?.city) resolvedName = revRes.data.city;
+          } catch (_) {}
+
           setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
+            status: 'resolved',
+            lat,
+            lng,
             accuracy: pos.coords.accuracy,
-            name: 'Live GPS Position',
+            name: resolvedName,
+            source: 'precise',
           });
         },
         () => {
@@ -252,7 +425,11 @@ export const ChatProvider = ({ children }) => {
       };
       setMessages(prev => [...prev, optimisticMsg]);
 
-      const effectiveLocation = overrideLocation !== null ? overrideLocation : (userLocation || null);
+      const effectiveLocation = overrideLocation !== null
+        ? overrideLocation
+        : (userLocation && (userLocation.status === 'resolved' || userLocation.status === 'manual' || userLocation.lat)
+            ? userLocation
+            : (userLocation?.status === 'denied' || userLocation?.denied ? { denied: true, source: 'denied' } : null));
 
       const res = await api.post('/chat/message', {
         conversationId: currentConversation ? (currentConversation._id || currentConversation.id) : null,
@@ -621,6 +798,10 @@ export const ChatProvider = ({ children }) => {
         setShowUpgradeModal,
         userLocation,
         setUserLocation,
+        detectLocation,
+        setManualLocation,
+        clearLocation,
+        isDetectingLocation,
         isLocationModalOpen,
         setIsLocationModalOpen,
         isTrackingActive,

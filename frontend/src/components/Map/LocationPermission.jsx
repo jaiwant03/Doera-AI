@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { MapPin, Navigation, X, ShieldAlert, CheckCircle2, Radio } from 'lucide-react';
+import { MapPin, Navigation, X, ShieldAlert, CheckCircle2, Radio, Loader2 } from 'lucide-react';
+import { useChat } from '../../context/ChatContext';
 
 const LocationPermission = ({
   isOpen,
@@ -8,56 +9,51 @@ const LocationPermission = ({
   isTrackingActive,
   onToggleTracking,
 }) => {
+  const { detectLocation, setManualLocation, isDetectingLocation } = useChat();
   const [manualQuery, setManualQuery] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isResolvingManual, setIsResolvingManual] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleRequestBrowserLocation = () => {
-    if (!navigator.geolocation) {
-      setErrorMsg('Geolocation is not supported by your browser.');
-      return;
+  const handleRequestBrowserLocation = async () => {
+    setErrorMsg('');
+    try {
+      const loc = await detectLocation();
+      if (loc?.status === 'resolved' && loc.lat) {
+        if (onLocationAcquired) onLocationAcquired(loc);
+        onClose();
+      } else if (loc?.status === 'denied' || loc?.denied) {
+        setErrorMsg('Location access was denied in your browser. You can enter your city or area manually below.');
+      } else {
+        setErrorMsg(loc?.error || 'Unable to retrieve location. Enter location manually below.');
+      }
+    } catch (err) {
+      setErrorMsg('Failed to detect location. Enter location manually below.');
     }
+  };
 
-    setIsLoading(true);
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    const clean = manualQuery.trim();
+    if (!clean) return;
+
+    setIsResolvingManual(true);
     setErrorMsg('');
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setIsLoading(false);
-        const loc = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          name: 'Current Location',
-        };
-        if (onLocationAcquired) {
-          onLocationAcquired(loc);
-        }
-        onClose();
-      },
-      (err) => {
-        setIsLoading(false);
-        if (err.code === 1) {
-          setErrorMsg('Location access was denied. You can enter your city or area manually below.');
-        } else {
-          setErrorMsg(`Unable to retrieve location (${err.message}). Enter location manually.`);
-        }
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
-  };
-
-  const handleManualSubmit = (e) => {
-    e.preventDefault();
-    if (!manualQuery.trim()) return;
-
-    if (onLocationAcquired) {
-      onLocationAcquired({ name: manualQuery.trim() });
+    try {
+      const loc = await setManualLocation(clean);
+      setIsResolvingManual(false);
+      if (onLocationAcquired) onLocationAcquired(loc);
+      setManualQuery('');
+      onClose();
+    } catch (err) {
+      setIsResolvingManual(false);
+      setErrorMsg('Failed to resolve manual location. Please check the spelling or try another area.');
     }
-    onClose();
   };
+
+  const isBusy = isDetectingLocation || isResolvingManual;
 
   return (
     <div className="doera-loc-permission-modal-overlay" onClick={onClose}>
@@ -92,10 +88,14 @@ const LocationPermission = ({
             type="button"
             onClick={handleRequestBrowserLocation}
             className="doera-loc-primary-btn"
-            disabled={isLoading}
+            disabled={isBusy}
           >
-            <Navigation size={15} />
-            {isLoading ? 'Locating...' : 'Allow Browser Location Access'}
+            {isDetectingLocation ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Navigation size={15} />
+            )}
+            {isDetectingLocation ? 'Detecting Location...' : 'Allow Browser Location Access'}
           </button>
 
           {onToggleTracking && (
@@ -120,6 +120,7 @@ const LocationPermission = ({
               placeholder="e.g. Coimbatore, Gandhipuram"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
+              disabled={isBusy}
               style={{
                 flex: 1,
                 background: '#190C23',
@@ -134,9 +135,10 @@ const LocationPermission = ({
             <button
               type="submit"
               className="doera-loc-secondary-btn"
+              disabled={isBusy || !manualQuery.trim()}
               style={{ padding: '9px 14px', fontSize: '12px' }}
             >
-              Set
+              {isResolvingManual ? 'Resolving...' : 'Set'}
             </button>
           </form>
         </div>

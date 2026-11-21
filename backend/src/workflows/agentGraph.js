@@ -22,6 +22,7 @@ import universalIntentService from '../services/universalIntentService.js';
 import mongoose from 'mongoose';
 import Approval from '../models/Approval.js';
 import TaskEvent from '../models/TaskEvent.js';
+import Task from '../models/Task.js';
 import approvalService from '../services/approvalService.js';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
@@ -32,6 +33,7 @@ const TaskStateAnnotation = Annotation.Root({
   taskDocId: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   userId: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   userRequest: Annotation({ reducer: (x, y) => y ?? x, default: () => '' }),
+  userLocation: Annotation({ reducer: (x, y) => y ?? x, default: () => null }),
   category: Annotation({ reducer: (x, y) => y ?? x, default: () => 'GENERAL_EXECUTION' }),
   status: Annotation({ reducer: (x, y) => y ?? x, default: () => 'RECEIVED' }),
   currentAgent: Annotation({ reducer: (x, y) => y ?? x, default: () => 'Orchestrator' }),
@@ -1083,7 +1085,23 @@ const localServiceNode = async (state) => {
     { step: { id: 'local_service', name: 'Local service research and verification', status: 'in_progress', timestamp: new Date() } }
   );
 
-  const res = await localServiceAgent.execute(state);
+  // Fallback to Task document if state.userLocation was somehow omitted
+  let resolvedLocation = state.userLocation || null;
+  if (!resolvedLocation && state.taskDocId) {
+    try {
+      const taskDoc = await Task.findById(state.taskDocId).select('userLocation').lean();
+      if (taskDoc?.userLocation) {
+        resolvedLocation = taskDoc.userLocation;
+      }
+    } catch (_) {}
+  }
+
+  logger.info(`[DIAGNOSTICS][Point 5] Local Service Research location in localServiceNode: ${JSON.stringify(resolvedLocation || null)}`);
+
+  const res = await localServiceAgent.execute({
+    ...state,
+    userLocation: resolvedLocation,
+  });
 
   const isLocationRequired = res.status === 'LOCATION_REQUIRED' || res.output?.locationRequired;
   const isSearchFailed = res.status === 'SEARCH_FAILED' || res.output?.searchState === 'SEARCH_FAILED';

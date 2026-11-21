@@ -106,6 +106,8 @@ export const streamMessage = async (req, res) => {
   const idempotencyKey = req.headers['idempotency-key'] || null;
   const testDate = req.headers['x-test-date'] || null;
 
+  logger.info(`[DIAGNOSTICS][Point 4] Backend stream request body [${requestId}]: userLocation=${JSON.stringify(userLocation || null)}`);
+
   try {
     // Atomic quota reservation
     const quota = await usageService.reserveQuota({
@@ -604,6 +606,8 @@ export const sendMessage = async (req, res, next) => {
   const requestId = req.headers['x-request-id'] || `req-${uuidv4().substring(0, 12)}`;
   const idempotencyKey = req.headers['idempotency-key'] || null;
   const testDate = req.headers['x-test-date'] || null;
+
+  logger.info(`[DIAGNOSTICS][Point 4] Backend REST request body [${requestId}]: userLocation=${JSON.stringify(userLocation || null)}`);
 
   try {
     // Atomic quota reservation

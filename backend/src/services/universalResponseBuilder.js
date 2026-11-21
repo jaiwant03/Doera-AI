@@ -297,6 +297,8 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
     categorySingular = 'hospital';
   } else if (/restaurant|cafe/i.test(categoryTitle)) {
     categorySingular = 'restaurant';
+  } else if (/laptop|computer/i.test(categoryTitle)) {
+    categorySingular = 'laptop service centre';
   } else {
     categorySingular = categoryTitle.toLowerCase().replace(/s\b/, '');
   }

@@ -10,7 +10,9 @@ import {
   Sparkles,
   Loader2,
   Square,
-  MapPin
+  MapPin,
+  ShieldAlert,
+  AlertCircle
 } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import LocationPermission from '../Map/LocationPermission';
@@ -21,6 +23,10 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
     stopGeneration,
     userLocation,
     setUserLocation,
+    detectLocation,
+    setManualLocation,
+    clearLocation,
+    isDetectingLocation,
     isLocationModalOpen,
     setIsLocationModalOpen,
     isTrackingActive,
@@ -228,7 +234,7 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     const trimmed = input.trim();
     if ((!trimmed && attachments.length === 0) || isSending) return;
@@ -243,55 +249,37 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
       /\b(near me|nearby|closest|nearest|around me|within \d+\s*(?:km|miles?)|near here)\b/i.test(trimmed) &&
       !/\bnear\s+(?!me\b|here\b)[a-z0-9]/i.test(trimmed);
 
-    // If query is location-dependent ("near me") and userLocation is not yet set, request browser geolocation
-    if (isNearMe && !userLocation) {
-      if (typeof window !== 'undefined' && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const loc = {
-              lat: pos.coords.latitude,
-              lng: pos.coords.longitude,
-              accuracy: pos.coords.accuracy,
-              name: 'Detected Location',
-              source: 'precise',
-            };
-            setUserLocation(loc);
-            onSendMessage(trimmed, attachments, loc);
-            setInput('');
-            setAttachments([]);
-            if (textareaRef.current) textareaRef.current.style.height = 'auto';
-          },
-          (err) => {
-            // Permission denied (code 1), position unavailable (code 2), timeout (code 3)
-            const locDenied = {
-              denied: err.code === 1,
-              unavailable: err.code === 2 || err.code === 3,
-              error: err.message,
-              source: 'denied',
-            };
-            onSendMessage(trimmed, attachments, locDenied);
-            setInput('');
-            setAttachments([]);
-            if (textareaRef.current) textareaRef.current.style.height = 'auto';
-          },
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-        );
-        return;
+    let locationToPass = null;
+
+    if (isNearMe) {
+      // 1. If location is already resolved or manually set with valid coordinates
+      if (userLocation && (userLocation.status === 'resolved' || userLocation.status === 'manual') && userLocation.lat && userLocation.lng) {
+        locationToPass = userLocation;
+      } else if (userLocation && (userLocation.status === 'denied' || userLocation.denied)) {
+        // User explicitly denied location previously
+        locationToPass = { denied: true, source: 'denied' };
+      } else if (userLocation && (userLocation.status === 'error' || userLocation.unavailable)) {
+        // Location detection failed/unavailable previously
+        locationToPass = { unavailable: true, source: 'unavailable' };
       } else {
-        const locUnavailable = {
-          denied: false,
-          unavailable: true,
-          source: 'unavailable',
-        };
-        onSendMessage(trimmed, attachments, locUnavailable);
-        setInput('');
-        setAttachments([]);
-        if (textareaRef.current) textareaRef.current.style.height = 'auto';
-        return;
+        // Location not yet determined; automatically trigger detectLocation()
+        const detected = await detectLocation();
+        if (detected?.status === 'resolved' && detected?.lat) {
+          locationToPass = detected;
+        } else if (detected?.status === 'denied' || detected?.denied) {
+          locationToPass = { denied: true, source: 'denied' };
+        } else {
+          locationToPass = { unavailable: true, source: 'unavailable' };
+        }
+      }
+    } else if (userLocation) {
+      // For general queries, pass current location if active and valid
+      if ((userLocation.status === 'resolved' || userLocation.status === 'manual') && userLocation.lat) {
+        locationToPass = userLocation;
       }
     }
 
-    onSendMessage(trimmed, attachments);
+    onSendMessage(trimmed, attachments, locationToPass);
     setInput('');
     setAttachments([]);
     if (textareaRef.current) {
@@ -305,25 +293,197 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
     <div className="doera-composer-wrapper">
       <div className={`doera-composer-container ${isFocused ? 'focused' : ''}`}>
         {/* Attachment Chips Bar & Active Location Pill */}
-        {(attachments.length > 0 || userLocation) && (
+        {(attachments.length > 0 || userLocation || isDetectingLocation) && (
           <div className="doera-composer-chips">
-            {userLocation && (
-              <div className="doera-attachment-chip" style={{ background: 'rgba(241, 45, 152, 0.15)', borderColor: 'rgba(241, 45, 152, 0.4)' }}>
-                <MapPin size={12} color="#FF55BD" />
+            {/* Dynamic Location Chip with 5 distinct states */}
+            {isDetectingLocation || userLocation?.status === 'detecting' ? (
+              // State A: While detecting
+              <div
+                className="doera-attachment-chip"
+                style={{
+                  background: 'rgba(241, 45, 152, 0.12)',
+                  borderColor: 'rgba(241, 45, 152, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Loader2 size={12} className="animate-spin" color="#FF55BD" />
                 <span className="doera-chip-name" style={{ color: '#FF7BD5', fontWeight: 600 }}>
-                  {userLocation.name || 'Current Location'}
+                  Detecting location...
+                </span>
+              </div>
+            ) : userLocation?.status === 'resolved' || (userLocation?.lat && userLocation?.status !== 'manual' && !userLocation?.denied) ? (
+              // State B: After successful detection (Resolved locality)
+              <div
+                className="doera-attachment-chip"
+                style={{
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  borderColor: 'rgba(16, 185, 129, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <MapPin size={12} color="#10B981" />
+                <span className="doera-chip-name" style={{ color: '#34D399', fontWeight: 600 }}>
+                  {userLocation.name}
                   {isTrackingActive ? ' (Live GPS)' : ''}
                 </span>
                 <button
                   type="button"
-                  onClick={() => setUserLocation(null)}
+                  onClick={clearLocation}
                   className="doera-chip-remove"
                   title="Clear location"
+                  style={{ color: '#34D399', cursor: 'pointer' }}
                 >
                   <X size={11} />
                 </button>
               </div>
-            )}
+            ) : userLocation?.status === 'denied' || userLocation?.denied ? (
+              // State C: If permission denied
+              <div
+                className="doera-attachment-chip"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  borderColor: 'rgba(239, 68, 68, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <ShieldAlert size={12} color="#EF4444" />
+                <span className="doera-chip-name" style={{ color: '#FCA5A5', fontWeight: 600 }}>
+                  Location access denied
+                </span>
+                <button
+                  type="button"
+                  onClick={() => detectLocation()}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.25)',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    borderRadius: '4px',
+                    color: '#FEE2E2',
+                    fontSize: '10.5px',
+                    padding: '2px 7px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Retry
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLocationModalOpen(true)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    color: '#F3F4F6',
+                    fontSize: '10.5px',
+                    padding: '2px 7px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Enter manually
+                </button>
+                <button
+                  type="button"
+                  onClick={clearLocation}
+                  className="doera-chip-remove"
+                  title="Dismiss"
+                  style={{ color: '#FCA5A5', cursor: 'pointer' }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : userLocation?.status === 'error' || userLocation?.unavailable ? (
+              // State D: If detection fails / error
+              <div
+                className="doera-attachment-chip"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  borderColor: 'rgba(245, 158, 11, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <AlertCircle size={12} color="#F59E0B" />
+                <span className="doera-chip-name" style={{ color: '#FCD34D', fontWeight: 600 }}>
+                  Unable to detect location
+                </span>
+                <button
+                  type="button"
+                  onClick={() => detectLocation()}
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.25)',
+                    border: '1px solid rgba(245, 158, 11, 0.5)',
+                    borderRadius: '4px',
+                    color: '#FEF3C7',
+                    fontSize: '10.5px',
+                    padding: '2px 7px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Retry
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLocationModalOpen(true)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    color: '#F3F4F6',
+                    fontSize: '10.5px',
+                    padding: '2px 7px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Enter manually
+                </button>
+                <button
+                  type="button"
+                  onClick={clearLocation}
+                  className="doera-chip-remove"
+                  title="Dismiss"
+                  style={{ color: '#FCD34D', cursor: 'pointer' }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : userLocation?.status === 'manual' ? (
+              // State E: If manually entered
+              <div
+                className="doera-attachment-chip"
+                style={{
+                  background: 'rgba(241, 45, 152, 0.15)',
+                  borderColor: 'rgba(241, 45, 152, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <MapPin size={12} color="#FF55BD" />
+                <span className="doera-chip-name" style={{ color: '#FF7BD5', fontWeight: 600 }}>
+                  Using: {userLocation.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearLocation}
+                  className="doera-chip-remove"
+                  title="Clear location"
+                  style={{ color: '#FF7BD5', cursor: 'pointer' }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : null}
+
             {attachments.map((file, idx) => (
               <div key={idx} className="doera-attachment-chip">
                 {file.type?.startsWith('image/') && file.dataUrl ? (
@@ -374,12 +534,36 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
             </button>
             <button
               type="button"
-              onClick={() => setIsLocationModalOpen(true)}
-              className={`doera-btn-icon doera-composer-icon-btn ${userLocation ? 'active' : ''}`}
-              title={userLocation ? `Location active: ${userLocation.name}` : 'Use my location for nearby search & routing'}
-              style={userLocation ? { color: '#FF55BD' } : {}}
+              onClick={() => {
+                if (!userLocation || userLocation.status === 'denied' || userLocation.status === 'error') {
+                  detectLocation();
+                } else {
+                  setIsLocationModalOpen(true);
+                }
+              }}
+              className={`doera-btn-icon doera-composer-icon-btn ${
+                userLocation?.status === 'resolved' || userLocation?.status === 'manual' ? 'active' : ''
+              }`}
+              title={
+                userLocation?.status === 'resolved'
+                  ? `Active location: ${userLocation.name} (Click to change)`
+                  : userLocation?.status === 'manual'
+                  ? `Manual location: ${userLocation.name} (Click to change)`
+                  : 'Detect my location for nearby search & routing'
+              }
+              style={
+                userLocation?.status === 'resolved'
+                  ? { color: '#10B981' }
+                  : userLocation?.status === 'manual'
+                  ? { color: '#FF55BD' }
+                  : {}
+              }
             >
-              <MapPin size={17} />
+              {isDetectingLocation ? (
+                <Loader2 size={17} className="animate-spin" color="#FF55BD" />
+              ) : (
+                <MapPin size={17} />
+              )}
             </button>
           </div>
 
