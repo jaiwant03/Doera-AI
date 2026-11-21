@@ -979,6 +979,41 @@ function buildSingleMathResponse({
       break;
     }
 
+    case 'COVARIANCE': {
+      const cov = results?.covariance;
+      md += '**Covariance Calculation**\n\n';
+      if (cov?.isSpecified) {
+        md += `Variables: **${cov.colA}** ($X$) and **${cov.colB}** ($Y$)\n\n`;
+        md += 'Formulas:\n\n';
+        md += '\\[\n\\text{Cov}(X,Y) = \\frac{\\sum (x_i - \\mu_x)(y_i - \\mu_y)}{N}\n\\]\n';
+        md += '\\[\ns_{xy} = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{n-1}\n\\]\n\n';
+        md += 'Substitute actual calculated values:\n\n';
+        md += `\\[\n\\text{Cov}(X,Y) = \\frac{${formatRaw(cov.sumDiffProd, 2)}}{${validCountFormatted}} = ${formatRaw(cov.populationCovariance, 4)}\n\\]\n`;
+        md += `\\[\ns_{xy} = \\frac{${formatRaw(cov.sumDiffProd, 2)}}{${dofFormatted}} = ${formatRaw(cov.sampleCovariance, 4)}\n\\]\n\n`;
+        md += '**Final Answer:**\n\n';
+        md += `\\[\n\\boxed{\\text{Cov}(${cov.colA}, ${cov.colB}) = ${formatRaw(cov.populationCovariance, 4)} \\quad | \\quad s_{xy} = ${formatRaw(cov.sampleCovariance, 4)}}\n\\]\n\n`;
+      } else {
+        md += 'Covariance evaluates joint variability between two distinct numerical variables.\n\n';
+        const pairs = cov?.plausiblePairs?.length > 0
+          ? cov.plausiblePairs.map((p) => `**${p}**`).join(', ')
+          : '**Amount and Year**, **Amount and Month**, or **Amount and Day**';
+        md += `Which two columns should I use for covariance: ${pairs}, or another pair?\n`;
+      }
+      break;
+    }
+
+    case 'IQR': {
+      const q = results?.quartiles;
+      md += '**Interquartile Range Calculation**\n\n';
+      md += 'Formula:\n\n';
+      md += '\\[\n\\text{IQR} = Q_3 - Q_1\n\\]\n\n';
+      md += 'Substitute actual calculated values:\n\n';
+      md += `\\[\n\\text{IQR} = ${formatRaw(q?.q3)} - ${formatRaw(q?.q1)}\n\\]\n\n`;
+      md += '**Final Answer:**\n\n';
+      md += `\\[\n\\boxed{\\text{IQR} = ${formatCurrency(q?.iqr)}}\n\\]\n`;
+      break;
+    }
+
     case 'CORRELATION': {
       const corr = results?.correlation;
       if (corr && corr.pearson) {
