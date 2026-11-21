@@ -567,6 +567,7 @@ async function runTestSuite() {
   const t3Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t3Query);
   assert(t3Analysis.statisticalResult.primaryOperation === 'VARIANCE', 'Turn 3: Evaluates variance');
   const t3Text = universalResponseBuilder.buildDataAnalysisResponse(t3Analysis, {}, t3Query);
+  console.log('DEBUG T3TEXT:\n', t3Text);
   assert(t3Text.includes('2,076,422.7042') || t3Text.includes('2,076,443.4687'), 'Turn 3: Exact calculated variance values present');
   conversationHistory.push({ role: 'user', content: t3Query });
   conversationHistory.push({
@@ -580,6 +581,7 @@ async function runTestSuite() {
   const t4Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t4Query);
   assert(t4Analysis.statisticalResult.primaryOperation === 'COEFFICIENT_OF_VARIATION', 'Turn 4: Op is COEFFICIENT_OF_VARIATION');
   const t4Text = universalResponseBuilder.buildDataAnalysisResponse(t4Analysis, {}, t4Query);
+  console.log('DEBUG T4TEXT:\n', t4Text);
   assert(t4Text.includes('57.40%') || t4Text.includes('57.40\\%'), 'Turn 4: CV 57.40% present');
   conversationHistory.push({ role: 'user', content: t4Query });
   conversationHistory.push({
