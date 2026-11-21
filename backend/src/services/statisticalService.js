@@ -863,14 +863,11 @@ class StatisticalService {
       return reg.test(queryLower);
     }).length >= 2;
 
-    const isSkewnessRequested = !isFullSummaryRequested && /\b(skew|skewness)\b/i.test(queryLower);
-    const isKurtosisRequested = !isFullSummaryRequested && /\b(kurtosis)\b/i.test(queryLower);
-    const isMADRequested = !isFullSummaryRequested && /\b(mean\s*absolute\s*deviation|\bmad\b)\b/i.test(queryLower);
-    const isCovarianceRequested = !isFullSummaryRequested && (
+    const isCorrelationRequested = !isFullSummaryRequested && /\b(correlation|pearsons?|spearmans?|linear\s*relationship)\b/i.test(queryLower);
+    const isCovarianceRequested = !isFullSummaryRequested && !isCorrelationRequested && (
       /\b(covariance|covar|cov\b)\b/i.test(queryLower) ||
       (mentionedTwoCols && !/\b(mean|median|mode|variance|range|quartiles?|iqr|outliers?|skew|kurtosis)\b/i.test(queryLower))
     );
-    const isCorrelationRequested = !isFullSummaryRequested && !isCovarianceRequested && /\b(correlation|pearsons?|spearmans?|linear\s*relationship)\b/i.test(queryLower);
     const isCompareRequested = !isFullSummaryRequested && /\b(compare|comparison|versus|\bvs\b)\b/i.test(queryLower) &&
       /\b(standard\s*deviation|std\s*dev|stdev|cv|coefficient\s*of\s*variation|mean|variance)\b/i.test(queryLower);
 
