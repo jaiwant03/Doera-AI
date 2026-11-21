@@ -100,8 +100,10 @@ export const ChatProvider = ({ children }) => {
             accuracy,
             name: resolvedName,
             displayName,
-            source: 'precise',
+            source: 'browser_geolocation',
           };
+
+          console.log('[DIAGNOSTICS][Point 2] Browser geolocation result:', loc);
 
           setUserLocation(loc);
           setIsDetectingLocation(false);
