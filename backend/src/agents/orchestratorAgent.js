@@ -70,6 +70,7 @@ Output pure JSON:
     // Ensure local service / discovery agent step exists for search & discovery tasks
     if (
       !requiredAgents.includes('DataAnalysis') &&
+      !requiredAgents.includes('Document') &&
       (isLocalResearch || requiredAgents.includes('Location') || requiredAgents.includes('Research')) &&
       !subtasks.some((st) => st.agent === 'LocalService' || st.agent === 'Discovery')
     ) {
@@ -89,10 +90,11 @@ Output pure JSON:
       }
     }
 
-    // Ensure scheduling agent step exists ONLY if appointment/booking is explicitly requested and NOT research-only or data analysis
+    // Ensure scheduling agent step exists ONLY if appointment/booking is explicitly requested and NOT research-only, document analysis, or data analysis
     if (
       !isLocalResearch &&
       !requiredAgents.includes('DataAnalysis') &&
+      !requiredAgents.includes('Document') &&
       (requiredAgents.includes('Scheduling') || /book\s+an?\s+appointment|reserve\s+slot/i.test(userRequest)) &&
       !subtasks.some((st) => st.agent === 'Scheduling')
     ) {
