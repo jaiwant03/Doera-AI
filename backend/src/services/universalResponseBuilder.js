@@ -543,7 +543,65 @@ export function buildDocumentAnalysisResponse(docs, crossDocAnalysis, task, user
   const requestIntent = primaryDoc.requestIntent || 'GENERAL_ANALYSIS';
   const reqLower = (userRequest || task?.userRequest || '').toLowerCase();
 
-  // 1. ARCHITECTURE_ANALYSIS (Proposal, System Architecture, Weaknesses, Improvements)
+  const isCompareReq =
+    requestIntent === 'COMPARISON' ||
+    /compare|comparison|difference between|vs\b|versus|which (document|proposal) is better/i.test(reqLower) ||
+    Boolean(crossDocAnalysis?.comparisonMatrix?.length > 0 && docList.length > 1);
+
+  // 1. MULTI-DOCUMENT COMPARISON (Prioritized when comparison or 2+ docs requested)
+  if (isCompareReq) {
+    md += `## Document Comparison\n\n`;
+    if (crossDocAnalysis?.comparisonSummary) {
+      md += `### Executive Comparison\n${crossDocAnalysis.comparisonSummary}\n\n`;
+    }
+
+    if (crossDocAnalysis?.comparisonMatrix?.length > 0) {
+      md += `### Comparative Matrix\n\n`;
+      md += `| Dimension | Document 1 | Document 2 | Comparative Finding |\n`;
+      md += `| :--- | :--- | :--- | :--- |\n`;
+      crossDocAnalysis.comparisonMatrix.forEach((m) => {
+        md += `| **${m.criteria}** | ${m.doc1Value || '-'} | ${m.doc2Value || '-'} | ${m.verdict || '-'} |\n`;
+      });
+      md += `\n`;
+    }
+
+    if (crossDocAnalysis?.commonRequirements?.length > 0) {
+      md += `### Common Terms & Requirements\n`;
+      crossDocAnalysis.commonRequirements.forEach((r) => (md += `- ${r}\n`));
+      md += `\n`;
+    }
+
+    if (crossDocAnalysis?.conflictingRequirements?.length > 0) {
+      md += `### Key Differences & Conflicts\n`;
+      crossDocAnalysis.conflictingRequirements.forEach((c) => {
+        if (typeof c === 'string') {
+          md += `- ${c}\n`;
+        } else {
+          md += `- **${c.issue}**: Doc 1 (*${c.doc1Stance}*) vs Doc 2 (*${c.doc2Stance}*)\n`;
+        }
+      });
+      md += `\n`;
+    }
+
+    if (crossDocAnalysis?.missingInEach) {
+      const doc1Lacks = crossDocAnalysis.missingInEach.doc1Lacks || [];
+      const doc2Lacks = crossDocAnalysis.missingInEach.doc2Lacks || [];
+      if (doc1Lacks.length > 0 || doc2Lacks.length > 0) {
+        md += `### Coverage Gaps Between Sources\n`;
+        if (doc1Lacks.length > 0) md += `- **Missing in Document 1**: ${doc1Lacks.join('; ')}\n`;
+        if (doc2Lacks.length > 0) md += `- **Missing in Document 2**: ${doc2Lacks.join('; ')}\n`;
+        md += `\n`;
+      }
+    }
+
+    if (crossDocAnalysis?.recommendation) {
+      md += `### Grounded Recommendation\n${crossDocAnalysis.recommendation}\n`;
+    }
+
+    return md.trim();
+  }
+
+  // 2. ARCHITECTURE_ANALYSIS (Proposal, System Architecture, Weaknesses, Improvements)
   if (
     requestIntent === 'ARCHITECTURE_ANALYSIS' ||
     primaryDoc.architectureAnalysis ||
