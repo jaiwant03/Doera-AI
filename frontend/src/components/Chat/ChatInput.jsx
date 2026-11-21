@@ -249,11 +249,14 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
       /\b(near me|nearby|closest|nearest|around me|within \d+\s*(?:km|miles?)|near here)\b/i.test(trimmed) &&
       !/\bnear\s+(?!me\b|here\b)[a-z0-9]/i.test(trimmed);
 
+    // Diagnostics Point 1: Location chip state
+    console.log('[DIAGNOSTICS][Point 1] Location chip state:', userLocation);
+
     let locationToPass = null;
 
     if (isNearMe) {
-      // 1. If location is already resolved or manually set with valid coordinates
-      if (userLocation && (userLocation.status === 'resolved' || userLocation.status === 'manual') && userLocation.lat && userLocation.lng) {
+      // 1. If location is already resolved or manually set with valid coordinates OR valid locality name
+      if (userLocation && (userLocation.status === 'resolved' || userLocation.status === 'manual') && (userLocation.lat || userLocation.name)) {
         locationToPass = userLocation;
       } else if (userLocation && (userLocation.status === 'denied' || userLocation.denied)) {
         // User explicitly denied location previously
@@ -264,7 +267,7 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
       } else {
         // Location not yet determined; automatically trigger detectLocation()
         const detected = await detectLocation();
-        if (detected?.status === 'resolved' && detected?.lat) {
+        if (detected?.status === 'resolved' && (detected?.lat || detected?.name)) {
           locationToPass = detected;
         } else if (detected?.status === 'denied' || detected?.denied) {
           locationToPass = { denied: true, source: 'denied' };
@@ -274,7 +277,7 @@ const ChatInput = ({ onSendMessage, isSending, initialValue = '' }) => {
       }
     } else if (userLocation) {
       // For general queries, pass current location if active and valid
-      if ((userLocation.status === 'resolved' || userLocation.status === 'manual') && userLocation.lat) {
+      if ((userLocation.status === 'resolved' || userLocation.status === 'manual') && (userLocation.lat || userLocation.name)) {
         locationToPass = userLocation;
       }
     }
