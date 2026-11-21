@@ -63,6 +63,14 @@ class DocumentAgent {
           requestIntent: deepAnalysis.requestIntent || 'GENERAL_ANALYSIS',
           architectureAnalysis: deepAnalysis.architectureAnalysis || null,
           summarization: deepAnalysis.summarization || null,
+          documentSummary: deepAnalysis.documentSummary || null,
+          techStack: deepAnalysis.techStack || null,
+          databaseArchitecture: deepAnalysis.databaseArchitecture || null,
+          databaseAnalysis: deepAnalysis.databaseAnalysis || null,
+          securityArchitecture: deepAnalysis.securityArchitecture || null,
+          workflowSteps: deepAnalysis.workflowSteps || null,
+          followUpAnswer: deepAnalysis.followUpAnswer || null,
+          improvementsAnalysis: deepAnalysis.improvementsAnalysis || null,
           datesExtraction: deepAnalysis.datesExtraction || null,
           requirementsExtraction: deepAnalysis.requirementsExtraction || null,
           slideExplanation: deepAnalysis.slideExplanation || null,
@@ -78,6 +86,7 @@ class DocumentAgent {
           extractedData: deepAnalysis.extractedData || processed.structuredData || {},
           missingInformation: deepAnalysis.missingInformation || [],
           limitations: processed.limitations || [],
+          ...deepAnalysis,
         });
       } catch (err) {
         logger.error(`[Document Agent] Failed processing ${file.name}: ${err.message}`);
@@ -121,20 +130,9 @@ class DocumentAgent {
         const deepAnalysis = await this.extractDocumentIntelligence(processed, userRequest, taskContext?.historyContext);
         extractedDocs.push({
           ...prevDoc,
-          requestIntent: deepAnalysis.requestIntent || 'GENERAL_ANALYSIS',
-          architectureAnalysis: deepAnalysis.architectureAnalysis || null,
-          summarization: deepAnalysis.summarization || null,
-          datesExtraction: deepAnalysis.datesExtraction || null,
-          requirementsExtraction: deepAnalysis.requirementsExtraction || null,
-          slideExplanation: deepAnalysis.slideExplanation || null,
-          specificAnswer: deepAnalysis.specificAnswer || null,
+          ...deepAnalysis,
+          requestIntent: deepAnalysis.requestIntent || prevDoc.requestIntent || 'GENERAL_ANALYSIS',
           summary: deepAnalysis.summary || prevDoc.summary,
-          factualFindings: deepAnalysis.factualFindings || prevDoc.factualFindings || [],
-          aiInterpretations: deepAnalysis.aiInterpretations || prevDoc.aiInterpretations || [],
-          identifiedWeaknesses: deepAnalysis.identifiedWeaknesses || prevDoc.identifiedWeaknesses || [],
-          keyRequirements: deepAnalysis.keyRequirements || prevDoc.keyRequirements || [],
-          technologies: deepAnalysis.technologies || prevDoc.technologies || [],
-          recommendations: deepAnalysis.recommendations || prevDoc.recommendations || [],
         });
       }
     }
