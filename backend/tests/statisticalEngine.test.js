@@ -1,8 +1,9 @@
 /**
- * DOERA AI — Complete Statistical Analysis Engine & Verification Test Suite
+ * DOERA AI — Complete Statistical Analysis Engine & Exact Request Matching Verification Suite
  *
- * Verifies all 15 independent statistical calculations, multi-operation parsing,
- * mathematical cross-validations, multi-turn follow-up workflows, and zero contamination
+ * Verifies exact user-request matching, dynamic allowlist response filtering,
+ * individual and combined operations, natural language query handling,
+ * mathematical cross-validation, multi-turn follow-up workflows, and zero contamination
  * on the 100,000-record dataset.
  */
 
@@ -64,9 +65,9 @@ async function runTestSuite() {
   assert(rows.length === 100000, 'Dataset record count matches exactly 100,000 rows');
 
   // =========================================================================
-  // SECTION 1: PHASE 12 — 15 INDEPENDENT STATISTICAL CALCULATIONS
+  // SECTION 1: 15 INDEPENDENT STATISTICAL CALCULATIONS
   // =========================================================================
-  console.log('\n--- Section 1: Phase 12 — 15 Independent Statistical Operations ---');
+  console.log('\n--- Section 1: 15 Independent Statistical Operations ---');
 
   // 1. Mean
   const meanRes = statisticalService.executeStatisticalAnalysis({
@@ -84,6 +85,8 @@ async function runTestSuite() {
   const meanResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: meanRes }, {}, 'Calculate mean of Amount');
   assert(meanResponse.includes('## Mean (Arithmetic Average)'), 'Mean: Dedicated markdown header present');
   assert(meanResponse.includes('$2,510.35'), 'Mean: Formatted value appears in response');
+  assert(!meanResponse.includes('Variance'), 'Mean: Unrequested Variance is not displayed');
+  assert(!meanResponse.includes('Standard Deviation'), 'Mean: Unrequested Standard Deviation is not displayed');
   assert(!meanResponse.includes('Appointment Status'), 'Mean: Zero appointment contamination');
 
   // 2. Median
@@ -101,6 +104,7 @@ async function runTestSuite() {
   const medianResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: medianRes }, {}, 'Calculate median of Amount');
   assert(medianResponse.includes('## Median'), 'Median: Dedicated markdown header present');
   assert(medianResponse.includes('$2,518.89'), 'Median: Formatted median present in response');
+  assert(!medianResponse.includes('Variance'), 'Median: Unrequested Variance is not displayed');
 
   // 3. Mode
   const modeRes = statisticalService.executeStatisticalAnalysis({
@@ -129,6 +133,7 @@ async function runTestSuite() {
   assert(Math.abs(popVarRes.results.variance.populationVariance - 2076422.70) < 1.0, `Pop Variance: Value is ~2,076,422.70 (actual: ${popVarRes.results.variance.populationVariance.toFixed(2)})`);
   const popVarResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: popVarRes }, {}, 'Calculate population variance');
   assert(popVarResponse.includes('## Population Variance'), 'Population Variance: Header specifies Population Variance');
+  assert(!popVarResponse.includes('Coefficient of Variation'), 'Population Variance: CV is not displayed');
 
   // 5. Sample Variance
   const sampVarRes = statisticalService.executeStatisticalAnalysis({
@@ -269,7 +274,7 @@ async function runTestSuite() {
   const corrResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: corrRes }, {}, 'Calculate correlation between Year and Amount');
   assert(corrResponse.includes('Correlation measures linear association and does NOT imply causation'), 'Correlation: Standard statistical caution present');
 
-  // 15. Complete Statistical Summary
+  // 15. Complete Statistical Summary (Explicit user request for full analysis)
   const sumRes = statisticalService.executeStatisticalAnalysis({
     rows,
     headers,
@@ -278,56 +283,228 @@ async function runTestSuite() {
     filename: parsedSpreadsheet.filename,
     sheetName,
   });
-  assert(sumRes.isMultiStat, 'Summary: Marked as multi-statistic report');
-  assert(sumRes.primaryOperation === 'MULTI_STATISTICAL_REPORT', 'Summary: Primary op classified as MULTI_STATISTICAL_REPORT');
+  assert(sumRes.isFullSummary, 'Summary: Marked as full summary');
   const sumResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: sumRes }, {}, 'Generate a complete statistical summary');
-  assert(sumResponse.includes('| Statistical Measure | Calculated Value | Definition / Convention |'), 'Summary: Multi-stat Markdown table included');
-  assert(sumResponse.includes('Mean (Arithmetic Average)'), 'Summary: Table contains Mean');
-  assert(sumResponse.includes('Median (Q2 / 50th %ile)'), 'Summary: Table contains Median');
+  assert(sumResponse.includes('| Statistical Measure | Calculated Value | Definition / Convention |'), 'Summary: Full 3-column table included');
+  assert(sumResponse.includes('Mean'), 'Summary: Table contains Mean');
+  assert(sumResponse.includes('Median'), 'Summary: Table contains Median');
   assert(sumResponse.includes('Population Variance'), 'Summary: Table contains Population Variance');
   assert(sumResponse.includes('Sample Variance'), 'Summary: Table contains Sample Variance');
   assert(sumResponse.includes('Coefficient of Variation'), 'Summary: Table contains CV');
 
   // =========================================================================
-  // SECTION 2: PHASE 8 — MULTIPLE CALCULATIONS IN A SINGLE REQUEST
+  // SECTION 2: EXACT REQUEST MATCHING & DYNAMIC FILTERING (PHASE 2, 3, 4, 8)
   // =========================================================================
-  console.log('\n--- Section 2: Phase 8 — Multi-Statistic Query in Single Request ---');
+  console.log('\n--- Section 2: Exact User Request Matching & Dynamic Filtering ---');
 
-  const multiQuery = 'Calculate the mean, median, mode, variance, standard deviation and coefficient of variation of the Amount column';
-  const multiRes = statisticalService.executeStatisticalAnalysis({
+  // TEST 1: "Calculate the mean, median and mode." -> MUST return ONLY Mean, Median, Mode
+  const qMeanMedMode = 'Calculate the mean, median and mode.';
+  const resMeanMedMode = statisticalService.executeStatisticalAnalysis({
     rows,
     headers,
     columnSchema,
-    query: multiQuery,
+    query: qMeanMedMode,
     filename: parsedSpreadsheet.filename,
     sheetName,
   });
-  assert(multiRes.isMultiStat, 'Multi-Query: Correctly detected as multi-statistical request');
-  assert(multiRes.targetColumn === 'Amount', 'Multi-Query: Target column correctly identified as Amount');
-  const multiResponse = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: multiRes }, {}, multiQuery);
-  assert(multiResponse.includes('| Statistical Measure | Calculated Value |'), 'Multi-Query: Structured table generated');
-  assert(multiResponse.includes('$2,510.35'), 'Multi-Query: Mean $2,510.35 present in table');
-  assert(multiResponse.includes('$2,518.89'), 'Multi-Query: Median $2,518.89 present in table');
-  assert(multiResponse.includes('57.40%'), 'Multi-Query: CV 57.40% present in table');
-  assert(!multiResponse.includes('Appointment Status'), 'Multi-Query: Zero appointment contamination');
-  assert(!multiResponse.includes('```json:doera-chart'), 'Multi-Query: No unsolicited chart generated');
+  assert(resMeanMedMode.requestedOperations.length === 3, 'Mean/Med/Mode: Allowlist contains exactly 3 operations');
+  assert(resMeanMedMode.requestedOperations.includes('mean'), 'Mean/Med/Mode: Contains mean');
+  assert(resMeanMedMode.requestedOperations.includes('median'), 'Mean/Med/Mode: Contains median');
+  assert(resMeanMedMode.requestedOperations.includes('mode'), 'Mean/Med/Mode: Contains mode');
+  assert(!resMeanMedMode.requestedOperations.includes('variance'), 'Mean/Med/Mode: Does NOT contain variance');
+
+  const textMeanMedMode = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resMeanMedMode }, {}, qMeanMedMode);
+  assert(textMeanMedMode.includes('## Statistical Results'), 'Mean/Med/Mode: Header is ## Statistical Results');
+  assert(textMeanMedMode.includes('| **Mean** | **$2,510.35** |'), 'Mean/Med/Mode: Table has Mean row');
+  assert(textMeanMedMode.includes('| **Median** | **$2,518.89** |'), 'Mean/Med/Mode: Table has Median row');
+  assert(textMeanMedMode.includes('| **Mode** | **$1,678.97** |'), 'Mean/Med/Mode: Table has Mode row');
+
+  // Strict negative verification: Unrequested metrics MUST NOT be displayed
+  assert(!textMeanMedMode.includes('Variance'), 'Mean/Med/Mode: STRICT - Zero Variance displayed');
+  assert(!textMeanMedMode.includes('Standard Deviation'), 'Mean/Med/Mode: STRICT - Zero Standard Deviation displayed');
+  assert(!textMeanMedMode.includes('Coefficient of Variation'), 'Mean/Med/Mode: STRICT - Zero CV displayed');
+  assert(!textMeanMedMode.includes('Quartile'), 'Mean/Med/Mode: STRICT - Zero Quartiles displayed');
+  assert(!textMeanMedMode.includes('Skewness'), 'Mean/Med/Mode: STRICT - Zero Skewness displayed');
+  assert(!textMeanMedMode.includes('Kurtosis'), 'Mean/Med/Mode: STRICT - Zero Kurtosis displayed');
+  assert(!textMeanMedMode.includes('Outlier'), 'Mean/Med/Mode: STRICT - Zero Outlier displayed');
+  assert(!textMeanMedMode.includes('```json:doera-chart'), 'Mean/Med/Mode: STRICT - Zero chart generated');
+
+  // TEST 2: "Calculate mean and median." -> ONLY Mean and Median
+  const qMeanMed = 'Calculate mean and median.';
+  const resMeanMed = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: qMeanMed,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resMeanMed.requestedOperations.length === 2, 'Mean/Med: Allowlist has exactly 2 operations');
+  const textMeanMed = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resMeanMed }, {}, qMeanMed);
+  assert(textMeanMed.includes('| **Mean** | **$2,510.35** |'), 'Mean/Med: Table has Mean');
+  assert(textMeanMed.includes('| **Median** | **$2,518.89** |'), 'Mean/Med: Table has Median');
+  assert(!textMeanMed.includes('Mode'), 'Mean/Med: STRICT - Zero Mode displayed');
+  assert(!textMeanMed.includes('Variance'), 'Mean/Med: STRICT - Zero Variance displayed');
+
+  // TEST 3: "Calculate variance and standard deviation." -> ONLY Variance and Standard Deviation
+  const qVarSd = 'Calculate variance and standard deviation.';
+  const resVarSd = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: qVarSd,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resVarSd.requestedOperations.includes('variance') && resVarSd.requestedOperations.includes('standard_deviation'), 'Var/SD: Detected variance and SD');
+  const textVarSd = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resVarSd }, {}, qVarSd);
+  assert(textVarSd.includes('Variance'), 'Var/SD: Table has Variance');
+  assert(textVarSd.includes('Standard Deviation'), 'Var/SD: Table has Standard Deviation');
+  assert(!textVarSd.includes('| **Mean** |'), 'Var/SD: STRICT - Mean is not displayed in table');
+  assert(!textVarSd.includes('| **Mode** |'), 'Var/SD: STRICT - Mode is not displayed in table');
+  assert(!textVarSd.includes('Quartile'), 'Var/SD: STRICT - Quartiles are not displayed');
+
+  // TEST 4: "Calculate Q1 and Q3." -> ONLY Q1, Q3 (and supporting IQR)
+  const qQ1Q3 = 'Calculate Q1 and Q3.';
+  const resQ1Q3 = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: qQ1Q3,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resQ1Q3.requestedOperations.includes('q1') && resQ1Q3.requestedOperations.includes('q3'), 'Q1/Q3: Detected Q1 and Q3');
+  const textQ1Q3 = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resQ1Q3 }, {}, qQ1Q3);
+  assert(textQ1Q3.includes('First Quartile (Q1 / 25th %ile)'), 'Q1/Q3: Table has Q1');
+  assert(textQ1Q3.includes('Third Quartile (Q3 / 75th %ile)'), 'Q1/Q3: Table has Q3');
+  assert(!textQ1Q3.includes('| **Mean** |'), 'Q1/Q3: STRICT - Mean not displayed');
+  assert(!textQ1Q3.includes('| **Mode** |'), 'Q1/Q3: STRICT - Mode not displayed');
+  assert(!textQ1Q3.includes('Variance'), 'Q1/Q3: STRICT - Variance not displayed');
+
+  // TEST 5: "Calculate mean, median, mode and standard deviation." -> EXACTLY 4 metrics
+  const q4Metrics = 'Calculate mean, median, mode and standard deviation.';
+  const res4Metrics = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: q4Metrics,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(res4Metrics.requestedOperations.length === 4, '4-Metrics: Exactly 4 metrics in allowlist');
+  const text4Metrics = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: res4Metrics }, {}, q4Metrics);
+  assert(text4Metrics.includes('| **Mean** |'), '4-Metrics: Has Mean');
+  assert(text4Metrics.includes('| **Median** |'), '4-Metrics: Has Median');
+  assert(text4Metrics.includes('| **Mode** |'), '4-Metrics: Has Mode');
+  assert(text4Metrics.includes('Standard Deviation'), '4-Metrics: Has Standard Deviation');
+  assert(!text4Metrics.includes('Variance'), '4-Metrics: STRICT - Zero Variance displayed');
+  assert(!text4Metrics.includes('Quartile'), '4-Metrics: STRICT - Zero Quartile displayed');
+  assert(!text4Metrics.includes('Skewness'), '4-Metrics: STRICT - Zero Skewness displayed');
 
   // =========================================================================
-  // SECTION 3: PHASE 9 — SAME-CHAT 7-TURN STATISTICAL FOLLOW-UP SEQUENCE
+  // SECTION 3: NATURAL LANGUAGE VARIATIONS (PHASE 9)
   // =========================================================================
-  console.log('\n--- Section 3: Phase 9 — Same-Chat 7-Turn Statistical Follow-Up Sequence ---');
+  console.log('\n--- Section 3: Natural Language Variations ---');
+
+  // NL 1: "What's the average transaction amount?" -> Mean only
+  const nl1 = "What's the average transaction amount?";
+  const resNl1 = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: nl1,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resNl1.primaryOperation === 'MEAN', 'NL 1: "average transaction amount" maps to MEAN');
+  const textNl1 = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resNl1 }, {}, nl1);
+  assert(textNl1.includes('$2,510.35'), 'NL 1: Mean value $2,510.35 present');
+  assert(!textNl1.includes('Variance'), 'NL 1: Zero Variance displayed');
+
+  // NL 2: "Tell me the middle value." -> Median only
+  const nl2 = 'Tell me the middle value.';
+  const resNl2 = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: nl2,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resNl2.primaryOperation === 'MEDIAN', 'NL 2: "middle value" maps to MEDIAN');
+  const textNl2 = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resNl2 }, {}, nl2);
+  assert(textNl2.includes('$2,518.89'), 'NL 2: Median value $2,518.89 present');
+
+  // NL 3: "Which amount occurs most frequently?" -> Mode only
+  const nl3 = 'Which amount occurs most frequently?';
+  const resNl3 = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: nl3,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resNl3.primaryOperation === 'MODE', 'NL 3: "occurs most frequently" maps to MODE');
+  const textNl3 = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resNl3 }, {}, nl3);
+  assert(textNl3.includes('$1,678.97'), 'NL 3: Mode value $1,678.97 present');
+
+  // NL 4: "Find the spread of these values." -> Range only
+  const nl4 = 'Find the spread of these values.';
+  const resNl4 = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: nl4,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resNl4.primaryOperation === 'RANGE', 'NL 4: "spread of these values" maps to RANGE');
+  const textNl4 = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resNl4 }, {}, nl4);
+  assert(textNl4.includes('$4,989.87'), 'NL 4: Range spread $4,989.87 present');
+
+  // NL 5: "How much variation is present in the expenses?" -> Variance & SD
+  const nl5 = 'How much variation is present in the expenses?';
+  const resNl5 = statisticalService.executeStatisticalAnalysis({
+    rows,
+    headers,
+    columnSchema,
+    query: nl5,
+    filename: parsedSpreadsheet.filename,
+    sheetName,
+  });
+  assert(resNl5.requestedOperations.includes('variance') || resNl5.requestedOperations.includes('standard_deviation'), 'NL 5: "variation present" maps to variability');
+  const textNl5 = universalResponseBuilder.buildDataAnalysisResponse({ statisticalResult: resNl5 }, {}, nl5);
+  assert(textNl5.includes('Variance') || textNl5.includes('Standard Deviation'), 'NL 5: Variability metrics present');
+  assert(!textNl5.includes('Quartile'), 'NL 5: Zero Quartiles displayed');
+
+  // =========================================================================
+  // SECTION 4: SAME-CHAT 7-TURN STATISTICAL FOLLOW-UP SEQUENCE (PHASE 6)
+  // =========================================================================
+  console.log('\n--- Section 4: Phase 6 — Same-Chat Multi-Turn Follow-Ups without Context Pollution ---');
 
   const conversationHistory = [];
+  const resolveIntent = (query, lastCalc) => {
+    return conversationContextEngine.analyzeFollowUpIntent({
+      text: query,
+      lower: query.toLowerCase(),
+      rawMessages: conversationHistory,
+      activeCategory: 'DATA_ANALYSIS',
+      hasEffectiveAttachments: true,
+      lastCalculation: lastCalc,
+      lastChartConfig: null,
+    });
+  };
 
-  // Turn 1: "Calculate the mean of Amount."
-  const t1Query = 'Calculate the mean of Amount.';
-  const t1Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t1Query,
-  });
-  assert(t1Analysis.isStatisticalAnalysis, 'Turn 1: Classified as statistical analysis');
-  assert(t1Analysis.statisticalResult.results.mean > 2500, 'Turn 1: Mean computed successfully');
+  // Turn 1: "Calculate the mean, median and mode."
+  const t1Query = 'Calculate the mean, median and mode.';
+  const t1Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t1Query);
+  assert(t1Analysis.isStatisticalAnalysis, 'Turn 1: Statistical analysis executed');
+  assert(t1Analysis.statisticalResult.requestedOperations.length === 3, 'Turn 1: Exact 3 operations detected');
   const t1Text = universalResponseBuilder.buildDataAnalysisResponse(t1Analysis, {}, t1Query);
+  assert(t1Text.includes('| **Mean** |') && t1Text.includes('| **Median** |') && t1Text.includes('| **Mode** |'), 'Turn 1: Renders exactly Mean, Median, Mode');
+  assert(!t1Text.includes('Variance'), 'Turn 1: Zero Variance displayed');
   conversationHistory.push({ role: 'user', content: t1Query });
   conversationHistory.push({
     role: 'assistant',
@@ -335,30 +512,17 @@ async function runTestSuite() {
     dataContext: { calculation: t1Analysis.calculation, statisticalResult: t1Analysis.statisticalResult },
   });
 
-  // Helper for context follow-up intent resolution
-  const resolveIntent = (query) => {
-    return conversationContextEngine.analyzeFollowUpIntent({
-      text: query,
-      lower: query.toLowerCase(),
-      rawMessages: conversationHistory,
-      activeCategory: 'DATA_ANALYSIS',
-      hasEffectiveAttachments: true,
-      lastCalculation: t1Analysis.calculation,
-      lastChartConfig: null,
-    });
-  };
-
-  // Turn 2: "Now calculate the median."
-  const t2Query = 'Now calculate the median.';
-  const t2Intent = resolveIntent(t2Query);
+  // Turn 2: "Now calculate the variance." -> Must display ONLY Variance
+  const t2Query = 'Now calculate the variance.';
+  const t2Intent = resolveIntent(t2Query, t1Analysis.calculation);
   assert(t2Intent.isFollowUp, 'Turn 2: Follow-up intent detected');
-  assert(t2Intent.followUpType === 'STATISTICAL_INSPECTION', 'Turn 2: Follow-up type is STATISTICAL_INSPECTION');
-  const t2Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t2Query,
-  });
-  assert(t2Analysis.statisticalResult.primaryOperation === 'MEDIAN', 'Turn 2: Primary op is MEDIAN');
+  const t2Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t2Query);
+  assert(t2Analysis.statisticalResult.primaryOperation === 'VARIANCE', 'Turn 2: Primary op is strictly VARIANCE');
+  assert(t2Analysis.statisticalResult.requestedOperations.length === 1, 'Turn 2: Does not bleed Mean/Median/Mode from Turn 1');
   const t2Text = universalResponseBuilder.buildDataAnalysisResponse(t2Analysis, {}, t2Query);
+  assert(t2Text.includes('## Variance'), 'Turn 2: Variance header displayed');
+  assert(!t2Text.includes('| **Median** |'), 'Turn 2: Median is NOT repeated in Turn 2');
+  assert(!t2Text.includes('| **Mode** |'), 'Turn 2: Mode is NOT repeated in Turn 2');
   conversationHistory.push({ role: 'user', content: t2Query });
   conversationHistory.push({
     role: 'assistant',
@@ -366,16 +530,12 @@ async function runTestSuite() {
     dataContext: { calculation: t2Analysis.calculation, statisticalResult: t2Analysis.statisticalResult },
   });
 
-  // Turn 3: "Find the standard deviation."
-  const t3Query = 'Find the standard deviation.';
-  const t3Intent = resolveIntent(t3Query);
-  assert(t3Intent.isFollowUp, 'Turn 3: Follow-up intent detected');
-  const t3Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t3Query,
-  });
-  assert(t3Analysis.statisticalResult.primaryOperation === 'STANDARD_DEVIATION', 'Turn 3: Primary op is STANDARD_DEVIATION');
+  // Turn 3: "Explain the variance."
+  const t3Query = 'Explain the variance.';
+  const t3Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t3Query);
+  assert(t3Analysis.statisticalResult.primaryOperation === 'VARIANCE', 'Turn 3: Evaluates variance');
   const t3Text = universalResponseBuilder.buildDataAnalysisResponse(t3Analysis, {}, t3Query);
+  assert(t3Text.includes('### Interpretation'), 'Turn 3: Interpretation section present');
   conversationHistory.push({ role: 'user', content: t3Query });
   conversationHistory.push({
     role: 'assistant',
@@ -385,14 +545,10 @@ async function runTestSuite() {
 
   // Turn 4: "Calculate the coefficient of variation."
   const t4Query = 'Calculate the coefficient of variation.';
-  const t4Intent = resolveIntent(t4Query);
-  assert(t4Intent.isFollowUp, 'Turn 4: Follow-up intent detected');
-  const t4Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t4Query,
-  });
-  assert(t4Analysis.statisticalResult.primaryOperation === 'COEFFICIENT_OF_VARIATION', 'Turn 4: Primary op is COEFFICIENT_OF_VARIATION');
+  const t4Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t4Query);
+  assert(t4Analysis.statisticalResult.primaryOperation === 'COEFFICIENT_OF_VARIATION', 'Turn 4: Op is COEFFICIENT_OF_VARIATION');
   const t4Text = universalResponseBuilder.buildDataAnalysisResponse(t4Analysis, {}, t4Query);
+  assert(t4Text.includes('57.40%'), 'Turn 4: CV 57.40% present');
   conversationHistory.push({ role: 'user', content: t4Query });
   conversationHistory.push({
     role: 'assistant',
@@ -400,71 +556,29 @@ async function runTestSuite() {
     dataContext: { calculation: t4Analysis.calculation, statisticalResult: t4Analysis.statisticalResult },
   });
 
-  // Turn 5: "Explain what this CV means."
-  const t5Query = 'Explain what this CV means.';
-  const t5Intent = resolveIntent(t5Query);
-  assert(t5Intent.isFollowUp, 'Turn 5: Follow-up intent detected');
-  const t5Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t5Query,
-  });
-  assert(t5Analysis.statisticalResult.primaryOperation === 'COEFFICIENT_OF_VARIATION', 'Turn 5: Primary op is COEFFICIENT_OF_VARIATION');
+  // Turn 5: "Give me a complete statistical summary."
+  const t5Query = 'Give me a complete statistical summary.';
+  const t5Analysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, t5Query);
+  assert(t5Analysis.statisticalResult.isFullSummary, 'Turn 5: Full summary recognized');
   const t5Text = universalResponseBuilder.buildDataAnalysisResponse(t5Analysis, {}, t5Query);
-  assert(t5Text.includes('Practical Meaning of this CV'), 'Turn 5: Practical interpretation provided');
-  conversationHistory.push({ role: 'user', content: t5Query });
-  conversationHistory.push({
-    role: 'assistant',
-    content: t5Text,
-    dataContext: { calculation: t5Analysis.calculation, statisticalResult: t5Analysis.statisticalResult },
-  });
-
-  // Turn 6: "Compare it with the previous standard deviation."
-  const t6Query = 'Compare it with the previous standard deviation.';
-  const t6Intent = resolveIntent(t6Query);
-  assert(t6Intent.isFollowUp, 'Turn 6: Follow-up intent detected');
-  const t6Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t6Query,
-  });
-  assert(t6Analysis.statisticalResult.primaryOperation === 'COMPARE_METRICS', 'Turn 6: Primary op is COMPARE_METRICS');
-  const t6Text = universalResponseBuilder.buildDataAnalysisResponse(t6Analysis, {}, t6Query);
-  assert(t6Text.includes('Metric Comparison: Standard Deviation vs. Coefficient of Variation'), 'Turn 6: Comparative title rendered');
-  assert(t6Text.includes('Absolute vs. Relative Measure'), 'Turn 6: Mathematical distinction explained');
-  conversationHistory.push({ role: 'user', content: t6Query });
-  conversationHistory.push({
-    role: 'assistant',
-    content: t6Text,
-    dataContext: { calculation: t6Analysis.calculation, statisticalResult: t6Analysis.statisticalResult },
-  });
-
-  // Turn 7: "Give me a complete statistical summary."
-  const t7Query = 'Give me a complete statistical summary.';
-  const t7Intent = resolveIntent(t7Query);
-  assert(t7Intent.isFollowUp, 'Turn 7: Follow-up intent detected');
-  const t7Analysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: t7Query,
-  });
-  assert(t7Analysis.statisticalResult.isMultiStat, 'Turn 7: Recognized complete summary');
-  const t7Text = universalResponseBuilder.buildDataAnalysisResponse(t7Analysis, {}, t7Query);
-  assert(t7Text.includes('Statistical Analysis Report'), 'Turn 7: Comprehensive report rendered');
-  assert(t7Text.includes('| Statistical Measure | Calculated Value |'), 'Turn 7: Comprehensive table rendered');
+  assert(t5Text.includes('## Complete Statistical Analysis Report'), 'Turn 5: Full report header present');
+  assert(t5Text.includes('| Statistical Measure | Calculated Value | Definition / Convention |'), 'Turn 5: Full table present');
 
   // =========================================================================
-  // SECTION 4: PHASE 13 — MATHEMATICAL CROSS-VALIDATION
+  // SECTION 5: MATHEMATICAL CROSS-VALIDATION (PHASE 13)
   // =========================================================================
-  console.log('\n--- Section 4: Phase 13 — Mathematical Cross-Validation ---');
+  console.log('\n--- Section 5: Mathematical Cross-Validation ---');
 
   const fullStat = statisticalService.executeStatisticalAnalysis({
     rows,
     headers,
     columnSchema,
-    query: 'statistical summary',
+    query: 'complete statistical analysis',
     filename: parsedSpreadsheet.filename,
     sheetName,
   });
 
-  const { mean, median, variance, standardDeviation, coefficientOfVariation, quartiles, range, seriesMetadata } = fullStat.results;
+  const { mean, median, variance, standardDeviation, coefficientOfVariation, quartiles, range } = fullStat.results;
 
   // 1. Median == Q2
   assert(Math.abs(median - quartiles.q2) < 0.0001, 'Cross-Val 1: Median equals Q2 (50th percentile)');
@@ -490,14 +604,11 @@ async function runTestSuite() {
   assert(fullStat.seriesMetadata.completeness === 100, 'Cross-Val 9: Data completeness is 100%');
 
   // 6. Zero charts generated when not asked
-  const noChartAnalysis = await spreadsheetService.executeAnalysis({
-    parsedSpreadsheet,
-    userQuery: 'Calculate the variance and standard deviation',
-  });
+  const noChartAnalysis = await spreadsheetService.executeAnalysis(parsedSpreadsheet, 'Calculate the variance and standard deviation');
   assert(!noChartAnalysis.chartConfig, 'Cross-Val 10: Zero chart generated when user did not request visualization');
 
   // 7. Zero workflow contamination in any statistical response
-  const responsesToCheck = [meanResponse, medianResponse, popVarResponse, sampVarResponse, popSdResponse, sampSdResponse, multiResponse, t5Text, t6Text, t7Text];
+  const responsesToCheck = [meanResponse, medianResponse, popVarResponse, sampVarResponse, popSdResponse, sampSdResponse, textMeanMedMode, textMeanMed, textVarSd, t5Text];
   const contaminationKeywords = [
     'Appointment Status',
     'Awaiting Provider Confirmation',

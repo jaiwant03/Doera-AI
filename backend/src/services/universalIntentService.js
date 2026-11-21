@@ -43,8 +43,8 @@ class UniversalIntentService {
     );
 
     const isDataAnalysis = hasSpreadsheetAttachment || (
-      /(analyze|analysis|trend|distribution|correlation|dataset|csv|excel|spreadsheet|sheet|metrics|statistics|table|data|chart|expenses?|spending|sales|revenue|profit|cost|price|transactions?|columns?|rows?|top\s*\d+|lowest|highest|average|mean|median|mode|variance|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|skewness|kurtosis|quartiles?|iqr|covariance|sum|total|rank|growth|outliers?|anomalies)/i.test(lower) &&
-      (hasAttachments || /(dataset|dataframe|spreadsheet|numbers|rows|columns|expenses?|sales|table|chart|amount|day|year|month)/i.test(lower) || Boolean(historyContext))
+      /(analyze|analysis|trend|distribution|correlation|dataset|csv|excel|spreadsheet|sheet|metrics|statistics|table|data|chart|expenses?|spending|sales|revenue|profit|cost|price|transactions?|columns?|rows?|top\s*\d+|lowest|highest|average|mean|median|mode|variance|variation|standard\s*deviation|std\s*dev|stdev|coefficient\s*of\s*variation|\bcv\b|skewness|kurtosis|quartiles?|iqr|covariance|sum|total|rank|growth|outliers?|anomalies|spread|middle\s*value|most\s*frequent|how\s*much\s*variation)/i.test(lower) &&
+      (hasAttachments || /(dataset|dataframe|spreadsheet|numbers|rows|columns|expenses?|sales|table|chart|amount|day|year|month|values|records)/i.test(lower) || Boolean(historyContext))
     );
     const isDocAnalysis = (hasAttachments && !hasSpreadsheetAttachment) || /(summarize|analyze|review|extract|read)\s+(this|the|my)?\s*(pdf|document|file|doc|report|invoice|paper)/i.test(lower);
     const isMissionPlanning = /(organize|plan|host|conduct|manage|execution\s*plan|complete\s*plan)\s+(?:a|an)?\s*(?:two-day|2-day|\d+-day)?\s*(?:[a-z0-9_-]+\s+){0,3}(?:hackathon|event|symposium|conference|workshop|fest|competition|championship)/i.test(lower) ||
