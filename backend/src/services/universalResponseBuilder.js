@@ -689,11 +689,15 @@ function buildDataAnalysisResponse(analysis, task, userRequest) {
   const isChartOnlyQuery = /(create\s*(a\s*)?(bar|line|pie|doughnut|donut|area)?\s*chart|show\s*(me\s*)?(a\s*)?chart|plot\s*expenses|visualize\s*(this)?)/i.test(queryLower);
   const isMonthlyQuery = /(monthly|month\s*by\s*month|compare\s*monthly|over\s*time|timeline|trend)/i.test(queryLower);
   const isReduceExpensesQuery = /(reduce|save\s*money|cut\s*costs|optimize\s*spending|cost\s*reduction|lower\s*expenses)/i.test(queryLower);
+  const isInterpretationQuery = /(interpret|interpretation|explain\s*(this|the)?\s*chart|what\s*does\s*(this|the)\s*chart\s*show|walk\s*me\s*through)/i.test(queryLower);
 
   let md = '';
 
   // 1. HEADER & NATURAL LANGUAGE SUMMARY
-  if (isHighestQuery && highest) {
+  if (isInterpretationQuery) {
+    md += `### Chart Interpretation & Dataset Analysis\n\n`;
+    md += `Based on the interactive chart, here is the detailed breakdown and interpretation of your ${isCountBased ? 'dataset distribution' : 'spending totals'}. The chart compares values across all recorded categories, highlighting primary expenditure drivers and notable variations.\n\n`;
+  } else if (isHighestQuery && highest) {
     md += `### Highest Spending Category\n\n`;
     md += `The highest spending category is **${highest.label}** with total spending of **${formatVal(highest.value)}**, accounting for **${highest.percentage ?? 0}%** of total recorded ${isCountBased ? 'transactions' : 'expenses'}.\n\n`;
   } else if (isMonthlyQuery) {
@@ -712,7 +716,13 @@ function buildDataAnalysisResponse(analysis, task, userRequest) {
 
   // 2. KEY INSIGHTS
   md += `### Key Insights\n\n`;
-  if (isMonthlyQuery) {
+  if (isInterpretationQuery) {
+    md += `- **Total ${isCountBased ? 'Records' : 'Expenses'} Analyzed**: ${formatVal(totalAmount)}\n`;
+    if (highest) md += `- **Highest ${isCountBased ? 'Category' : 'Spending Category'}**: **${highest.label}** (${formatVal(highest.value)}, **${highest.percentage}%** of total)\n`;
+    if (lowest && lowest.label !== highest?.label) md += `- **Lowest ${isCountBased ? 'Category' : 'Spending Category'}**: **${lowest.label}** (${formatVal(lowest.value)}, **${lowest.percentage}%** of total)\n`;
+    if (calc?.overallAverage !== undefined && !isCountBased) md += `- **Average Category Amount**: ${formatVal(calc.overallAverage)}\n`;
+    md += `- **Number of Transactions Analyzed**: **${totalRows.toLocaleString()}** records\n\n`;
+  } else if (isMonthlyQuery) {
     md += `- **Total Expenses Analyzed**: ${formatVal(totalAmount)}\n`;
     if (highest) md += `- **Peak Spending Month**: **${highest.label}** (${formatVal(highest.value)}, ${highest.percentage}% of total)\n`;
     if (lowest && lowest.label !== highest?.label) md += `- **Lowest Spending Month**: **${lowest.label}** (${formatVal(lowest.value)}, ${lowest.percentage}% of total)\n`;
