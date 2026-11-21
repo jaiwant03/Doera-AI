@@ -455,8 +455,26 @@ class LocalServiceResearcher {
 
     let networkSuccess = false;
 
-    // 1. If user requested a specific brand (e.g. "KG Cinemas", "Dell")
-    if (brandQuery) {
+    // 1. Google Places API (if API Key is configured in environment)
+    if (this.googlePlacesApiKey) {
+      try {
+        const googleResults = await this.searchGooglePlaces(params);
+        if (googleResults && googleResults.length > 0) {
+          for (const g of googleResults) {
+            if (!seenNames.has(g.businessName.toLowerCase())) {
+              seenNames.add(g.businessName.toLowerCase());
+              candidates.push(g);
+            }
+          }
+          networkSuccess = true;
+        }
+      } catch (gErr) {
+        logger.warn(`[Local Service Researcher] Google Places search notice:`, gErr.message);
+      }
+    }
+
+    // 2. If user requested a specific brand (e.g. "KG Cinemas", "Dell")
+    if (brandQuery && !candidates.some((c) => c.isBrandMatch)) {
       const brandVariants = [
         brandQuery,
         `${brandQuery} ${targetCity || ''}`.trim(),
@@ -474,7 +492,7 @@ class LocalServiceResearcher {
 
           const res = await axios.get(brandUrl, {
             headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-            timeout: 8000,
+            timeout: 5000,
           });
 
           networkSuccess = true;
@@ -497,12 +515,36 @@ class LocalServiceResearcher {
         }
       }
 
+      // If Nominatim couldn't find brand, fallback to Photon for brand
+      if (!candidates.some((c) => c.isBrandMatch)) {
+        try {
+          const photonBrandUrl = center
+            ? `${this.photonBase}/api/?q=${encodeURIComponent(brandQuery + (targetCity ? ' ' + targetCity : ''))}&lat=${center.lat}&lon=${center.lng}&limit=10`
+            : `${this.photonBase}/api/?q=${encodeURIComponent(brandQuery + ' ' + (targetLocation || ''))}&limit=10`;
+          const res = await axios.get(photonBrandUrl, { timeout: 6000 });
+          networkSuccess = true;
+          providerHttpStatus = 200;
+          const feats = res.data?.features || [];
+          for (const f of feats) {
+            const parsed = this.parsePhotonPlace(f, center);
+            if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
+              seenNames.add(parsed.businessName.toLowerCase());
+              parsed.isBrandMatch = true;
+              candidates.push(parsed);
+              break;
+            }
+          }
+        } catch (pErr) {
+          logger.warn(`[Local Service Researcher] Photon brand search notice:`, pErr.message);
+        }
+      }
+
       if (!candidates.some((c) => c.isBrandMatch)) {
         brandNotFoundNotice = `I couldn't verify a ${brandQuery} location within the selected search radius. However, I found these other ${params.categoryTitle.toLowerCase()} near your location:`;
       }
     }
 
-    // 2. Discover category businesses using viewbox / coordinates
+    // 3. Discover category businesses using viewbox / coordinates via Nominatim
     for (const term of searchTerms) {
       if (candidates.length >= targetCount + 3) break;
 
@@ -513,7 +555,7 @@ class LocalServiceResearcher {
 
         const res = await axios.get(url, {
           headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-          timeout: 8000,
+          timeout: 5000,
         });
 
         networkSuccess = true;
@@ -535,14 +577,14 @@ class LocalServiceResearcher {
       }
     }
 
-    // 3. Fallback: If viewbox bounded search was too strict, search with locality
+    // 4. Fallback: If viewbox bounded search was too strict, search with locality via Nominatim
     if (candidates.length < targetCount && targetLocation) {
       try {
         const fallbackTerm = searchTerms[0] || 'service';
         const url = `${this.nominatimBase}/search?format=json&q=${encodeURIComponent(fallbackTerm + ' in ' + targetLocation)}&addressdetails=1&extratags=1&limit=15`;
         const res = await axios.get(url, {
           headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-          timeout: 8000,
+          timeout: 5000,
         });
         networkSuccess = true;
         if (Array.isArray(res.data)) {
@@ -559,6 +601,55 @@ class LocalServiceResearcher {
       }
     }
 
+    // 5. Resilient Fallback: Photon OpenStreetMap Geocoding & POI API (handles rate limits & Varnish 629 blocks)
+    if (candidates.length < targetCount) {
+      for (const term of searchTerms) {
+        if (candidates.length >= targetCount + 5) break;
+        try {
+          const photonQuery = targetCity ? `${term} ${targetCity}` : (targetLocation ? `${term} ${targetLocation}` : term);
+          const photonUrl = center
+            ? `${this.photonBase}/api/?q=${encodeURIComponent(photonQuery)}&lat=${center.lat}&lon=${center.lng}&limit=15`
+            : `${this.photonBase}/api/?q=${encodeURIComponent(photonQuery)}&limit=15`;
+
+          const res = await axios.get(photonUrl, { timeout: 6000 });
+          networkSuccess = true;
+          providerHttpStatus = 200;
+          const feats = res.data?.features || [];
+          for (const f of feats) {
+            const parsed = this.parsePhotonPlace(f, center);
+            if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
+              seenNames.add(parsed.businessName.toLowerCase());
+              candidates.push(parsed);
+            }
+          }
+        } catch (pErr) {
+          logger.warn(`[Local Service Researcher] Photon search for "${term}" notice:`, pErr.message);
+          if (!networkSuccess) providerError = pErr.message;
+        }
+      }
+
+      // 5b. Broader coordinate-centered search if still needed
+      if (candidates.length < targetCount && center) {
+        for (const term of searchTerms.slice(0, 2)) {
+          if (candidates.length >= targetCount + 5) break;
+          try {
+            const photonUrl = `${this.photonBase}/api/?q=${encodeURIComponent(term)}&lat=${center.lat}&lon=${center.lng}&limit=15`;
+            const res = await axios.get(photonUrl, { timeout: 6000 });
+            networkSuccess = true;
+            providerHttpStatus = 200;
+            const feats = res.data?.features || [];
+            for (const f of feats) {
+              const parsed = this.parsePhotonPlace(f, center);
+              if (parsed && !seenNames.has(parsed.businessName.toLowerCase())) {
+                seenNames.add(parsed.businessName.toLowerCase());
+                candidates.push(parsed);
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    }
+
     // If all network queries failed and zero candidates were obtained
     if (!networkSuccess && candidates.length === 0) {
       return {
@@ -569,7 +660,17 @@ class LocalServiceResearcher {
       };
     }
 
-    // Sort by distance ascending when distance is available
+    // Distance filtering: filter out excessively far results if local options exist
+    if (center && candidates.some((c) => c.distanceKmNum !== null && c.distanceKmNum <= radiusKm * 1.5)) {
+      const maxAllowedDist = Math.max(radiusKm * 1.5, 25);
+      const filtered = candidates.filter((c) => c.distanceKmNum === null || c.distanceKmNum <= maxAllowedDist || c.isBrandMatch);
+      if (filtered.length >= targetCount) {
+        candidates.length = 0;
+        candidates.push(...filtered);
+      }
+    }
+
+    // Sort by distance ascending when distance is available (brand matches prioritized)
     candidates.sort((a, b) => {
       if (a.isBrandMatch && !b.isBrandMatch) return -1;
       if (!a.isBrandMatch && b.isBrandMatch) return 1;
@@ -600,6 +701,129 @@ class LocalServiceResearcher {
       error: null,
       httpStatus: 200,
     };
+  }
+
+  /**
+   * Search real businesses via Google Places API (when API key is configured)
+   */
+  async searchGooglePlaces(params) {
+    if (!this.googlePlacesApiKey) return [];
+    const { center, targetLocation, targetCity, searchTerms, brandQuery, radiusKm } = params;
+    const query = brandQuery || `${searchTerms[0]} in ${targetCity || targetLocation}`;
+    const radiusMeters = (radiusKm || 15) * 1000;
+    
+    let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${this.googlePlacesApiKey}`;
+    if (center && typeof center.lat === 'number' && typeof center.lng === 'number') {
+      url += `&location=${center.lat},${center.lng}&radius=${radiusMeters}`;
+    }
+
+    try {
+      const res = await axios.get(url, { timeout: 8000 });
+      if (res.data.status !== 'OK' && res.data.status !== 'ZERO_RESULTS') {
+        logger.warn(`[Local Service Researcher] Google Places API status: ${res.data.status}`, res.data.error_message);
+        return [];
+      }
+
+      const results = [];
+      for (const p of res.data.results || []) {
+        const lat = p.geometry?.location?.lat;
+        const lng = p.geometry?.location?.lng;
+        let distanceKmNum = null;
+        let distanceKm = null;
+        if (center && typeof center.lat === 'number' && typeof center.lng === 'number' && lat && lng) {
+          distanceKmNum = haversineDistance(center.lat, center.lng, lat, lng);
+          distanceKm = distanceKmNum !== null ? `${distanceKmNum} km` : null;
+        }
+
+        results.push({
+          businessName: p.name,
+          address: p.formatted_address || p.name,
+          location: { lat, lng },
+          distanceKmNum,
+          distanceKm,
+          phone: null,
+          website: null,
+          rating: p.rating || null,
+          reviewsCount: p.user_ratings_total || null,
+          directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+          source: 'Google Places API',
+          sourceUrl: `https://www.google.com/maps/place/?q=place_id:${p.place_id}`,
+          verificationStatus: VERIFICATION_STATUSES.CONFIRMED,
+          dataSource: 'REAL SOURCE-BASED LOCATION',
+          retrievedAt: new Date().toISOString(),
+        });
+      }
+      return results;
+    } catch (err) {
+      logger.warn(`[Local Service Researcher] Google Places request error:`, err.message);
+      return [];
+    }
+  }
+
+  /**
+   * Parse Photon OpenStreetMap JSON feature into clean provider object with Haversine distance
+   */
+  parsePhotonPlace(feature, center) {
+    if (!feature || !feature.geometry?.coordinates) return null;
+    const [lng, lat] = feature.geometry.coordinates;
+    if (isNaN(lat) || isNaN(lng)) return null;
+
+    const props = feature.properties || {};
+    const businessName = props.name;
+    if (!businessName) return null;
+
+    // Discard non-commercial public utilities or generic administrative boundaries
+    if (props.osm_key === 'boundary' || props.osm_value === 'administrative' || props.type === 'administrative') return null;
+
+    const bLower = businessName.toLowerCase();
+    if (
+      bLower.includes('department of') ||
+      bLower.includes('substation') ||
+      bLower.includes('sub-station') ||
+      bLower.includes('ministry of')
+    ) {
+      return null;
+    }
+
+    let distanceKmNum = null;
+    let distanceKm = null;
+    if (center && typeof center.lat === 'number' && typeof center.lng === 'number') {
+      distanceKmNum = haversineDistance(center.lat, center.lng, lat, lng);
+      distanceKm = distanceKmNum !== null ? `${distanceKmNum} km` : null;
+    }
+
+    const addressParts = [
+      businessName,
+      props.street,
+      props.district,
+      props.city,
+      props.state,
+      props.postcode,
+      props.country,
+    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+
+    const address = addressParts.join(', ');
+    const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    const sourceUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}`;
+
+    return {
+      businessName,
+      address: address || businessName,
+      location: { lat, lng },
+      distanceKmNum,
+      distanceKm,
+      phone: null,
+      website: null,
+      rating: null,
+      reviewsCount: null,
+      directionsUrl,
+      source: 'OpenStreetMap Nominatim', // Consistent source attribution format
+      sourceUrl,
+      verificationStatus: VERIFICATION_STATUSES.CONFIRMED,
+      dataSource: 'REAL SOURCE-BASED LOCATION',
+      retrievedAt: new Date().toISOString(),
+    };
+  }
   }
 
   /**

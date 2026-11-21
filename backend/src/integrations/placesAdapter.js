@@ -198,9 +198,40 @@ class PlacesAdapter {
         }
       }
 
+      // Resilient Fallback to Photon OpenStreetMap API if Nominatim returns no results
+      for (const phrase of candidates.slice(0, 2)) {
+        try {
+          const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(phrase)}&limit=10`;
+          const res = await axios.get(photonUrl, { timeout: 6000 });
+          const features = res.data?.features || [];
+          const results = [];
+          for (const f of features) {
+            const props = f.properties || {};
+            const [lon, lat] = f.geometry?.coordinates || [];
+            if (!props.name || !lat || !lon) continue;
+            results.push({
+              businessName: props.name,
+              address: [props.name, props.street, props.district, props.city, props.state].filter(Boolean).join(', '),
+              rating: null,
+              reviewsCount: null,
+              location: { lat, lng: lon },
+              source: 'OpenStreetMap Nominatim',
+              sourceUrl: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}`,
+              phone: null,
+              email: null,
+              website: null,
+              status: 'DISCOVERED',
+              retrievedAt: new Date().toISOString(),
+            });
+            if (results.length >= 5) break;
+          }
+          if (results.length > 0) return results;
+        } catch (_) {}
+      }
+
       return [];
     } catch (err) {
-      logger.warn('[OpenStreetMap Discovery] Query to OSM Nominatim failed:', err.message);
+      logger.warn('[OpenStreetMap Discovery] Query to OSM failed:', err.message);
       return [];
     }
   }

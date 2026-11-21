@@ -299,6 +299,8 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
     categorySingular = 'restaurant';
   } else if (/laptop|computer/i.test(categoryTitle)) {
     categorySingular = 'laptop service centre';
+  } else if (/mobile|phone/i.test(categoryTitle)) {
+    categorySingular = 'mobile phone service centre';
   } else {
     categorySingular = categoryTitle.toLowerCase().replace(/s\b/, '');
   }
@@ -310,6 +312,13 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
 
   // Case 2: Business search failed (service unavailable or error)
   if (searchState === 'SEARCH_FAILED' || task.status === 'SEARCH_FAILED') {
+    const errorMsg = localServiceData.error || '';
+    if (errorMsg.includes('API key') || errorMsg.includes('INVALID_KEY')) {
+      return `I couldn't complete the ${categorySingular} search because the business search API key is invalid or unconfigured. Please configure a valid API key in your environment.`;
+    }
+    if (errorMsg.includes('timeout') || errorMsg.includes('ECONNABORTED')) {
+      return `I couldn't complete the ${categorySingular} search due to a network connection timeout. Please check your connection and try again.`;
+    }
     return `I couldn't complete the ${categorySingular} search because the business search service is currently unavailable. Please try again.`;
   }
 
