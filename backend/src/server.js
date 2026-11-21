@@ -114,7 +114,16 @@ export const startServer = async () => {
     proactiveEngine.start();
   }
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`[DOERA] Port ${config.port} is already in use (EADDRINUSE). Another process or background instance is occupying port ${config.port}.`);
+      } else {
+        logger.error('[DOERA] Server listen error:', err.message);
+      }
+      reject(err);
+    });
+
     server.listen(config.port, () => {
       logger.info(`====================================================`);
       logger.info(`  DOERA AI 3.0 — Autonomous Assistant Platform     `);
@@ -140,6 +149,16 @@ const handleShutdown = async (signal) => {
 
 process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+// Handle nodemon restarts cleanly so port 5000 is released immediately
+process.once('SIGUSR2', async () => {
+  logger.info('[DOERA] Received SIGUSR2 (nodemon restart). Releasing port and shutting down cleanly...');
+  proactiveEngine.stop();
+  server.close(async () => {
+    await disconnectDB().catch(() => {});
+    process.kill(process.pid, 'SIGUSR2');
+  });
+});
 
 // Process-level unhandled exception and rejection handlers — prevents unexpected crash/restart loops
 process.on('uncaughtException', (err) => {
