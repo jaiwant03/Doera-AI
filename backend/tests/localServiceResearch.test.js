@@ -461,8 +461,71 @@ async function runTestSuite() {
   );
   console.log('  ✓ PASS: Test 12 (Honest handling of unlisted ratings and contact details)\n');
 
+  // -------------------------------------------------------------
+  // TEST 13: Find 5 laptop service centers near me (GPS Coordinates)
+  // -------------------------------------------------------------
+  console.log('--- TEST 13: Find 5 laptop service centers near me (GPS Location) ---');
+  const taskContext13 = {
+    taskId: 'test-13-laptop-services-near-me',
+    userRequest: 'find 5 laptop service centers near me',
+    userLocation: coimbatoreUserLocation,
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result13 = await localServiceResearcher.researchLocalServices(taskContext13);
+  console.log(`Providers found for Test 13: ${result13.providersFound} (requested: ${result13.requestedCount})`);
+  assert.strictEqual(result13.status, 'completed', 'Test 13 status must be completed');
+  assert.ok(result13.providersFound > 0, 'Test 13 must return real laptop/computer service providers');
+
+  const task13 = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContext13.userRequest,
+    discoveredData: { localService: result13 },
+    externalContacts: result13.providers,
+    locationData: result13.locationData,
+  };
+
+  const response13 = buildUniversalResponse(task13);
+  assert.ok(response13.includes('# Laptop Repair Centres Near You'), 'Header must be # Laptop Repair Centres Near You');
+  assert.ok(response13.includes('**Search location:**'), 'Must contain **Search location:**');
+  assert.ok(response13.includes('### Search results'), 'Must have ### Search results');
+  console.log('  ✓ PASS: Test 13 (Find 5 laptop service centers near me - GPS Location)\n');
+
+  // -------------------------------------------------------------
+  // TEST 14: Find 5 laptop service centers near me (City Location Without GPS Coordinates)
+  // -------------------------------------------------------------
+  console.log('--- TEST 14: Find 5 laptop service centers near me (City Location Without GPS) ---');
+  const taskContext14 = {
+    taskId: 'test-14-laptop-services-city-only',
+    userRequest: 'find 5 laptop service centers near me',
+    userLocation: {
+      status: 'resolved',
+      name: 'Coimbatore, Tamil Nadu',
+      source: 'user_selected',
+    },
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result14 = await localServiceResearcher.researchLocalServices(taskContext14);
+  console.log(`Providers found for Test 14: ${result14.providersFound} (requested: ${result14.requestedCount})`);
+  assert.strictEqual(result14.status, 'completed', 'Test 14 status must be completed without rejecting for missing GPS');
+  assert.ok(result14.providersFound > 0, 'Test 14 must return real laptop/computer providers for city selection');
+
+  const task14 = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContext14.userRequest,
+    discoveredData: { localService: result14 },
+    externalContacts: result14.providers,
+    locationData: result14.locationData,
+  };
+
+  const response14 = buildUniversalResponse(task14);
+  assert.ok(!response14.includes("I couldn't determine your current location"), 'Must not say location unavailable when city was provided');
+  assert.ok(response14.includes('### Search results'), 'Must display search results for city location');
+  console.log('  ✓ PASS: Test 14 (Find 5 laptop service centers near me - City Location Without GPS)\n');
+
   console.log('=================================================================');
-  console.log('✓ ALL 12 LOCAL SERVICE RESEARCH TESTS COMPLETED SUCCESSFULLY!');
+  console.log('✓ ALL 14 LOCAL SERVICE RESEARCH TESTS COMPLETED SUCCESSFULLY!');
   console.log('=================================================================');
 }
 
