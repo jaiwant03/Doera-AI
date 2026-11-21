@@ -409,7 +409,13 @@ class SpreadsheetService {
     const uniqueValues = Array.from(new Set(values));
     const cardinalityRatio = uniqueValues.length / sampleRatio;
 
-    if (uniqueValues.length <= 35 || cardinalityRatio <= 0.4 || /(category|department|status|region|city|type|group|tier|gender|role|brand|product)/i.test(colLower)) {
+    // Identifiers and raw URLs should remain text if values are largely unique
+    const isIdentifierOrUrl = /(url|link|href|^id$|_id$|uuid|guid|hash|token|email|address)/i.test(colLower);
+    if (isIdentifierOrUrl && (cardinalityRatio > 0.7 || uniqueValues.length > 20) && sampleRatio > 2) {
+      return { type: 'text' };
+    }
+
+    if (uniqueValues.length <= 35 || cardinalityRatio <= 0.4 || /(category|department|status|region|city|type|group|tier|gender|role|brand|product|label|class)/i.test(colLower)) {
       const freqMap = {};
       values.forEach((v) => {
         const k = String(v).trim();
