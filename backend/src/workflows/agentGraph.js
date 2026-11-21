@@ -814,6 +814,9 @@ const documentNode = async (state) => {
     dataPayload: docResult.documents?.[0]?.extractedData || state.dataPayload,
     currentAgent: state.requiredAgents.includes('DataAnalysis') ? 'DataAnalysis' : 'Verification',
     currentAction: 'Document analysis complete.',
+    bookingDetails: null,
+    pendingApproval: null,
+    externalContacts: [],
   };
 };
 
@@ -1172,11 +1175,11 @@ const workflow = new StateGraph(TaskStateAnnotation)
     return 'verification';
   })
 
-  // Document -> DataAnalysis or Research or Verification
+  // Document -> DataAnalysis or Verification (strictly no unneeded research/booking)
   .addConditionalEdges('document', (state) => {
     const req = state.requiredAgents || [];
     if (req.includes('DataAnalysis')) return 'data_analysis';
-    if (req.includes('Research')) return 'research';
+    if (req.includes('Research') && state.category !== 'DOCUMENT_ANALYSIS') return 'research';
     return 'verification';
   })
 
