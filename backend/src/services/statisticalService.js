@@ -780,36 +780,82 @@ class StatisticalService {
       };
     }
 
-    // 2. Identify requested operations
-    const isMeanRequested = /\b(mean|average|avg)\b/i.test(queryLower);
-    const isMedianRequested = /\b(median|middle\s*value)\b/i.test(queryLower);
-    const isModeRequested = /\b(mode|most\s*frequent)\b/i.test(queryLower);
-    const isVarianceRequested = /\b(variance|\bvar\b)\b/i.test(queryLower);
-    const isStdDevRequested = /\b(standard\s*deviation|std\s*dev|stdev|sigma)\b/i.test(queryLower);
-    const isCVRequested = /\b(coefficient\s*of\s*variation|\bcv\b)\b/i.test(queryLower);
-    const isRangeRequested = /\b(range|min\s*and\s*max|spread)\b/i.test(queryLower);
-    const isOutliersRequested = /\b(outlier|outliers|anomalies|anomalous)\b/i.test(queryLower);
-    const isQuartilesRequested = /\b(quartile|quartiles|q1|q2|q3|interquartile|five[\s-]number)\b/i.test(queryLower) || (/\biqr\b/i.test(queryLower) && !isOutliersRequested);
-    const isSkewnessRequested = /\b(skew|skewness)\b/i.test(queryLower);
-    const isKurtosisRequested = /\b(kurtosis)\b/i.test(queryLower);
-    const isCorrelationRequested = /\b(correlation|pearsons?|spearmans?|relationship|covariance)\b/i.test(queryLower);
-    const isFullSummaryRequested = /\b(complete\s*statistical\s*summary|statistical\s*summary|full\s*statistics|all\s*statistics|statistics\s*summary|statistical\s*profile)\b/i.test(queryLower);
+    // 2. Identify requested operations with exact allowlist matching
+    const isFullSummaryRequested = /\b(complete\s*statistical\s*analysis|complete\s*statistical\s*summary|full\s*statistical\s*analysis|complete\s*analysis|all\s*statistical\s*measures|all\s*statistics|full\s*statistics|statistics\s*summary|statistical\s*profile)\b/i.test(queryLower);
+
+    const isMeanRequested = !isFullSummaryRequested && (/\b(mean|average|avg)\b/i.test(queryLower) || /\baverage\s*transaction\b/i.test(queryLower));
+    const isMedianRequested = !isFullSummaryRequested && /\b(median|middle\s*value)\b/i.test(queryLower);
+    const isModeRequested = !isFullSummaryRequested && /\b(mode|most\s*frequent(ly)?|occurs?\s*most)\b/i.test(queryLower);
 
     const isPopulationVariance = /\bpopulation\s*(variance|\bvar\b)\b/i.test(queryLower);
     const isSampleVariance = /\bsample\s*(variance|\bvar\b)\b/i.test(queryLower);
+    const isGeneralVariationRequested = !isFullSummaryRequested && !/\b(coefficient\s*of\s*variation|\bcv\b)\b/i.test(queryLower) && /\bhow\s*much\s*variation\b/i.test(queryLower);
+    const isVarianceRequested = !isFullSummaryRequested && (/\b(variance|\bvar\b)\b/i.test(queryLower) || isPopulationVariance || isSampleVariance || isGeneralVariationRequested);
+
     const isPopulationStdDev = /\bpopulation\s*(standard\s*deviation|std\s*dev|stdev|sigma)\b/i.test(queryLower);
     const isSampleStdDev = /\bsample\s*(standard\s*deviation|std\s*dev|stdev)\b/i.test(queryLower);
-    const isCompareRequested = /\b(compare|comparison|versus|\bvs\b)\b/i.test(queryLower) &&
+    const isStdDevRequested = !isFullSummaryRequested && (/\b(standard\s*deviation|std\s*dev|stdev|sigma)\b/i.test(queryLower) || isPopulationStdDev || isSampleStdDev || isGeneralVariationRequested);
+
+    const isCVRequested = !isFullSummaryRequested && /\b(coefficient\s*of\s*variation|\bcv\b)\b/i.test(queryLower);
+    const isRangeRequested = !isFullSummaryRequested && /\b(range|min\s*and\s*max|spread)\b/i.test(queryLower);
+    const isMinRequested = !isFullSummaryRequested && !isRangeRequested && /\b(min|minimum|lowest\s*value)\b/i.test(queryLower);
+    const isMaxRequested = !isFullSummaryRequested && !isRangeRequested && /\b(max|maximum|highest\s*value)\b/i.test(queryLower);
+
+    const isOutliersRequested = !isFullSummaryRequested && /\b(outlier|outliers|anomalies|anomalous)\b/i.test(queryLower);
+    const isQ1Requested = !isFullSummaryRequested && /\b(q1|first\s*quartile|25th\s*percentile)\b/i.test(queryLower);
+    const isQ3Requested = !isFullSummaryRequested && /\b(q3|third\s*quartile|75th\s*percentile)\b/i.test(queryLower);
+    const isIQRRequested = !isFullSummaryRequested && !isOutliersRequested && /\b(iqr|interquartile\s*range)\b/i.test(queryLower);
+    const isQuartilesRequested = !isFullSummaryRequested && (
+      /\b(quartile|quartiles|interquartile|five[\s-]number)\b/i.test(queryLower) ||
+      (/\biqr\b/i.test(queryLower) && !isOutliersRequested) ||
+      (isQ1Requested && isQ3Requested)
+    );
+
+    const isSkewnessRequested = !isFullSummaryRequested && /\b(skew|skewness)\b/i.test(queryLower);
+    const isKurtosisRequested = !isFullSummaryRequested && /\b(kurtosis)\b/i.test(queryLower);
+    const isMADRequested = !isFullSummaryRequested && /\b(mean\s*absolute\s*deviation|\bmad\b)\b/i.test(queryLower);
+    const isCorrelationRequested = !isFullSummaryRequested && /\b(correlation|pearsons?|spearmans?|relationship|covariance)\b/i.test(queryLower);
+    const isCompareRequested = !isFullSummaryRequested && /\b(compare|comparison|versus|\bvs\b)\b/i.test(queryLower) &&
       /\b(standard\s*deviation|std\s*dev|stdev|cv|coefficient\s*of\s*variation|mean|variance)\b/i.test(queryLower);
 
-    // Check if multiple operations requested
-    const operationsCount = [
-      isMeanRequested, isMedianRequested, isModeRequested, isVarianceRequested,
-      isStdDevRequested, isCVRequested, isRangeRequested, isQuartilesRequested,
-      isOutliersRequested, isSkewnessRequested, isKurtosisRequested
-    ].filter(Boolean).length;
+    // Build explicit requestedOperations allowlist
+    const requestedOperations = [];
+    if (isFullSummaryRequested) {
+      requestedOperations.push('all');
+    } else {
+      if (isMeanRequested) requestedOperations.push('mean');
+      if (isMedianRequested) requestedOperations.push('median');
+      if (isModeRequested) requestedOperations.push('mode');
+      if (isVarianceRequested) {
+        if (isPopulationVariance && !isSampleVariance) requestedOperations.push('population_variance');
+        else if (isSampleVariance && !isPopulationVariance) requestedOperations.push('sample_variance');
+        else requestedOperations.push('variance');
+      }
+      if (isStdDevRequested) {
+        if (isPopulationStdDev && !isSampleStdDev) requestedOperations.push('population_standard_deviation');
+        else if (isSampleStdDev && !isPopulationStdDev) requestedOperations.push('sample_standard_deviation');
+        else requestedOperations.push('standard_deviation');
+      }
+      if (isCVRequested) requestedOperations.push('coefficient_of_variation');
+      if (isRangeRequested) requestedOperations.push('range');
+      if (isMinRequested) requestedOperations.push('min');
+      if (isMaxRequested) requestedOperations.push('max');
+      if (isQ1Requested && !isQuartilesRequested) requestedOperations.push('q1');
+      if (isQ3Requested && !isQuartilesRequested) requestedOperations.push('q3');
+      if (isIQRRequested && !isQuartilesRequested) requestedOperations.push('iqr');
+      if (isQuartilesRequested) requestedOperations.push('quartiles');
+      if (isOutliersRequested) requestedOperations.push('outliers');
+      if (isSkewnessRequested) requestedOperations.push('skewness');
+      if (isKurtosisRequested) requestedOperations.push('kurtosis');
+      if (isMADRequested) requestedOperations.push('mean_absolute_deviation');
+      if (isCorrelationRequested) requestedOperations.push('correlation');
+    }
 
-    const isMultiStat = operationsCount >= 2 || isFullSummaryRequested;
+    if (requestedOperations.length === 0) {
+      requestedOperations.push('all');
+    }
+
+    const isMultiStat = requestedOperations.length >= 2;
 
     // 3. Compute Comprehensive Profile
     const mean = this.calculateMean(values);
@@ -867,19 +913,23 @@ class StatisticalService {
     let primaryOp = 'SUMMARY';
     if (isCompareRequested) {
       primaryOp = 'COMPARE_METRICS';
-    } else if (!isMultiStat) {
-      if (isCVRequested) primaryOp = 'COEFFICIENT_OF_VARIATION';
-      else if (isStdDevRequested) primaryOp = 'STANDARD_DEVIATION';
-      else if (isVarianceRequested) primaryOp = 'VARIANCE';
-      else if (isModeRequested) primaryOp = 'MODE';
-      else if (isMedianRequested) primaryOp = 'MEDIAN';
-      else if (isMeanRequested) primaryOp = 'MEAN';
-      else if (isRangeRequested) primaryOp = 'RANGE';
-      else if (isQuartilesRequested) primaryOp = 'QUARTILES';
-      else if (isOutliersRequested) primaryOp = 'OUTLIERS';
-      else if (isSkewnessRequested) primaryOp = 'SKEWNESS';
-      else if (isKurtosisRequested) primaryOp = 'KURTOSIS';
-      else if (isCorrelationRequested) primaryOp = 'CORRELATION';
+    } else if (requestedOperations.includes('all')) {
+      primaryOp = 'FULL_STATISTICAL_ANALYSIS';
+    } else if (requestedOperations.length === 1) {
+      const single = requestedOperations[0];
+      if (single === 'coefficient_of_variation') primaryOp = 'COEFFICIENT_OF_VARIATION';
+      else if (single.includes('standard_deviation')) primaryOp = 'STANDARD_DEVIATION';
+      else if (single.includes('variance')) primaryOp = 'VARIANCE';
+      else if (single === 'mode') primaryOp = 'MODE';
+      else if (single === 'median') primaryOp = 'MEDIAN';
+      else if (single === 'mean') primaryOp = 'MEAN';
+      else if (single === 'range' || single === 'min' || single === 'max') primaryOp = 'RANGE';
+      else if (single === 'quartiles' || single === 'q1' || single === 'q3' || single === 'iqr') primaryOp = 'QUARTILES';
+      else if (single === 'outliers') primaryOp = 'OUTLIERS';
+      else if (single === 'skewness') primaryOp = 'SKEWNESS';
+      else if (single === 'kurtosis') primaryOp = 'KURTOSIS';
+      else if (single === 'correlation') primaryOp = 'CORRELATION';
+      else primaryOp = 'MULTI_STATISTICAL_REPORT';
     } else {
       primaryOp = 'MULTI_STATISTICAL_REPORT';
     }
@@ -889,6 +939,8 @@ class StatisticalService {
       isStatisticalAnalysis: true,
       primaryOperation: primaryOp,
       isMultiStat,
+      isFullSummary: requestedOperations.includes('all'),
+      requestedOperations,
       dataset: filename,
       sheetName,
       targetColumn: targetCol,
@@ -930,6 +982,7 @@ class StatisticalService {
         isSampleVariance,
         isPopulationStdDev,
         isSampleStdDev,
+        isFullSummaryRequested,
       },
     };
   }

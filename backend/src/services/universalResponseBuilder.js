@@ -663,7 +663,18 @@ function buildDocumentSection(docs, crossDocAnalysis, userRequest) {
 }
 
 function buildStatisticalResponse(statResult, chart, userRequest) {
-  const { dataset = 'dataset.xlsx', sheetName = 'Sheet1', targetColumn = 'Amount', seriesMetadata, results, primaryOperation, isMultiStat, activeOperations } = statResult;
+  const {
+    dataset = 'dataset.xlsx',
+    sheetName = 'Sheet1',
+    targetColumn = 'Amount',
+    seriesMetadata,
+    results,
+    primaryOperation,
+    isMultiStat,
+    isFullSummary,
+    requestedOperations = [],
+    activeOperations = {},
+  } = statResult;
   const validCount = seriesMetadata?.validCount || 0;
   const missingCount = seriesMetadata?.missingCount || 0;
   const completeness = seriesMetadata?.completeness || 100;
@@ -686,8 +697,8 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
 
   let md = '';
 
-  // 1. Single Statistical Requests
-  if (!isMultiStat) {
+  // 1. Single Statistical Requests (strictly only when exactly 1 measure was requested)
+  if (!isMultiStat && !isFullSummary && !requestedOperations.includes('all')) {
     switch (primaryOperation) {
       case 'COEFFICIENT_OF_VARIATION': {
         const cv = results?.coefficientOfVariation;
@@ -696,10 +707,10 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
         md += `- **Worksheet**: \`${sheetName}\`\n`;
         md += `- **Analyzed Column**: **${targetColumn}**\n`;
         md += `- **Valid Numeric Records**: ${validCount.toLocaleString()} (${completeness}% completeness, ${missingCount} missing)\n`;
-        md += `- **Mean**: ${formatNum(cv?.mean)}\n`;
-        md += `- **Population Standard Deviation**: ${formatNum(cv?.populationStandardDeviation)}\n`;
+        md += `- **Mean**: ${formatNum(cv?.mean)} *(supporting calculation)*\n`;
+        md += `- **Population Standard Deviation**: ${formatNum(cv?.populationStandardDeviation)} *(supporting calculation)*\n`;
         md += `- **Population Coefficient of Variation**: **${cv?.populationCV !== null && cv?.populationCV !== undefined ? `${cv.populationCV.toFixed(2)}%` : 'Undefined'}**\n`;
-        md += `- **Sample Standard Deviation**: ${formatNum(cv?.sampleStandardDeviation)}\n`;
+        md += `- **Sample Standard Deviation**: ${formatNum(cv?.sampleStandardDeviation)} *(supporting calculation)*\n`;
         md += `- **Sample Coefficient of Variation**: **${cv?.sampleCV !== null && cv?.sampleCV !== undefined ? `${cv.sampleCV.toFixed(2)}%` : 'Undefined'}**\n\n`;
 
         md += `### Interpretation\n\n`;
@@ -819,7 +830,7 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
         md += `- **Worksheet**: \`${sheetName}\`\n`;
         md += `- **Analyzed Column**: **${targetColumn}**\n`;
         md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
-        md += `- **Mean**: ${formatNum(variance?.mean)}\n`;
+        md += `- **Mean**: ${formatNum(variance?.mean)} *(intermediate mean)*\n`;
         md += `- **Sum of Squared Deviations**: ${formatRawNum(variance?.sumSquaredDiff, 2)}\n`;
         md += `- **Population Variance ($\\sigma^2$)**: **${formatRawNum(variance?.populationVariance, 4)}**\n`;
         md += `- **Sample Variance ($s^2$)**: **${formatRawNum(variance?.sampleVariance, 4)}**\n\n`;
@@ -845,7 +856,7 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
         md += `- **Worksheet**: \`${sheetName}\`\n`;
         md += `- **Analyzed Column**: **${targetColumn}**\n`;
         md += `- **Valid Numeric Records**: ${validCount.toLocaleString()}\n`;
-        md += `- **Mean**: ${formatNum(sd?.mean)}\n`;
+        md += `- **Mean**: ${formatNum(sd?.mean)} *(intermediate mean)*\n`;
         md += `- **Population Standard Deviation ($\\sigma$)**: **${formatNum(sd?.populationStandardDeviation)}**\n`;
         md += `- **Sample Standard Deviation ($s$)**: **${formatNum(sd?.sampleStandardDeviation)}**\n\n`;
 
@@ -905,9 +916,9 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
         md += `- **Dataset**: \`${dataset}\`\n`;
         md += `- **Worksheet**: \`${sheetName}\`\n`;
         md += `- **Analyzed Column**: **${targetColumn}**\n`;
-        md += `- **First Quartile (Q1)**: ${formatNum(o?.q1)}\n`;
-        md += `- **Third Quartile (Q3)**: ${formatNum(o?.q3)}\n`;
-        md += `- **Interquartile Range (IQR)**: ${formatNum(o?.iqr)}\n`;
+        md += `- **First Quartile (Q1)**: ${formatNum(o?.q1)} *(boundary parameter)*\n`;
+        md += `- **Third Quartile (Q3)**: ${formatNum(o?.q3)} *(boundary parameter)*\n`;
+        md += `- **Interquartile Range (IQR)**: ${formatNum(o?.iqr)} *(boundary parameter)*\n`;
         md += `- **Lower Bound ($Q_1 - 1.5 \\times \\text{IQR}$)**: **${formatNum(o?.lowerBound)}**\n`;
         md += `- **Upper Bound ($Q_3 + 1.5 \\times \\text{IQR}$)**: **${formatNum(o?.upperBound)}**\n`;
         md += `- **Identified Outliers**: **${o?.outlierCount.toLocaleString()}** observations (${o?.outlierPercentage}% of total)\n\n`;
@@ -989,7 +1000,7 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
         break;
     }
   } else {
-    // Multi-Statistic Report / Full Summary
+    // Multi-Statistic Report / Full Summary (Filtered strictly by requestedOperations allowlist)
     md += buildMultiStatTable(statResult, formatNum, formatRawNum);
   }
 
@@ -1003,8 +1014,18 @@ function buildStatisticalResponse(statResult, chart, userRequest) {
 }
 
 function buildMultiStatTable(statResult, formatNum, formatRawNum) {
-  const { dataset = 'dataset.xlsx', sheetName = 'Sheet1', targetColumn = 'Amount', seriesMetadata, results } = statResult;
+  const {
+    dataset = 'dataset.xlsx',
+    sheetName = 'Sheet1',
+    targetColumn = 'Amount',
+    seriesMetadata,
+    results,
+    requestedOperations = [],
+    isFullSummary = false,
+  } = statResult;
+
   const validCount = seriesMetadata?.validCount || 0;
+  const completeness = seriesMetadata?.completeness || 100;
   const cv = results?.coefficientOfVariation;
   const sd = results?.standardDeviation;
   const v = results?.variance;
@@ -1013,62 +1034,244 @@ function buildMultiStatTable(statResult, formatNum, formatRawNum) {
   const dist = results?.distribution;
   const mode = results?.mode;
 
-  let md = `## Statistical Analysis Report\n\n`;
+  const isAll = Boolean(isFullSummary || requestedOperations.includes('all'));
+  const allowlist = new Set(requestedOperations);
+
+  const title = isAll ? 'Complete Statistical Analysis Report' : 'Statistical Results';
+  let md = `## ${title}\n\n`;
   md += `- **Dataset**: \`${dataset}\`\n`;
   md += `- **Worksheet**: \`${sheetName}\`\n`;
   md += `- **Analyzed Column**: **${targetColumn}**\n`;
-  md += `- **Total Valid Observations**: **${validCount.toLocaleString()}** (${seriesMetadata?.completeness || 100}% completeness)\n\n`;
+  md += `- **Valid Observations**: **${validCount.toLocaleString()}** (${completeness}% completeness)\n\n`;
 
-  md += `| Statistical Measure | Calculated Value | Definition / Convention |\n`;
-  md += `| :--- | :--- | :--- |\n`;
-  md += `| **Mean (Arithmetic Average)** | **${formatNum(results?.mean)}** | $\\sum x_i / N$ |\n`;
-  md += `| **Median (Q2 / 50th %ile)** | **${formatNum(results?.median)}** | Central sorted observation |\n`;
-  if (mode?.hasMode) {
-    const modeStr = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatNum(m)).join(', ') : formatNum(mode.modeValue);
-    md += `| **Mode** | **${modeStr}** | Most frequent (frequency: ${mode.frequency.toLocaleString()}) |\n`;
-  } else {
-    md += `| **Mode** | *No Mode* | All values unique in continuous series |\n`;
+  // Dynamic rows based strictly on requestedOperations allowlist
+  const tableRows = [];
+
+  if (isAll || allowlist.has('mean')) {
+    tableRows.push({
+      measure: 'Mean',
+      value: formatNum(results?.mean),
+      def: '$\\sum x_i / N$',
+    });
   }
-  md += `| **Population Variance ($\\sigma^2$)** | **${formatRawNum(v?.populationVariance, 4)}** | Denominator $N = ${validCount.toLocaleString()}$ |\n`;
-  md += `| **Sample Variance ($s^2$)** | **${formatRawNum(v?.sampleVariance, 4)}** | Denominator $n - 1 = ${(Math.max(validCount - 1, 1)).toLocaleString()}$ |\n`;
-  md += `| **Population Standard Deviation ($\\sigma$)** | **${formatNum(sd?.populationStandardDeviation)}** | $\\sigma = \\sqrt{\\sigma^2}$ |\n`;
-  md += `| **Sample Standard Deviation ($s$)** | **${formatNum(sd?.sampleStandardDeviation)}** | $s = \\sqrt{s^2}$ |\n`;
-  md += `| **Population Coefficient of Variation** | **${cv?.populationCV !== null && cv?.populationCV !== undefined ? `${cv.populationCV.toFixed(2)}%` : 'Undefined'}** | $(\\sigma / \\mu) \\times 100$ |\n`;
-  md += `| **Sample Coefficient of Variation** | **${cv?.sampleCV !== null && cv?.sampleCV !== undefined ? `${cv.sampleCV.toFixed(2)}%` : 'Undefined'}** | $(s / \\bar{x}) \\times 100$ |\n`;
-  md += `| **Minimum** | **${formatNum(r?.min)}** | Lowest recorded value |\n`;
-  md += `| **First Quartile (Q1 / 25th %ile)** | **${formatNum(q?.q1)}** | 25th percentile rank |\n`;
-  md += `| **Third Quartile (Q3 / 75th %ile)** | **${formatNum(q?.q3)}** | 75th percentile rank |\n`;
-  md += `| **Maximum** | **${formatNum(r?.max)}** | Highest recorded value |\n`;
-  md += `| **Range (Spread)** | **${formatNum(r?.range)}** | $Max - Min$ |\n`;
-  md += `| **Interquartile Range (IQR)** | **${formatNum(q?.iqr)}** | $Q_3 - Q_1$ |\n`;
-  md += `| **Mean Absolute Deviation (MAD)** | **${formatNum(results?.meanAbsoluteDeviation)}** | $(1/n) \\sum |x_i - \\bar{x}|$ |\n`;
-  if (dist) {
-    md += `| **Sample Skewness ($G_1$)** | **${formatRawNum(dist.sampleSkewness, 4)}** | ${dist.skewnessDescription} |\n`;
-    md += `| **Sample Excess Kurtosis ($G_2$)** | **${formatRawNum(dist.sampleExcessKurtosis, 4)}** | ${dist.kurtosisDescription} |\n`;
+  if (isAll || allowlist.has('median')) {
+    tableRows.push({
+      measure: 'Median',
+      value: formatNum(results?.median),
+      def: 'Central sorted observation (50th %ile)',
+    });
+  }
+  if (isAll || allowlist.has('mode')) {
+    let modeVal = '*No Mode*';
+    if (mode?.hasMode) {
+      modeVal = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatNum(m)).join(', ') : formatNum(mode.modeValue);
+    }
+    tableRows.push({
+      measure: 'Mode',
+      value: modeVal,
+      def: mode?.hasMode ? `Most frequent (frequency: ${mode.frequency.toLocaleString()})` : 'All values unique in continuous series',
+    });
+  }
+  if (isAll || allowlist.has('variance') || allowlist.has('population_variance')) {
+    tableRows.push({
+      measure: allowlist.has('population_variance') && !allowlist.has('sample_variance') && !isAll ? 'Population Variance' : 'Population Variance ($\\sigma^2$)',
+      value: formatRawNum(v?.populationVariance, 4),
+      def: `Denominator $N = ${validCount.toLocaleString()}$`,
+    });
+  }
+  if (isAll || allowlist.has('variance') || allowlist.has('sample_variance')) {
+    tableRows.push({
+      measure: allowlist.has('sample_variance') && !allowlist.has('population_variance') && !isAll ? 'Sample Variance' : 'Sample Variance ($s^2$)',
+      value: formatRawNum(v?.sampleVariance, 4),
+      def: `Denominator $n - 1 = ${(Math.max(validCount - 1, 1)).toLocaleString()}$`,
+    });
+  }
+  if (isAll || allowlist.has('standard_deviation') || allowlist.has('population_standard_deviation')) {
+    tableRows.push({
+      measure: allowlist.has('population_standard_deviation') && !allowlist.has('sample_standard_deviation') && !isAll ? 'Population Standard Deviation' : 'Population Standard Deviation ($\\sigma$)',
+      value: formatNum(sd?.populationStandardDeviation),
+      def: '$\\sigma = \\sqrt{\\sigma^2}$',
+    });
+  }
+  if (isAll || allowlist.has('standard_deviation') || allowlist.has('sample_standard_deviation')) {
+    tableRows.push({
+      measure: allowlist.has('sample_standard_deviation') && !allowlist.has('population_standard_deviation') && !isAll ? 'Sample Standard Deviation' : 'Sample Standard Deviation ($s$)',
+      value: formatNum(sd?.sampleStandardDeviation),
+      def: '$s = \\sqrt{s^2}$',
+    });
+  }
+  if (isAll || allowlist.has('coefficient_of_variation')) {
+    tableRows.push({
+      measure: 'Population Coefficient of Variation',
+      value: cv?.populationCV !== null && cv?.populationCV !== undefined ? `${cv.populationCV.toFixed(2)}%` : 'Undefined',
+      def: '$(\\sigma / \\mu) \\times 100$',
+    });
+    tableRows.push({
+      measure: 'Sample Coefficient of Variation',
+      value: cv?.sampleCV !== null && cv?.sampleCV !== undefined ? `${cv.sampleCV.toFixed(2)}%` : 'Undefined',
+      def: '$(s / \\bar{x}) \\times 100$',
+    });
+  }
+  if (isAll || allowlist.has('min') || allowlist.has('range')) {
+    tableRows.push({
+      measure: 'Minimum',
+      value: formatNum(r?.min),
+      def: 'Lowest recorded value',
+    });
+  }
+  if (isAll || allowlist.has('q1') || allowlist.has('quartiles')) {
+    tableRows.push({
+      measure: 'First Quartile (Q1 / 25th %ile)',
+      value: formatNum(q?.q1),
+      def: '25th percentile rank',
+    });
+  }
+  if (isAll || allowlist.has('q3') || allowlist.has('quartiles')) {
+    tableRows.push({
+      measure: 'Third Quartile (Q3 / 75th %ile)',
+      value: formatNum(q?.q3),
+      def: '75th percentile rank',
+    });
+  }
+  if (isAll || allowlist.has('max') || allowlist.has('range')) {
+    tableRows.push({
+      measure: 'Maximum',
+      value: formatNum(r?.max),
+      def: 'Highest recorded value',
+    });
+  }
+  if (isAll || allowlist.has('range')) {
+    tableRows.push({
+      measure: 'Range (Spread)',
+      value: formatNum(r?.range),
+      def: '$Max - Min$',
+    });
+  }
+  if (isAll || allowlist.has('iqr') || allowlist.has('quartiles') || (allowlist.has('q1') && allowlist.has('q3'))) {
+    tableRows.push({
+      measure: 'Interquartile Range (IQR)',
+      value: formatNum(q?.iqr),
+      def: '$Q_3 - Q_1$',
+    });
+  }
+  if (isAll || allowlist.has('mean_absolute_deviation') || allowlist.has('mad')) {
+    tableRows.push({
+      measure: 'Mean Absolute Deviation (MAD)',
+      value: formatNum(results?.meanAbsoluteDeviation),
+      def: '$(1/n) \\sum |x_i - \\bar{x}|$',
+    });
+  }
+  if (dist && (isAll || allowlist.has('skewness'))) {
+    tableRows.push({
+      measure: 'Sample Skewness ($G_1$)',
+      value: formatRawNum(dist.sampleSkewness, 4),
+      def: dist.skewnessDescription,
+    });
+  }
+  if (dist && (isAll || allowlist.has('kurtosis'))) {
+    tableRows.push({
+      measure: 'Sample Excess Kurtosis ($G_2$)',
+      value: formatRawNum(dist.sampleExcessKurtosis, 4),
+      def: dist.kurtosisDescription,
+    });
+  }
+
+  // Render Table
+  if (isAll) {
+    md += `| Statistical Measure | Calculated Value | Definition / Convention |\n`;
+    md += `| :--- | :--- | :--- |\n`;
+    for (const row of tableRows) {
+      md += `| **${row.measure}** | **${row.value}** | ${row.def} |\n`;
+    }
+  } else {
+    md += `| Statistical Measure | Calculated Value |\n`;
+    md += `| :--- | ---: |\n`;
+    for (const row of tableRows) {
+      md += `| **${row.measure}** | **${row.value}** |\n`;
+    }
   }
   md += `\n`;
 
-  md += `### Interpretation & Statistical Assessment\n\n`;
-  const meanVal = results?.mean;
-  const medVal = results?.median;
-  const cvVal = cv?.sampleCV || cv?.populationCV;
-  md += `1. **Central Tendency**: The arithmetic mean is **${formatNum(meanVal)}** and the median is **${formatNum(medVal)}**. `;
-  if (meanVal !== null && medVal !== null && Math.abs(meanVal - medVal) < 1) {
-    md += `The close agreement between mean and median indicates an approximately symmetrical distribution.\n`;
-  } else {
-    md += `The difference between mean and median reflects skewness in the observed values.\n`;
+  // Brief interpretation tailored ONLY to requested metrics
+  md += `### Brief Interpretation\n\n`;
+
+  const interpPoints = [];
+
+  const hasCentral = allowlist.has('mean') || allowlist.has('median') || allowlist.has('mode') || isAll;
+  if (hasCentral) {
+    let cp = '';
+    const meanVal = results?.mean;
+    const medVal = results?.median;
+    if (allowlist.has('mean') && allowlist.has('median')) {
+      cp += `The arithmetic mean is **${formatNum(meanVal)}** and the median is **${formatNum(medVal)}**. `;
+      if (Math.abs(meanVal - medVal) < 15) {
+        cp += `Because the mean and median are closely aligned, the transaction amounts exhibit strong central symmetry across the dataset.`;
+      } else {
+        cp += `The difference between mean and median reflects skewness in the observed spending.`;
+      }
+    } else if (allowlist.has('mean')) {
+      cp += `The arithmetic mean across all valid observations is **${formatNum(meanVal)}**.`;
+    } else if (allowlist.has('median')) {
+      cp += `The median value is **${formatNum(medVal)}**, marking the exact 50th percentile rank.`;
+    }
+
+    if (allowlist.has('mode') || isAll) {
+      if (mode?.hasMode) {
+        const modeStr = Array.isArray(mode.modeValue) ? mode.modeValue.map(m => formatNum(m)).join(', ') : formatNum(mode.modeValue);
+        cp += ` The most frequently occurring amount is **${modeStr}**, appearing ${mode.frequency.toLocaleString()} times.`;
+      } else {
+        cp += ` Every value in this continuous series occurs uniquely without repeated modes.`;
+      }
+    }
+    if (cp) interpPoints.push(cp.trim());
   }
 
-  if (cvVal !== null && cvVal !== undefined) {
-    md += `2. **Relative Dispersion**: The coefficient of variation of **${cvVal.toFixed(2)}%** demonstrates a moderate relative spread of observations around the central location.\n`;
+  const hasDispersion = allowlist.has('variance') || allowlist.has('population_variance') || allowlist.has('sample_variance') ||
+    allowlist.has('standard_deviation') || allowlist.has('population_standard_deviation') || allowlist.has('sample_standard_deviation') ||
+    allowlist.has('coefficient_of_variation') || isAll;
+  if (hasDispersion) {
+    let dp = '';
+    const sdVal = sd?.sampleStandardDeviation || sd?.populationStandardDeviation;
+    const cvVal = cv?.sampleCV || cv?.populationCV;
+    if (sdVal) {
+      dp += `On average, individual transactions deviate from the mean by **${formatNum(sdVal)}** (${formatNum(sdVal)} standard deviation). `;
+    }
+    if (cvVal !== null && cvVal !== undefined && (allowlist.has('coefficient_of_variation') || isAll)) {
+      dp += `The coefficient of variation of **${cvVal.toFixed(2)}%** demonstrates moderate relative dispersion across recorded amounts.`;
+    }
+    if (dp) interpPoints.push(dp.trim());
   }
 
-  if (results?.outliers && results.outliers.outlierCount > 0) {
-    md += `3. **Outliers**: Identified ${results.outliers.outlierCount.toLocaleString()} potential statistical outliers (${results.outliers.outlierPercentage}%) using Tukey's 1.5×IQR method.\n`;
-  } else {
-    md += `3. **Outliers**: Zero outliers detected; all observations reside within the 1.5×IQR envelope.\n`;
+  const hasSpread = allowlist.has('range') || allowlist.has('quartiles') || allowlist.has('q1') || allowlist.has('q3') || allowlist.has('iqr') || isAll;
+  if (hasSpread) {
+    let sp = '';
+    if (allowlist.has('q1') || allowlist.has('q3') || allowlist.has('quartiles') || isAll) {
+      sp += `The middle 50% of transaction amounts fall between **${formatNum(q?.q1)}** (Q1) and **${formatNum(q?.q3)}** (Q3), yielding an IQR of **${formatNum(q?.iqr)}**. `;
+    }
+    if (allowlist.has('range') || isAll) {
+      sp += `Total observed spread spans **${formatNum(r?.range)}** (from minimum ${formatNum(r?.min)} to maximum ${formatNum(r?.max)}).`;
+    }
+    if (sp) interpPoints.push(sp.trim());
   }
-  md += `\n`;
+
+  if (isAll || allowlist.has('outliers')) {
+    if (results?.outliers && results.outliers.outlierCount > 0) {
+      interpPoints.push(`Identified **${results.outliers.outlierCount.toLocaleString()}** statistical outliers (${results.outliers.outlierPercentage}%) using Tukey's 1.5×IQR method.`);
+    } else {
+      interpPoints.push(`Zero statistical outliers were detected under Tukey's 1.5×IQR rule; all observations reside within the expected distribution bounds.`);
+    }
+  }
+
+  if (interpPoints.length > 0) {
+    if (isAll) {
+      interpPoints.forEach((p, idx) => {
+        md += `${idx + 1}. ${p}\n`;
+      });
+      md += `\n`;
+    } else {
+      md += `${interpPoints.join(' ')}\n\n`;
+    }
+  }
 
   return md;
 }
