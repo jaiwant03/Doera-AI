@@ -766,7 +766,7 @@ class LocalServiceResearcher {
   /**
    * Parse Photon OpenStreetMap JSON feature into clean provider object with Haversine distance
    */
-  parsePhotonPlace(feature, center) {
+  parsePhotonPlace(feature, center, categoryTitle = null) {
     if (!feature || !feature.geometry?.coordinates) return null;
     const [lng, lat] = feature.geometry.coordinates;
     if (isNaN(lat) || isNaN(lng)) return null;
@@ -786,6 +786,19 @@ class LocalServiceResearcher {
       bLower.includes('ministry of')
     ) {
       return null;
+    }
+
+    // Category relevance guard
+    if (categoryTitle) {
+      if (/cinema|theatre/i.test(categoryTitle)) {
+        if (/hospital|clinic|dispensary|doctor|pharma|medical|health/i.test(bLower)) return null;
+      } else if (/mobile|phone|repair|service cent/i.test(categoryTitle)) {
+        if (/hospital|clinic|dispensary|doctor|pharma|medical|health/i.test(bLower)) return null;
+      } else if (/hospital|clinic/i.test(categoryTitle)) {
+        if (/cinema|theatre|theater|multiplex|phone|laptop|restaurant/i.test(bLower)) return null;
+      } else if (/restaurant/i.test(categoryTitle)) {
+        if (/hospital|clinic|dispensary|theatre|cinema/i.test(bLower)) return null;
+      }
     }
 
     let distanceKmNum = null;
@@ -831,7 +844,7 @@ class LocalServiceResearcher {
   /**
    * Parse Nominatim JSON record into clean provider object with Haversine distance
    */
-  parseNominatimPlace(place, center) {
+  parseNominatimPlace(place, center, categoryTitle = null) {
     if (!place) return null;
     // Discard non-commercial public utilities or generic administrative boundaries
     if (place.class === 'boundary' || place.type === 'administrative') return null;
@@ -851,6 +864,19 @@ class LocalServiceResearcher {
       bLower.includes('ministry of')
     ) {
       return null;
+    }
+
+    // Category relevance guard
+    if (categoryTitle) {
+      if (/cinema|theatre/i.test(categoryTitle)) {
+        if (/hospital|clinic|dispensary|doctor|pharma|medical|health/i.test(bLower)) return null;
+      } else if (/mobile|phone|repair|service cent/i.test(categoryTitle)) {
+        if (/hospital|clinic|dispensary|doctor|pharma|medical|health/i.test(bLower)) return null;
+      } else if (/hospital|clinic/i.test(categoryTitle)) {
+        if (/cinema|theatre|theater|multiplex|phone|laptop|restaurant/i.test(bLower)) return null;
+      } else if (/restaurant/i.test(categoryTitle)) {
+        if (/hospital|clinic|dispensary|theatre|cinema/i.test(bLower)) return null;
+      }
     }
 
     const lat = parseFloat(place.lat);
