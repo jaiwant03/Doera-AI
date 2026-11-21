@@ -858,6 +858,10 @@ class StatisticalService {
       (isQ1Requested && isQ2Requested && isQ3Requested)
     );
 
+    const isSkewnessRequested = !isFullSummaryRequested && /\b(skew|skewness)\b/i.test(queryLower);
+    const isKurtosisRequested = !isFullSummaryRequested && /\b(kurtosis)\b/i.test(queryLower);
+    const isMADRequested = !isFullSummaryRequested && /\b(mean\s*absolute\s*deviation|\bmad\b)\b/i.test(queryLower);
+
     const mentionedTwoCols = headers.filter((h) => {
       const reg = new RegExp(`\\b${h.toLowerCase().replace(/[^a-z0-9]/g, '[_\\s]?')}\\b`, 'i');
       return reg.test(queryLower);
