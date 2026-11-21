@@ -848,18 +848,21 @@ class StatisticalService {
     const isQ1Requested = !isFullSummaryRequested && /\b(q1|first\s*quartile|25th\s*percentile)\b/i.test(queryLower);
     const isQ2Requested = !isFullSummaryRequested && /\b(q2|second\s*quartile)\b/i.test(queryLower);
     const isQ3Requested = !isFullSummaryRequested && /\b(q3|third\s*quartile|75th\s*percentile)\b/i.test(queryLower);
-    const isIQRRequested = !isFullSummaryRequested && !isOutliersRequested && /\b(iqr|interquartile\s*range)\b/i.test(queryLower);
+    const isIQRRequested = !isFullSummaryRequested && !isOutliersRequested && (
+      /\b(iqr|interquartile(\s*range)?|quartile\s*range)\b/i.test(queryLower) ||
+      /difference\s*between\s*(q3|third\s*quartile)\s*and\s*(q1|first\s*quartile)/i.test(queryLower)
+    );
     const isQuartilesRequested = !isFullSummaryRequested && (
       /\b(quartiles|five[\s-]number)\b/i.test(queryLower) ||
-      (/\bquartile\b/i.test(queryLower) && !isQ1Requested && !isQ2Requested && !isQ3Requested) ||
-      (/\biqr\b/i.test(queryLower) && !isOutliersRequested) ||
+      (/\bquartile\b/i.test(queryLower) && !isQ1Requested && !isQ2Requested && !isQ3Requested && !isIQRRequested) ||
       (isQ1Requested && isQ2Requested && isQ3Requested)
     );
 
     const isSkewnessRequested = !isFullSummaryRequested && /\b(skew|skewness)\b/i.test(queryLower);
     const isKurtosisRequested = !isFullSummaryRequested && /\b(kurtosis)\b/i.test(queryLower);
     const isMADRequested = !isFullSummaryRequested && /\b(mean\s*absolute\s*deviation|\bmad\b)\b/i.test(queryLower);
-    const isCorrelationRequested = !isFullSummaryRequested && /\b(correlation|pearsons?|spearmans?|relationship|covariance)\b/i.test(queryLower);
+    const isCovarianceRequested = !isFullSummaryRequested && /\b(covariance|covar|cov\b)\b/i.test(queryLower);
+    const isCorrelationRequested = !isFullSummaryRequested && !isCovarianceRequested && /\b(correlation|pearsons?|spearmans?|linear\s*relationship)\b/i.test(queryLower);
     const isCompareRequested = !isFullSummaryRequested && /\b(compare|comparison|versus|\bvs\b)\b/i.test(queryLower) &&
       /\b(standard\s*deviation|std\s*dev|stdev|cv|coefficient\s*of\s*variation|mean|variance)\b/i.test(queryLower);
 
@@ -883,6 +886,7 @@ class StatisticalService {
       }
       if (isCVRequested) requestedOperations.push('coefficient_of_variation');
       if (isRangeRequested) requestedOperations.push('range');
+      if (isCovarianceRequested) requestedOperations.push('covariance');
       if (isMinRequested) requestedOperations.push('min');
       if (isMaxRequested) requestedOperations.push('max');
       if (isQ1Requested && !isQuartilesRequested) requestedOperations.push('q1');
@@ -918,6 +922,82 @@ class StatisticalService {
     const mad = this.calculateMeanAbsoluteDeviation(values);
     const skewKurt = this.calculateSkewnessAndKurtosis(values);
     const outliersObj = this.detectOutliersIQR(values);
+
+    // Handle Covariance request between two columns
+    let covarianceResult = null;
+    if (isCovarianceRequested) {
+      const eligibleCols = headers.filter((h) => {
+        const isId = /(^id$|_id$|^uuid$|^guid$|transaction.*id|user.*id|customer.*id|order.*id|invoice.*id)/i.test(h);
+        return !isId && (!columnSchema || columnSchema[h]?.type === 'numeric');
+      });
+
+      const mentionedCols = [];
+      for (const h of headers) {
+        const hLower = h.toLowerCase();
+        const regex = new RegExp(`\\b${hLower.replace(/[^a-z0-9]/g, '[_\\s]?')}\\b`, 'i');
+        if (regex.test(queryLower)) {
+          mentionedCols.push(h);
+        }
+      }
+
+      let colA = null;
+      let colB = null;
+      let isSpecified = false;
+
+      if (mentionedCols.length >= 2) {
+        colA = mentionedCols[0];
+        colB = mentionedCols[1];
+        isSpecified = true;
+      } else if (mentionedCols.length === 1 && queryLower.includes('and')) {
+        const remaining = eligibleCols.filter((c) => c !== mentionedCols[0]);
+        for (const rem of remaining) {
+          if (queryLower.includes(rem.toLowerCase())) {
+            colA = mentionedCols[0];
+            colB = rem;
+            isSpecified = true;
+            break;
+          }
+        }
+      }
+
+      if (isSpecified && colA && colB && colA !== colB) {
+        const matchedX = [];
+        const matchedY = [];
+        for (let i = 0; i < rows.length; i++) {
+          const rawA = parseFloat(String(rows[i][colA] || '').replace(/[$,₹€£%\s,]/g, ''));
+          const rawB = parseFloat(String(rows[i][colB] || '').replace(/[$,₹€£%\s,]/g, ''));
+          if (!isNaN(rawA) && isFinite(rawA) && !isNaN(rawB) && isFinite(rawB)) {
+            matchedX.push(rawA);
+            matchedY.push(rawB);
+          }
+        }
+        const cov = this.calculateCovariance(matchedX, matchedY);
+        if (cov) {
+          covarianceResult = {
+            isSpecified: true,
+            colA,
+            colB,
+            n: cov.n,
+            meanA: cov.meanX,
+            meanB: cov.meanY,
+            sumDiffProd: cov.sumDiffProd,
+            populationCovariance: cov.populationCovariance,
+            sampleCovariance: cov.sampleCovariance,
+          };
+        }
+      }
+
+      if (!covarianceResult || !covarianceResult.isSpecified) {
+        const plausibleOtherCols = eligibleCols.filter((c) => c !== targetCol).slice(0, 3);
+        const plausiblePairs = plausibleOtherCols.map((c) => `${targetCol} and ${c}`);
+        covarianceResult = {
+          isSpecified: false,
+          primaryCol: targetCol,
+          plausiblePairs,
+          availableColumns: eligibleCols,
+        };
+      }
+    }
 
     // Handle Correlation request between two columns
     let correlationResult = null;
@@ -966,14 +1046,16 @@ class StatisticalService {
       primaryOp = 'FULL_STATISTICAL_ANALYSIS';
     } else if (requestedOperations.length === 1) {
       const single = requestedOperations[0];
-      if (single === 'coefficient_of_variation') primaryOp = 'COEFFICIENT_OF_VARIATION';
+      if (single === 'covariance') primaryOp = 'COVARIANCE';
+      else if (single === 'coefficient_of_variation') primaryOp = 'COEFFICIENT_OF_VARIATION';
       else if (single.includes('standard_deviation')) primaryOp = 'STANDARD_DEVIATION';
       else if (single.includes('variance')) primaryOp = 'VARIANCE';
       else if (single === 'mode') primaryOp = 'MODE';
       else if (single === 'median') primaryOp = 'MEDIAN';
       else if (single === 'mean') primaryOp = 'MEAN';
       else if (single === 'range' || single === 'min' || single === 'max') primaryOp = 'RANGE';
-      else if (single === 'quartiles' || single === 'q1' || single === 'q3' || single === 'iqr') primaryOp = 'QUARTILES';
+      else if (single === 'iqr') primaryOp = 'IQR';
+      else if (single === 'quartiles' || single === 'q1' || single === 'q3') primaryOp = 'QUARTILES';
       else if (single === 'outliers') primaryOp = 'OUTLIERS';
       else if (single === 'skewness') primaryOp = 'SKEWNESS';
       else if (single === 'kurtosis') primaryOp = 'KURTOSIS';
@@ -1013,6 +1095,7 @@ class StatisticalService {
         meanAbsoluteDeviation: mad,
         distribution: skewKurt,
         outliers: outliersObj,
+        covariance: covarianceResult,
         correlation: correlationResult,
       },
       activeOperations: {
@@ -1023,7 +1106,9 @@ class StatisticalService {
         isStdDevRequested,
         isCVRequested,
         isRangeRequested,
+        isCovarianceRequested,
         isQuartilesRequested,
+        isIQRRequested,
         isOutliersRequested,
         isSkewnessRequested,
         isKurtosisRequested,
