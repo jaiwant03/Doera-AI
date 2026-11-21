@@ -152,6 +152,7 @@ class ConversationContextEngine {
       hasEffectiveAttachments: effectiveAttachments.length > 0,
       lastChartConfig,
       lastCalculation,
+      lastDocumentAnalysis,
       lastPlan,
       lastDraft,
       lastResearchResults,
@@ -171,6 +172,7 @@ class ConversationContextEngine {
       activeArtifacts,
       lastChartConfig,
       lastCalculation,
+      lastDocumentAnalysis,
       lastPlan,
       lastDraft,
       lastResearchResults,
@@ -194,13 +196,14 @@ class ConversationContextEngine {
     hasEffectiveAttachments,
     lastChartConfig,
     lastCalculation,
+    lastDocumentAnalysis,
     lastPlan,
     lastDraft,
     lastResearchResults,
     activeCategory,
     rawMessages,
   }) {
-    if (rawMessages.length === 0 && !lastPlan && !lastChartConfig && !lastCalculation && !lastDraft && !lastResearchResults) {
+    if (rawMessages.length === 0 && !lastPlan && !lastChartConfig && !lastCalculation && !lastDocumentAnalysis && !lastDraft && !lastResearchResults) {
       return {
         isFollowUp: false,
         followUpType: 'NEW_CONVERSATION',
@@ -272,18 +275,26 @@ class ConversationContextEngine {
       };
     }
 
-    // 3. Document Follow-ups (Proposal, weaknesses, improvements)
+    // 3. Document Follow-ups (Proposal, architecture, weaknesses, improvements, slide explanation, dates)
     const isDocFollowUp =
       activeCategory === 'DOCUMENT_ANALYSIS' ||
-      /(second weakness|first weakness|third weakness|explain the (first|second|third)|suggest improvements for it|how to fix (this|it)|summarize it again|compare this with the second document|compare both documents|which document is better)/i.test(lower);
+      Boolean(lastDocumentAnalysis) ||
+      /(weakness|weaknesses|what are the weaknesses|how can i improve|improve the backend|third recommendation|first recommendation|second recommendation|proposed architecture|improved architecture|explain slide|technical requirements|important dates|summarize it again|compare (this|these) (with|and)?|which document is better|in this proposal|about this proposal)/i.test(lower);
 
-    if (isDocFollowUp && (activeCategory === 'DOCUMENT_ANALYSIS' || hasEffectiveAttachments)) {
+    if (isDocFollowUp && (activeCategory === 'DOCUMENT_ANALYSIS' || hasEffectiveAttachments || Boolean(lastDocumentAnalysis))) {
+      let instructionType = 'DOCUMENT_QUERY';
+      if (/(weakness)/i.test(lower)) instructionType = 'WEAKNESS_ELABORATION';
+      else if (/(improve|recommendation)/i.test(lower)) instructionType = 'IMPROVEMENT_ELABORATION';
+      else if (/(architecture)/i.test(lower)) instructionType = 'ARCHITECTURE_QUERY';
+      else if (/(compare)/i.test(lower)) instructionType = 'DOC_COMPARISON';
+      else if (/(slide)/i.test(lower)) instructionType = 'SLIDE_QUERY';
+
       return {
         isFollowUp: true,
         followUpType: 'DOCUMENT_INSPECTION',
         resolvedCategory: 'DOCUMENT_ANALYSIS',
-        referencedArtifact: null,
-        instructionType: /(weakness|improvement)/i.test(lower) ? 'WEAKNESS_ELABORATION' : 'DOC_COMPARISON',
+        referencedArtifact: { documentAnalysis: lastDocumentAnalysis },
+        instructionType,
       };
     }
 
@@ -380,6 +391,9 @@ class ConversationContextEngine {
     category = null,
     chartConfig = null,
     calculation = null,
+    documentAnalysis = null,
+    documents = null,
+    crossDocAnalysis = null,
     planningData = null,
     plan = null,
     draftData = null,
@@ -408,6 +422,14 @@ class ConversationContextEngine {
       if (effectiveMissionId) conversation.activeMissionId = effectiveMissionId;
       if (chartConfig) conversation.lastChartConfig = chartConfig;
       if (calculation) conversation.lastCalculation = calculation;
+      if (documentAnalysis) {
+        conversation.lastDocumentAnalysis = documentAnalysis;
+      } else if (documents || taskDoc?.discoveredData?.documents) {
+        conversation.lastDocumentAnalysis = {
+          documents: documents || taskDoc.discoveredData.documents,
+          crossDocAnalysis: crossDocAnalysis || taskDoc.discoveredData?.crossDocAnalysis || null,
+        };
+      }
       if (effectivePlan) conversation.lastPlan = effectivePlan;
       if (effectiveDraft) conversation.lastDraft = effectiveDraft;
       if (effectiveResearch) conversation.lastResearchResults = effectiveResearch;

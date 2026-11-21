@@ -358,6 +358,7 @@ export const streamMessage = async (req, res) => {
           followUpType: contextPayload.followUpType,
           lastChartConfig: contextPayload.lastChartConfig,
           lastCalculation: contextPayload.lastCalculation,
+          lastDocumentAnalysis: contextPayload.lastDocumentAnalysis,
           lastPlan: contextPayload.lastPlan,
           lastDraft: contextPayload.lastDraft,
           lastResearchResults: contextPayload.lastResearchResults,
@@ -399,7 +400,13 @@ export const streamMessage = async (req, res) => {
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
 
-        if (task.category === 'DATA_ANALYSIS' || task.discoveredData?.dataAnalysis || task.chartConfig) {
+        if (
+          task.category === 'DATA_ANALYSIS' ||
+          task.category === 'DOCUMENT_ANALYSIS' ||
+          task.discoveredData?.dataAnalysis ||
+          task.discoveredData?.documents ||
+          task.chartConfig
+        ) {
           task.bookingDetails = null;
           task.pendingApproval = null;
           task.externalContacts = [];
@@ -432,6 +439,10 @@ export const streamMessage = async (req, res) => {
         taskDoc: task,
         chartConfig,
         calculation: resultState?.calculation || task.discoveredData?.dataAnalysis?.calculation || null,
+        documentAnalysis: (resultState?.discoveredData?.documents || task.discoveredData?.documents) ? {
+          documents: resultState?.discoveredData?.documents || task.discoveredData?.documents,
+          crossDocAnalysis: resultState?.discoveredData?.crossDocAnalysis || task.discoveredData?.crossDocAnalysis || null,
+        } : null,
         plan: resultState?.plan || task.discoveredData?.planning || null,
         draft: resultState?.emailDraft || resultState?.draft || null,
         researchResults: resultState?.externalContacts || null,
@@ -852,6 +863,7 @@ export const sendMessage = async (req, res, next) => {
           followUpType: contextPayload.followUpType,
           lastChartConfig: contextPayload.lastChartConfig,
           lastCalculation: contextPayload.lastCalculation,
+          lastDocumentAnalysis: contextPayload.lastDocumentAnalysis,
           lastPlan: contextPayload.lastPlan,
           lastDraft: contextPayload.lastDraft,
           lastResearchResults: contextPayload.lastResearchResults,
@@ -893,7 +905,13 @@ export const sendMessage = async (req, res, next) => {
         task.currentAgent = resultState.currentAgent || 'Orchestrator';
         task.currentAction = resultState.currentAction || 'Execution synthesized with verified evidence.';
 
-        if (task.category === 'DATA_ANALYSIS' || task.discoveredData?.dataAnalysis || task.chartConfig) {
+        if (
+          task.category === 'DATA_ANALYSIS' ||
+          task.category === 'DOCUMENT_ANALYSIS' ||
+          task.discoveredData?.dataAnalysis ||
+          task.discoveredData?.documents ||
+          task.chartConfig
+        ) {
           task.bookingDetails = null;
           task.pendingApproval = null;
           task.externalContacts = [];
@@ -926,6 +944,10 @@ export const sendMessage = async (req, res, next) => {
         taskDoc: task,
         chartConfig,
         calculation: resultState?.calculation || task.discoveredData?.dataAnalysis?.calculation || null,
+        documentAnalysis: (resultState?.discoveredData?.documents || task.discoveredData?.documents) ? {
+          documents: resultState?.discoveredData?.documents || task.discoveredData?.documents,
+          crossDocAnalysis: resultState?.discoveredData?.crossDocAnalysis || task.discoveredData?.crossDocAnalysis || null,
+        } : null,
         plan: resultState?.plan || task.discoveredData?.planning || null,
         draft: resultState?.emailDraft || resultState?.draft || null,
         researchResults: resultState?.externalContacts || null,
