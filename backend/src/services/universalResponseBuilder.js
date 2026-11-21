@@ -290,7 +290,16 @@ export function buildLocalServiceResearchResponse(task, userRequest) {
   );
 
   const categoryTitle = params.categoryTitle || 'Cinema Theatres';
-  const categorySingular = (categoryTitle.toLowerCase().replace(/s\b/, '') || 'cinema');
+  let categorySingular = 'local service';
+  if (/cinema|theatre|theater|multiplex|movie/i.test(categoryTitle)) {
+    categorySingular = 'cinema';
+  } else if (/hospital|clinic/i.test(categoryTitle)) {
+    categorySingular = 'hospital';
+  } else if (/restaurant|cafe/i.test(categoryTitle)) {
+    categorySingular = 'restaurant';
+  } else {
+    categorySingular = categoryTitle.toLowerCase().replace(/s\b/, '');
+  }
 
   // Case 1: Location unavailable / required
   if (searchState === 'LOCATION_REQUIRED' || localServiceData.locationRequired || task.status === 'LOCATION_REQUIRED') {

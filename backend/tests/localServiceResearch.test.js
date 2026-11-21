@@ -3,7 +3,7 @@ import localServiceResearcher from '../src/services/localServiceResearcher.js';
 import { buildLocalServiceResearchResponse, buildUniversalResponse } from '../src/services/universalResponseBuilder.js';
 
 console.log('=================================================================');
-console.log(' DOERA AI — LOCAL SERVICE RESEARCH VERIFICATION TEST SUITE');
+console.log(' DOERA AI — LOCAL SERVICE RESEARCH 12-POINT VERIFICATION TEST SUITE');
 console.log('=================================================================\n');
 
 // Mock User Coordinates for testing near-me (e.g., Coimbatore central coordinates)
@@ -11,218 +11,459 @@ const coimbatoreUserLocation = {
   lat: 11.0168,
   lng: 76.9558,
   accuracy: 15,
-  name: 'Gandhipuram, Coimbatore',
+  name: 'Ward 51, Central Zone, Coimbatore',
   source: 'precise',
 };
 
 async function runTestSuite() {
   // -------------------------------------------------------------
-  // TEST A: Find 5 cinema theatres near me
+  // TEST 1: Find 5 cinema theatres near me
   // -------------------------------------------------------------
-  console.log('--- TEST A: Find 5 cinema theatres near me ---');
-  const taskContextA = {
-    taskId: 'test-cinemas-near-me',
+  console.log('--- TEST 1: Find 5 cinema theatres near me ---');
+  const taskContext1 = {
+    taskId: 'test-1-cinemas-near-me',
     userRequest: 'Find 5 cinema theatres near me',
     userLocation: coimbatoreUserLocation,
     category: 'LOCATION_DISCOVERY',
   };
 
-  const resultA = await localServiceResearcher.researchLocalServices(taskContextA);
-  console.log(`Providers found for Test A: ${resultA.providersFound} (requested: ${resultA.requestedCount})`);
+  const result1 = await localServiceResearcher.researchLocalServices(taskContext1);
+  console.log(`Providers found for Test 1: ${result1.providersFound} (requested: ${result1.requestedCount})`);
 
-  assert.strictEqual(resultA.status, 'completed', 'Test A status must be completed');
-  assert.ok(resultA.providersFound > 0, 'Test A must return real cinema providers');
-  assert.strictEqual(resultA.requestedCount, 5, 'Requested count must be 5');
+  assert.strictEqual(result1.status, 'completed', 'Test 1 status must be completed');
+  assert.ok(result1.providersFound > 0, 'Test 1 must return real cinema providers');
+  assert.strictEqual(result1.requestedCount, 5, 'Requested count must be 5');
 
-  const taskA = {
+  const task1 = {
     category: 'LOCATION_DISCOVERY',
-    userRequest: taskContextA.userRequest,
-    discoveredData: { localService: resultA },
-    externalContacts: resultA.providers,
-    locationData: resultA.locationData,
+    userRequest: taskContext1.userRequest,
+    discoveredData: { localService: result1 },
+    externalContacts: result1.providers,
+    locationData: result1.locationData,
   };
 
-  const responseA = buildUniversalResponse(taskA);
-  console.log('Test A Response Preview (First 350 chars):');
-  console.log(responseA.slice(0, 350) + '...\n');
+  const response1 = buildUniversalResponse(task1);
+  console.log('Test 1 Response Preview (First 350 chars):');
+  console.log(response1.slice(0, 350) + '...\n');
 
-  assert.ok(responseA.includes('# 5 Cinema Theatres Near You'), 'Header must be # 5 Cinema Theatres Near You');
-  assert.ok(responseA.includes('### Search results'), 'Must have ### Search results');
-  assert.ok(responseA.includes('Distance from user'), 'Must include calculated Distance from user');
-  assert.ok(responseA.includes('[Get Directions]'), 'Must include Directions link');
-  assert.ok(responseA.includes('### Recommendation'), 'Must include Recommendation');
-  assert.ok(responseA.includes('Research completed. No business was contacted and no booking or transaction was made.'), 'Must have research-only guarantee');
-  assert.ok(!responseA.includes('Evidence & Verification Dimensions'), 'Must NOT have Evidence & Verification Dimensions');
-  assert.ok(!responseA.includes('SOURCE_FOUND'), 'Must NOT have SOURCE_FOUND');
-  console.log('  ✓ PASS: Test A (Find 5 cinema theatres near me)\n');
+  assert.ok(response1.includes('# Cinema Theatres Near You'), 'Header must be # Cinema Theatres Near You');
+  assert.ok(response1.includes('**Search location:**'), 'Must contain **Search location:**');
+  assert.ok(response1.includes('(Device Location)'), 'Location must be explicitly labelled as (Device Location)');
+  assert.ok(response1.includes('**Search radius:** 15 km'), 'Search radius must be 15 km');
+  assert.ok(response1.includes('### Search results'), 'Must have ### Search results');
+  assert.ok(response1.includes('**Distance**:'), 'Must include calculated Distance');
+  assert.ok(response1.includes('[Get Directions]'), 'Must include Directions link');
+  assert.ok(response1.includes('### Recommendation'), 'Must include Recommendation');
+  assert.ok(response1.includes('Research completed. No business was contacted and no booking or transaction was made.'), 'Must have research-only guarantee');
+  assert.ok(!response1.includes('Evidence & Verification Dimensions'), 'Must NOT have Evidence & Verification Dimensions');
+  assert.ok(!response1.includes('SOURCE_FOUND'), 'Must NOT have SOURCE_FOUND');
+  assert.ok(!response1.includes('your location'), 'Must NEVER display placeholder "your location"');
+  console.log('  ✓ PASS: Test 1 (Find 5 cinema theatres near me)\n');
 
   // -------------------------------------------------------------
-  // TEST B: Find 3 hospitals near me
+  // TEST 2: Find 3 hospitals near me
   // -------------------------------------------------------------
-  console.log('--- TEST B: Find 3 hospitals near me ---');
-  const taskContextB = {
-    taskId: 'test-hospitals-near-me',
+  console.log('--- TEST 2: Find 3 hospitals near me ---');
+  const taskContext2 = {
+    taskId: 'test-2-hospitals-near-me',
     userRequest: 'Find 3 hospitals near me',
     userLocation: coimbatoreUserLocation,
     category: 'LOCATION_DISCOVERY',
   };
 
-  const resultB = await localServiceResearcher.researchLocalServices(taskContextB);
-  console.log(`Providers found for Test B: ${resultB.providersFound} (requested: ${resultB.requestedCount})`);
+  const result2 = await localServiceResearcher.researchLocalServices(taskContext2);
+  console.log(`Providers found for Test 2: ${result2.providersFound} (requested: ${result2.requestedCount})`);
 
-  assert.strictEqual(resultB.status, 'completed');
-  assert.ok(resultB.providersFound > 0);
-  assert.strictEqual(resultB.requestedCount, 3, 'Requested count must be 3');
-  assert.ok(resultB.providers.length <= 3, 'Providers count must be at most 3');
+  assert.strictEqual(result2.status, 'completed');
+  assert.ok(result2.providersFound > 0);
+  assert.strictEqual(result2.requestedCount, 3, 'Requested count must be 3');
+  assert.ok(result2.providers.length <= 3, 'Providers count must be at most 3');
 
-  const taskB = {
+  const task2 = {
     category: 'LOCATION_DISCOVERY',
-    userRequest: taskContextB.userRequest,
-    discoveredData: { localService: resultB },
-    externalContacts: resultB.providers,
-    locationData: resultB.locationData,
+    userRequest: taskContext2.userRequest,
+    discoveredData: { localService: result2 },
+    externalContacts: result2.providers,
+    locationData: result2.locationData,
   };
 
-  const responseB = buildUniversalResponse(taskB);
-  assert.ok(responseB.includes('# 3 Hospitals Near You'), 'Header must be # 3 Hospitals Near You');
-  assert.ok(responseB.includes('### Search results'));
-  assert.ok(!responseB.includes('Evidence & Verification Dimensions'));
-  console.log('  ✓ PASS: Test B (Find 3 hospitals near me)\n');
+  const response2 = buildUniversalResponse(task2);
+  assert.ok(response2.includes('# Hospitals Near You'), 'Header must be # Hospitals Near You');
+  assert.ok(response2.includes('**Search location:**'));
+  assert.ok(response2.includes('(Device Location)'));
+  assert.ok(response2.includes('### Search results'));
+  assert.ok(!response2.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test 2 (Find 3 hospitals near me)\n');
 
   // -------------------------------------------------------------
-  // TEST C: Find 5 restaurants near me
+  // TEST 3: Find 5 restaurants near me
   // -------------------------------------------------------------
-  console.log('--- TEST C: Find 5 restaurants near me ---');
-  const taskContextC = {
-    taskId: 'test-restaurants-near-me',
+  console.log('--- TEST 3: Find 5 restaurants near me ---');
+  const taskContext3 = {
+    taskId: 'test-3-restaurants-near-me',
     userRequest: 'Find 5 restaurants near me',
     userLocation: coimbatoreUserLocation,
     category: 'LOCATION_DISCOVERY',
   };
 
-  const resultC = await localServiceResearcher.researchLocalServices(taskContextC);
-  console.log(`Providers found for Test C: ${resultC.providersFound} (requested: ${resultC.requestedCount})`);
+  const result3 = await localServiceResearcher.researchLocalServices(taskContext3);
+  console.log(`Providers found for Test 3: ${result3.providersFound} (requested: ${result3.requestedCount})`);
 
-  assert.strictEqual(resultC.status, 'completed');
-  assert.ok(resultC.providersFound > 0);
+  assert.strictEqual(result3.status, 'completed');
+  assert.ok(result3.providersFound > 0);
 
-  const taskC = {
+  const task3 = {
     category: 'LOCATION_DISCOVERY',
-    userRequest: taskContextC.userRequest,
-    discoveredData: { localService: resultC },
-    externalContacts: resultC.providers,
-    locationData: resultC.locationData,
+    userRequest: taskContext3.userRequest,
+    discoveredData: { localService: result3 },
+    externalContacts: result3.providers,
+    locationData: result3.locationData,
   };
 
-  const responseC = buildUniversalResponse(taskC);
-  assert.ok(responseC.includes('# 5 Restaurants Near You'), 'Header must be # 5 Restaurants Near You');
-  assert.ok(responseC.includes('### Search results'));
-  assert.ok(!responseC.includes('Evidence & Verification Dimensions'));
-  console.log('  ✓ PASS: Test C (Find 5 restaurants near me)\n');
+  const response3 = buildUniversalResponse(task3);
+  assert.ok(response3.includes('# Restaurants Near You'), 'Header must be # Restaurants Near You');
+  assert.ok(response3.includes('**Search location:**'));
+  assert.ok(response3.includes('### Search results'));
+  assert.ok(!response3.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test 3 (Find 5 restaurants near me)\n');
 
   // -------------------------------------------------------------
-  // TEST D: Find KG Cinemas near me
+  // TEST 4: Find KG Cinemas near me
   // -------------------------------------------------------------
-  console.log('--- TEST D: Find KG Cinemas near me ---');
-  const taskContextD = {
-    taskId: 'test-kg-cinemas-near-me',
+  console.log('--- TEST 4: Find KG Cinemas near me ---');
+  const taskContext4 = {
+    taskId: 'test-4-kg-cinemas-near-me',
     userRequest: 'Find KG Cinemas near me',
     userLocation: coimbatoreUserLocation,
     category: 'LOCATION_DISCOVERY',
   };
 
-  const resultD = await localServiceResearcher.researchLocalServices(taskContextD);
-  console.log(`Providers found for Test D: ${resultD.providersFound}`);
-  assert.strictEqual(resultD.status, 'completed');
-  assert.ok(resultD.providersFound > 0);
+  const result4 = await localServiceResearcher.researchLocalServices(taskContext4);
+  console.log(`Providers found for Test 4: ${result4.providersFound}`);
+  assert.strictEqual(result4.status, 'completed');
+  assert.ok(result4.providersFound > 0);
 
-  const hasKGCinemas = resultD.providers.some(p => p.businessName.toLowerCase().includes('kg'));
-  console.log(`Found KG Cinema: ${hasKGCinemas} (${resultD.providers[0]?.businessName})`);
+  const hasKGCinemas = result4.providers.some(p => p.businessName.toLowerCase().includes('kg'));
+  console.log(`Found KG Cinema: ${hasKGCinemas} (${result4.providers[0]?.businessName})`);
   assert.ok(hasKGCinemas, 'Must find KG Cinema near Coimbatore coordinates');
 
-  const taskD = {
+  const task4 = {
     category: 'LOCATION_DISCOVERY',
-    userRequest: taskContextD.userRequest,
-    discoveredData: { localService: resultD },
-    externalContacts: resultD.providers,
-    locationData: resultD.locationData,
+    userRequest: taskContext4.userRequest,
+    discoveredData: { localService: result4 },
+    externalContacts: result4.providers,
+    locationData: result4.locationData,
   };
 
-  const responseD = buildUniversalResponse(taskD);
-  assert.ok(responseD.includes('# KG Cinemas Near You'), 'Header must be # KG Cinemas Near You');
-  assert.ok(responseD.includes('KG Big Cinema') || responseD.includes('KG Cinema'), 'Must list KG Cinema');
-  assert.ok(!responseD.includes('Evidence & Verification Dimensions'));
-  console.log('  ✓ PASS: Test D (Find KG Cinemas near me)\n');
+  const response4 = buildUniversalResponse(task4);
+  assert.ok(response4.includes('# KG Cinemas Near You'), 'Header must be # KG Cinemas Near You');
+  assert.ok(response4.includes('KG Big Cinema') || response4.includes('KG Cinema'), 'Must list KG Cinema');
+  assert.ok(!response4.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test 4 (Find KG Cinemas near me)\n');
 
   // -------------------------------------------------------------
-  // TEST E: Find 5 cinema theatres in Coimbatore
+  // TEST 5: Find 5 cinema theatres in Coimbatore
   // -------------------------------------------------------------
-  console.log('--- TEST E: Find 5 cinema theatres in Coimbatore ---');
-  const taskContextE = {
-    taskId: 'test-cinemas-in-coimbatore',
+  console.log('--- TEST 5: Find 5 cinema theatres in Coimbatore ---');
+  const taskContext5 = {
+    taskId: 'test-5-cinemas-in-coimbatore',
     userRequest: 'Find 5 cinema theatres in Coimbatore',
     userLocation: null, // No GPS, explicit city specified
     category: 'LOCATION_DISCOVERY',
   };
 
-  const resultE = await localServiceResearcher.researchLocalServices(taskContextE);
-  console.log(`Providers found for Test E: ${resultE.providersFound} in ${resultE.params.targetLocation}`);
+  const result5 = await localServiceResearcher.researchLocalServices(taskContext5);
+  console.log(`Providers found for Test 5: ${result5.providersFound} in ${result5.params.targetLocation}`);
 
-  assert.strictEqual(resultE.status, 'completed');
-  assert.ok(resultE.providersFound > 0);
-  assert.strictEqual(resultE.params.locationSource, 'city_specified');
+  assert.strictEqual(result5.status, 'completed');
+  assert.ok(result5.providersFound > 0);
+  assert.strictEqual(result5.params.locationSource, 'user_specified');
 
-  const taskE = {
+  const task5 = {
     category: 'LOCATION_DISCOVERY',
-    userRequest: taskContextE.userRequest,
-    discoveredData: { localService: resultE },
-    externalContacts: resultE.providers,
-    locationData: resultE.locationData,
+    userRequest: taskContext5.userRequest,
+    discoveredData: { localService: result5 },
+    externalContacts: result5.providers,
+    locationData: result5.locationData,
   };
 
-  const responseE = buildUniversalResponse(taskE);
-  assert.ok(responseE.includes('# 5 Cinema Theatres in Coimbatore'), 'Header must specify city');
-  assert.ok(responseE.includes('### Search results'));
-  assert.ok(!responseE.includes('Evidence & Verification Dimensions'));
-  console.log('  ✓ PASS: Test E (Find 5 cinema theatres in Coimbatore)\n');
+  const response5 = buildUniversalResponse(task5);
+  assert.ok(response5.includes('# Cinema Theatres in Coimbatore'), 'Header must specify city');
+  assert.ok(response5.includes('(User Specified)'), 'Must indicate user-specified location');
+  assert.ok(response5.includes('### Search results'));
+  assert.ok(!response5.includes('Evidence & Verification Dimensions'));
+  console.log('  ✓ PASS: Test 5 (Find 5 cinema theatres in Coimbatore)\n');
 
   // -------------------------------------------------------------
-  // TEST F: Find 5 cinema theatres near me when location permission is denied
+  // TEST 6: Find cinemas near Gandhipuram, Coimbatore
   // -------------------------------------------------------------
-  console.log('--- TEST F: Find 5 cinema theatres near me (Permission Denied) ---');
-  const taskContextF = {
-    taskId: 'test-cinemas-denied',
+  console.log('--- TEST 6: Find cinemas near Gandhipuram, Coimbatore ---');
+  const taskContext6 = {
+    taskId: 'test-6-cinemas-gandhipuram',
+    userRequest: 'Find cinemas near Gandhipuram, Coimbatore',
+    userLocation: null,
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result6 = await localServiceResearcher.researchLocalServices(taskContext6);
+  console.log(`Providers found for Test 6: ${result6.providersFound} near ${result6.params.targetLocation}`);
+
+  assert.strictEqual(result6.status, 'completed');
+  assert.ok(result6.providersFound > 0);
+  assert.strictEqual(result6.params.locationSource, 'user_specified');
+  assert.ok(result6.params.targetLocation.toLowerCase().includes('gandhipuram'), 'Target location must resolve Gandhipuram');
+
+  const task6 = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContext6.userRequest,
+    discoveredData: { localService: result6 },
+    externalContacts: result6.providers,
+    locationData: result6.locationData,
+  };
+
+  const response6 = buildUniversalResponse(task6);
+  assert.ok(response6.includes('# Cinema Theatres in Gandhipuram'), 'Header must contain Gandhipuram');
+  assert.ok(response6.includes('(User Specified)'), 'Location must be explicitly labelled as User Specified');
+  assert.ok(response6.includes('### Search results'));
+  console.log('  ✓ PASS: Test 6 (Find cinemas near Gandhipuram, Coimbatore)\n');
+
+  // -------------------------------------------------------------
+  // TEST 7: Search when location permission is denied
+  // -------------------------------------------------------------
+  console.log('--- TEST 7: Search when location permission is denied ---');
+  const taskContext7 = {
+    taskId: 'test-7-permission-denied',
     userRequest: 'Find 5 cinema theatres near me',
     userLocation: { denied: true, source: 'denied' },
     category: 'LOCATION_DISCOVERY',
   };
 
-  const resultF = await localServiceResearcher.researchLocalServices(taskContextF);
-  console.log(`Status for Test F: ${resultF.status}`);
+  const result7 = await localServiceResearcher.researchLocalServices(taskContext7);
+  console.log(`Status for Test 7: ${result7.status}`);
 
-  assert.strictEqual(resultF.status, 'LOCATION_REQUIRED', 'Must return LOCATION_REQUIRED status');
-  assert.strictEqual(resultF.locationRequired, true);
+  assert.strictEqual(result7.status, 'LOCATION_REQUIRED', 'Must return LOCATION_REQUIRED status');
+  assert.strictEqual(result7.searchState, 'LOCATION_REQUIRED');
 
-  const taskF = {
+  const task7 = {
     category: 'LOCATION_DISCOVERY',
     status: 'LOCATION_REQUIRED',
-    userRequest: taskContextF.userRequest,
-    discoveredData: { localService: resultF },
+    userRequest: taskContext7.userRequest,
+    discoveredData: { localService: result7 },
   };
 
-  const responseF = buildUniversalResponse(taskF);
-  console.log(`Response F message: "${responseF}"`);
+  const response7 = buildUniversalResponse(task7);
+  console.log(`Response 7 message: "${response7}"`);
   assert.strictEqual(
-    responseF,
-    'DOERA needs your location to find nearby places accurately. Please enable location access or enter your area or city.',
+    response7,
+    "I couldn't determine your current location. Please enter your area or city so I can find nearby cinema theatres.",
     'Must cleanly prompt for location when denied'
   );
-  assert.ok(!responseF.includes('Evidence & Verification Dimensions'));
-  console.log('  ✓ PASS: Test F (Location Permission Denied prompt)\n');
+  console.log('  ✓ PASS: Test 7 (Location Permission Denied prompt)\n');
 
-  console.log('========================================================');
-  console.log('✓ ALL 6 LOCAL SERVICE RESEARCH ACCEPTANCE TESTS PASSED!');
-  console.log('========================================================');
+  // -------------------------------------------------------------
+  // TEST 8: Search when location coordinates are unavailable
+  // -------------------------------------------------------------
+  console.log('--- TEST 8: Search when location coordinates are unavailable ---');
+  const taskContext8 = {
+    taskId: 'test-8-coords-unavailable',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: { unavailable: true, source: 'unavailable' },
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result8 = await localServiceResearcher.researchLocalServices(taskContext8);
+  console.log(`Status for Test 8: ${result8.status}`);
+
+  assert.strictEqual(result8.status, 'LOCATION_REQUIRED');
+  assert.strictEqual(result8.searchState, 'LOCATION_REQUIRED');
+
+  const task8 = {
+    category: 'LOCATION_DISCOVERY',
+    status: 'LOCATION_REQUIRED',
+    userRequest: taskContext8.userRequest,
+    discoveredData: { localService: result8 },
+  };
+
+  const response8 = buildUniversalResponse(task8);
+  assert.strictEqual(
+    response8,
+    "I couldn't determine your current location. Please enter your area or city so I can find nearby cinema theatres.",
+    'Must cleanly prompt for location when coordinates unavailable'
+  );
+  console.log('  ✓ PASS: Test 8 (Location Coordinates Unavailable prompt)\n');
+
+  // -------------------------------------------------------------
+  // TEST 9: Search when the business provider returns zero results
+  // -------------------------------------------------------------
+  console.log('--- TEST 9: Search when the business provider returns zero results ---');
+  const taskContext9 = {
+    taskId: 'test-9-zero-results',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: coimbatoreUserLocation,
+    simulateZeroResults: true,
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result9 = await localServiceResearcher.researchLocalServices(taskContext9);
+  console.log(`Search state for Test 9: ${result9.searchState}`);
+
+  assert.strictEqual(result9.searchState, 'NO_RESULTS');
+  assert.strictEqual(result9.providersFound, 0);
+
+  const task9 = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContext9.userRequest,
+    discoveredData: { localService: result9 },
+    externalContacts: [],
+  };
+
+  const response9 = buildUniversalResponse(task9);
+  console.log(`Response 9 message: "${response9}"`);
+  assert.ok(
+    response9.includes("I searched for cinema theatres around") &&
+    response9.includes("within 15 km, but couldn't find matching results. You can try a wider search radius or another area."),
+    'Must return accurate zero-results message per Section 7'
+  );
+  console.log('  ✓ PASS: Test 9 (Zero Results Message)\n');
+
+  // -------------------------------------------------------------
+  // TEST 10: Search when the business provider returns an error
+  // -------------------------------------------------------------
+  console.log('--- TEST 10: Search when the business provider returns an error ---');
+  const taskContext10 = {
+    taskId: 'test-10-provider-error',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: coimbatoreUserLocation,
+    simulateProviderError: true,
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result10 = await localServiceResearcher.researchLocalServices(taskContext10);
+  console.log(`Status for Test 10: ${result10.status}, searchState: ${result10.searchState}`);
+
+  assert.strictEqual(result10.status, 'SEARCH_FAILED');
+  assert.strictEqual(result10.searchState, 'SEARCH_FAILED');
+
+  const task10 = {
+    category: 'LOCATION_DISCOVERY',
+    status: 'SEARCH_FAILED',
+    userRequest: taskContext10.userRequest,
+    discoveredData: { localService: result10 },
+    externalContacts: [],
+  };
+
+  const response10 = buildUniversalResponse(task10);
+  console.log(`Response 10 message: "${response10}"`);
+  assert.strictEqual(
+    response10,
+    "I couldn't complete the cinema search because the business search service is currently unavailable. Please try again.",
+    'Must return service unavailable message per Section 7'
+  );
+  console.log('  ✓ PASS: Test 10 (Provider Error Message)\n');
+
+  // -------------------------------------------------------------
+  // TEST 11: Search when the provider returns fewer than five results
+  // -------------------------------------------------------------
+  console.log('--- TEST 11: Search when provider returns fewer than 5 results ---');
+  const mockThreeCinemas = [
+    {
+      businessName: 'Maruti Theatre',
+      address: 'Bashyakarlu Road, Vadakovai, Coimbatore',
+      distanceKm: '1.2 km',
+      rating: null,
+      phone: null,
+      website: null,
+      directionsUrl: 'https://maps.google.com/?q=11.018,76.945',
+      source: 'OpenStreetMap Nominatim',
+      sourceUrl: 'https://nominatim.openstreetmap.org/ui/details.html?osmid=1',
+    },
+    {
+      businessName: 'Ganga Yamuna Kaveri Theatre',
+      address: 'Gandhipuram, Coimbatore',
+      distanceKm: '1.7 km',
+      rating: null,
+      phone: null,
+      website: null,
+      directionsUrl: 'https://maps.google.com/?q=11.018,76.970',
+      source: 'OpenStreetMap Nominatim',
+      sourceUrl: 'https://nominatim.openstreetmap.org/ui/details.html?osmid=2',
+    },
+    {
+      businessName: 'Senthil Kumaran Theatres',
+      address: 'Ramnagar, Coimbatore',
+      distanceKm: '1.7 km',
+      rating: null,
+      phone: null,
+      website: null,
+      directionsUrl: 'https://maps.google.com/?q=11.010,76.969',
+      source: 'OpenStreetMap Nominatim',
+      sourceUrl: 'https://nominatim.openstreetmap.org/ui/details.html?osmid=3',
+    },
+  ];
+
+  const taskContext11 = {
+    taskId: 'test-11-partial-results',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: coimbatoreUserLocation,
+    simulatePartialResults: true,
+    mockProviders: mockThreeCinemas,
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result11 = await localServiceResearcher.researchLocalServices(taskContext11);
+  console.log(`Providers found for Test 11: ${result11.providersFound}, searchState: ${result11.searchState}`);
+
+  assert.strictEqual(result11.searchState, 'PARTIAL_RESULTS');
+  assert.strictEqual(result11.providersFound, 3);
+
+  const task11 = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContext11.userRequest,
+    discoveredData: { localService: result11 },
+    externalContacts: result11.providers,
+  };
+
+  const response11 = buildUniversalResponse(task11);
+  assert.ok(response11.includes('**Results:** 3 cinema theatres found'), 'Must state 3 cinema theatres found');
+  assert.ok(response11.includes('*Note: Only 3 cinema theatres were found within the 15 km search radius.*'), 'Must explain partial results');
+  assert.ok(response11.includes('1. **Maruti Theatre**'));
+  assert.ok(response11.includes('2. **Ganga Yamuna Kaveri Theatre**'));
+  assert.ok(response11.includes('3. **Senthil Kumaran Theatres**'));
+  console.log('  ✓ PASS: Test 11 (Partial Results Explanation)\n');
+
+  // -------------------------------------------------------------
+  // TEST 12: Search when provider returns results but some lack ratings or contact details
+  // -------------------------------------------------------------
+  console.log('--- TEST 12: Search with unlisted ratings or contact details ---');
+  const taskContext12 = {
+    taskId: 'test-12-unlisted-details',
+    userRequest: 'Find 5 cinema theatres near me',
+    userLocation: coimbatoreUserLocation,
+    category: 'LOCATION_DISCOVERY',
+  };
+
+  const result12 = await localServiceResearcher.researchLocalServices(taskContext12);
+  const task12 = {
+    category: 'LOCATION_DISCOVERY',
+    userRequest: taskContext12.userRequest,
+    discoveredData: { localService: result12 },
+    externalContacts: result12.providers,
+  };
+
+  const response12 = buildUniversalResponse(task12);
+  assert.ok(
+    response12.includes('Not publicly listed in open directory'),
+    'Must display "Not publicly listed in open directory" without fabricating false ratings or numbers'
+  );
+  assert.ok(
+    response12.includes('Website not listed') || response12.includes('[http'),
+    'Must handle unlisted websites honestly without fabricating URLs'
+  );
+  console.log('  ✓ PASS: Test 12 (Honest handling of unlisted ratings and contact details)\n');
+
+  console.log('=================================================================');
+  console.log('✓ ALL 12 LOCAL SERVICE RESEARCH TESTS COMPLETED SUCCESSFULLY!');
+  console.log('=================================================================');
 }
 
 runTestSuite().catch((err) => {
