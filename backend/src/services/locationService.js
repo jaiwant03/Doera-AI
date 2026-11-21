@@ -24,7 +24,7 @@ class LocationService {
       
       const res = await axios.get(url, {
         headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-        timeout: 5000,
+        timeout: 2500,
       });
 
       if (res.data && res.data.length > 0) {
@@ -95,7 +95,7 @@ class LocationService {
       const url = `${this.nominatimBase}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`;
       const res = await axios.get(url, {
         headers: { 'User-Agent': this.userAgent, Accept: 'application/json' },
-        timeout: 5000,
+        timeout: 2500,
       });
 
       if (res.data) {
