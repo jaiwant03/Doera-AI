@@ -124,7 +124,19 @@ class ConversationContextEngine {
     const lastDocumentAnalysis = conversation.lastDocumentAnalysis || null;
     const lastPlan = conversation.lastPlan || null;
     const lastDraft = conversation.lastDraft || null;
-    const lastResearchResults = conversation.lastResearchResults || this.extractLatestFromMessages(rawMessages, 'locationData');
+    let lastResearchResults = conversation.lastResearchResults || null;
+    if (!lastResearchResults) {
+      const msgLoc = this.extractLatestFromMessages(rawMessages, 'locationData');
+      if (msgLoc) lastResearchResults = { locationData: msgLoc, providers: [] };
+    } else if (Array.isArray(lastResearchResults)) {
+      lastResearchResults = {
+        conversationId: conversation._id.toString(),
+        providers: lastResearchResults,
+        categoryTitle: 'Local Services',
+        searchLocation: 'Your Location',
+        searchRadius: 15,
+      };
+    }
     const activeArtifacts = Array.isArray(conversation.activeArtifacts) ? conversation.activeArtifacts : [];
 
     // 5. Build Formatted Multi-Turn History Context
@@ -496,7 +508,47 @@ class ConversationContextEngine {
       }
       if (effectivePlan) conversation.lastPlan = effectivePlan;
       if (effectiveDraft) conversation.lastDraft = effectiveDraft;
-      if (effectiveResearch) conversation.lastResearchResults = effectiveResearch;
+      // Rich Local Service Research Persistence
+      const lsData = taskDoc?.discoveredData?.localService || (researchResults?.providers ? researchResults : null);
+      if (lsData && Array.isArray(lsData.providers) && lsData.providers.length > 0) {
+        conversation.lastResearchResults = {
+          conversationId: conversation._id.toString(),
+          missionId: effectiveMissionId || taskDoc?.missionId || null,
+          originalQuery: lsData.params?.userRequest || taskDoc?.userRequest || effectiveRequest,
+          serviceCategory: lsData.params?.serviceCategory || 'Local Services',
+          categoryTitle: lsData.params?.categoryTitle || 'Local Services',
+          searchLocation: lsData.params?.targetLocation || 'Your Location',
+          locationSource: lsData.params?.locationSource || 'device',
+          searchRadius: lsData.params?.radiusKm || 15,
+          center: lsData.params?.center || null,
+          providers: lsData.providers,
+          recommendation: lsData.recommendation || null,
+          locationData: taskDoc?.locationData || locationData || lsData.locationData || null,
+          searchCompletionStatus: lsData.searchState || 'RESULTS_FOUND',
+          lastFocusedBusiness: lsData.lastFocusedBusiness || conversation.lastResearchResults?.lastFocusedBusiness || null,
+          updatedAt: new Date(),
+        };
+      } else if (Array.isArray(researchResults) && researchResults.length > 0) {
+        conversation.lastResearchResults = {
+          conversationId: conversation._id.toString(),
+          missionId: effectiveMissionId || null,
+          originalQuery: effectiveRequest,
+          serviceCategory: effectiveCategory || 'Local Services',
+          categoryTitle: 'Local Services',
+          searchLocation: 'Your Location',
+          locationSource: 'device',
+          searchRadius: 15,
+          center: null,
+          providers: researchResults,
+          recommendation: null,
+          locationData: locationData || taskDoc?.locationData || null,
+          searchCompletionStatus: 'RESULTS_FOUND',
+          lastFocusedBusiness: conversation.lastResearchResults?.lastFocusedBusiness || null,
+          updatedAt: new Date(),
+        };
+      } else if (effectiveResearch && !conversation.lastResearchResults) {
+        conversation.lastResearchResults = effectiveResearch;
+      }
 
       // Update active artifacts list
       const artifacts = Array.isArray(conversation.activeArtifacts) ? [...conversation.activeArtifacts] : [];
