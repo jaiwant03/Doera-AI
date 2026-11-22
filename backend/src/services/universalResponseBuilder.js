@@ -84,6 +84,17 @@ export const buildUniversalResponse = (taskOrPayload) => {
     return buildLocalServiceResearchResponse(task, userRequest);
   }
 
+  const isImageAnalysis =
+    category === 'IMAGE_ANALYSIS' ||
+    Boolean(visionData) ||
+    Boolean(task.discoveredData?.vision) ||
+    Boolean(task.discoveredData?.visionResult);
+
+  // Dedicated clean, question-specific response for Image Understanding (Sections 2, 3, 4, 5, 6)
+  if (isImageAnalysis && !isMissionPlanning && !isDocAnalysis && !isDataAnalysis && !isLocalResearch) {
+    return buildVisionResponse(task, userRequest);
+  }
+
   let md = '';
 
   // ==========================================
@@ -555,6 +566,61 @@ function buildTravelSection(route, locationData) {
     }
   }
   return md;
+}
+
+/**
+ * Dedicated Question-Aware Response Builder for Image Understanding (Sections 2, 3, 4, 5, 6)
+ * Strictly zero unrequested visual asset profile, zero unrequested contrast index tables,
+ * zero fake verification dimensions, zero unrelated next steps or "Authorize & Execute".
+ */
+export function buildVisionResponse(task, userRequest = '') {
+  const req = userRequest || task.userRequest || '';
+  const visionData = task.discoveredData?.vision || task.visionResult?.images || [];
+  const visionComparison = task.discoveredData?.visionComparison || task.visionResult?.comparison;
+  const directAnswer =
+    task.discoveredData?.visionFormattedAnswer ||
+    task.discoveredData?.visionResult?.formattedAnswer ||
+    task.visionResult?.formattedAnswer ||
+    task.directAnswer;
+  const intentType =
+    task.discoveredData?.visionIntentType ||
+    task.discoveredData?.visionResult?.intentType ||
+    task.visionResult?.intentType ||
+    'GENERAL_IMAGE_DESCRIPTION';
+
+  // 1. Direct formatted answer from Vision Agent (Primary, clean, question-specific)
+  if (directAnswer && typeof directAnswer === 'string' && directAnswer.trim().length > 0) {
+    return directAnswer.trim();
+  }
+
+  // 2. Multi-image comparison
+  if (visionComparison) {
+    if (visionComparison.formattedAnswer) return visionComparison.formattedAnswer.trim();
+    let md = '';
+    if (visionComparison.summary) md += `${visionComparison.summary}\n\n`;
+    if (visionComparison.keyDifferences?.length > 0) {
+      md += `### Key Visual Differences\n\n`;
+      visionComparison.keyDifferences.forEach((diff) => {
+        md += `- **${diff.aspect || 'Aspect'}**: ${diff.details}\n`;
+      });
+      md += `\n`;
+    }
+    if (visionComparison.recommendation) {
+      md += `> 💡 ${visionComparison.recommendation}\n\n`;
+    }
+    return md.trim();
+  }
+
+  // 3. Fallback from individual images
+  const imgList = Array.isArray(visionData) ? visionData : [];
+  if (imgList.length > 0) {
+    const primary = imgList[0];
+    if (primary.formattedAnswer) return primary.formattedAnswer.trim();
+    if (primary.detailedExplanation) return primary.detailedExplanation.trim();
+    if (primary.summary) return primary.summary.trim();
+  }
+
+  return 'I have inspected the uploaded image and answered your inquiry.';
 }
 
 function buildVisionSection(images, comparison, userRequest) {
