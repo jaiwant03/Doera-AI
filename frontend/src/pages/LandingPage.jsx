@@ -553,11 +553,8 @@ ws.onmessage = (event) => {
             Deploy autonomous agent swarms, real-time web execution, deep research, and instant scheduling with verified human-in-the-loop controls. Built for teams that need reliability at scale.
           </p>
           <div className="cerebrium-cta-row">
-            <button onClick={() => navigate('/chat')} className="btn-cerebrium-primary">
+            <button onClick={() => navigate('/login')} className="btn-cerebrium-primary">
               TRY IT NOW
-            </button>
-            <button onClick={() => navigate('/chat')} className="btn-cerebrium-secondary">
-              BOOK A DEMO
             </button>
           </div>
         </div>
@@ -1027,7 +1024,7 @@ ws.onmessage = (event) => {
         <div className="final-cta-box">
           <h2>Ready to automate your daily tasks?</h2>
           <p>Join thousands experiencing next-generation autonomous AI execution today.</p>
-          <button onClick={() => navigate('/chat')} className="btn-cerebrium-primary large">
+          <button onClick={() => navigate('/login')} className="btn-cerebrium-primary large">
             <span>Launch DOERA AI Workspace</span>
             <ArrowUpRight size={18} />
           </button>
