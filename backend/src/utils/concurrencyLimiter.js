@@ -1,6 +1,6 @@
 import { logger } from './logger.js';
 
-class ConcurrencyLimiter {
+export class ConcurrencyLimiter {
   constructor(maxConcurrent = 2) {
     this.maxConcurrent = maxConcurrent;
     this.activeCount = 0;
