@@ -12,7 +12,7 @@ let baseMongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/doera-a
 export const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  clientUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? 'https://doera-ai.vercel.app' : 'http://localhost:5173'),
   mongoUri: baseMongoUri,
   jwtSecret: process.env.JWT_SECRET || 'doera_ai_development_jwt_secret_key_super_secure_32chars!',
   encryptionKey: process.env.ENCRYPTION_KEY || 'doera_ai_32_bytes_super_secure_encrypt_key_0123',
@@ -25,9 +25,9 @@ export const config = {
   geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
   
   // Google Integrations
-  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '827156118247-ebaf4o2s8g21122btv0iv9v1sf5cmmqm.apps.googleusercontent.com',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_CALLBACK_URL || process.env.GMAIL_OAUTH_REDIRECT_URI || 'http://localhost:5000/api/integrations/google/callback',
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_CALLBACK_URL || process.env.GMAIL_OAUTH_REDIRECT_URI || (process.env.RENDER_EXTERNAL_URL ? `${process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '')}/api/integrations/google/callback` : (process.env.NODE_ENV === 'production' ? 'https://doera-ai.onrender.com/api/integrations/google/callback' : 'http://localhost:5000/api/integrations/google/callback')),
   googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY || '',
 
   // External Self-Hosted n8n Automation Engine (DO NOT DEPLOY TO VERCEL OR RENDER)
