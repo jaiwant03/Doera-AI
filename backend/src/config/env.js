@@ -12,7 +12,7 @@ let baseMongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/doera-a
 export const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173',
   mongoUri: baseMongoUri,
   jwtSecret: process.env.JWT_SECRET || 'doera_ai_development_jwt_secret_key_super_secure_32chars!',
   encryptionKey: process.env.ENCRYPTION_KEY || 'doera_ai_32_bytes_super_secure_encrypt_key_0123',
@@ -27,8 +27,13 @@ export const config = {
   // Google Integrations
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/integrations/google/callback',
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_CALLBACK_URL || process.env.GMAIL_OAUTH_REDIRECT_URI || 'http://localhost:5000/api/integrations/google/callback',
   googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY || '',
+
+  // External Self-Hosted n8n Automation Engine (DO NOT DEPLOY TO VERCEL OR RENDER)
+  n8nEnabled: process.env.N8N_ENABLED === 'true' || !!process.env.N8N_WEBHOOK_URL,
+  n8nBaseUrl: process.env.N8N_BASE_URL || '',
+  n8nWebhookUrl: process.env.N8N_WEBHOOK_URL || '',
   
   // WhatsApp Cloud API
   whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',

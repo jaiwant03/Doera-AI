@@ -50,18 +50,27 @@ envWarnings.forEach((w) => logger.warn(`[CONFIG] ${w}`));
 // CORS Configuration
 const allowedOrigins = [
   config.clientUrl,
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
-      } else {
+      } else if (config.nodeEnv !== 'production') {
         callback(null, true); // Allow during development
+      } else {
+        const isClient = config.clientUrl && (origin === config.clientUrl || origin === config.clientUrl.replace(/\/+$/, ''));
+        if (isClient) {
+          callback(null, true);
+        } else {
+          callback(null, true); // Permissive fallback to prevent breaking cross-domain UI
+        }
       }
     },
     credentials: true,
