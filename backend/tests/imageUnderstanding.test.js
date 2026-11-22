@@ -285,8 +285,8 @@ async function runTests() {
   // Section D: Universal Intent Service Validation
   console.log('\n--- SECTION D: Intent Service Checks ---');
 
-  test('universalIntentService classifies image requests with Vision agent and without Action/Verification gate', () => {
-    const intent = universalIntentService.normalizeIntent(
+  await asyncTest('universalIntentService classifies image requests with Vision agent and without Action/Verification gate', async () => {
+    const intent = await universalIntentService.classifyIntent(
       'What is this uploaded image about?',
       [{ filename: 'landing.png', mimeType: 'image/png' }]
     );
@@ -303,19 +303,23 @@ async function runTests() {
   console.log('\n--- SECTION E: Conversation Context Engine ---');
 
   test('conversationContextEngine recognizes visual follow-ups referencing images', () => {
-    const followUp1 = conversationContextEngine.analyzeFollowUpIntent(
-      'What does the headline mean?',
-      { lastVisionAnalysis: { images: [dummyImage1] } }
-    );
+    const followUp1 = conversationContextEngine.analyzeFollowUpIntent({
+      text: 'What does the headline mean?',
+      lower: 'what does the headline mean?',
+      lastVisionAnalysis: { images: [dummyImage1] },
+      rawMessages: [],
+    });
     assert.strictEqual(followUp1.isFollowUp, true);
-    assert.strictEqual(followUp1.type, 'IMAGE_INSPECTION');
+    assert.strictEqual(followUp1.followUpType, 'IMAGE_INSPECTION');
 
-    const followUp2 = conversationContextEngine.analyzeFollowUpIntent(
-      'What is written in the top-right corner?',
-      { lastVisionAnalysis: { images: [dummyImage1] } }
-    );
+    const followUp2 = conversationContextEngine.analyzeFollowUpIntent({
+      text: 'What is written in the top-right corner?',
+      lower: 'what is written in the top-right corner?',
+      lastVisionAnalysis: { images: [dummyImage1] },
+      rawMessages: [],
+    });
     assert.strictEqual(followUp2.isFollowUp, true);
-    assert.strictEqual(followUp2.type, 'IMAGE_INSPECTION');
+    assert.strictEqual(followUp2.followUpType, 'IMAGE_INSPECTION');
   });
 
   console.log('\n================================================================');
