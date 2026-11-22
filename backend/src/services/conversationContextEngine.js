@@ -219,7 +219,7 @@ class ConversationContextEngine {
     lastDraft,
     lastResearchResults,
     activeCategory,
-    rawMessages,
+    rawMessages = [],
   }) {
     if (
       rawMessages.length === 0 &&
