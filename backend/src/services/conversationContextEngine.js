@@ -122,6 +122,7 @@ class ConversationContextEngine {
     const lastChartConfig = conversation.lastChartConfig || this.extractLatestFromMessages(rawMessages, 'chartConfig');
     const lastCalculation = conversation.lastCalculation || this.extractLatestFromMessages(rawMessages, 'calculation');
     const lastDocumentAnalysis = conversation.lastDocumentAnalysis || null;
+    const lastVisionAnalysis = conversation.lastVisionAnalysis || null;
     const lastPlan = conversation.lastPlan || null;
     const lastDraft = conversation.lastDraft || null;
     let lastResearchResults = conversation.lastResearchResults || null;
@@ -162,9 +163,11 @@ class ConversationContextEngine {
       lower,
       hasIncomingAttachments: incomingAttachments.length > 0,
       hasEffectiveAttachments: effectiveAttachments.length > 0,
+      effectiveAttachments,
       lastChartConfig,
       lastCalculation,
       lastDocumentAnalysis,
+      lastVisionAnalysis,
       lastPlan,
       lastDraft,
       lastResearchResults,
@@ -185,6 +188,7 @@ class ConversationContextEngine {
       lastChartConfig,
       lastCalculation,
       lastDocumentAnalysis,
+      lastVisionAnalysis,
       lastPlan,
       lastDraft,
       lastResearchResults,
@@ -206,16 +210,27 @@ class ConversationContextEngine {
     lower,
     hasIncomingAttachments,
     hasEffectiveAttachments,
+    effectiveAttachments = [],
     lastChartConfig,
     lastCalculation,
     lastDocumentAnalysis,
+    lastVisionAnalysis,
     lastPlan,
     lastDraft,
     lastResearchResults,
     activeCategory,
     rawMessages,
   }) {
-    if (rawMessages.length === 0 && !lastPlan && !lastChartConfig && !lastCalculation && !lastDocumentAnalysis && !lastDraft && !lastResearchResults) {
+    if (
+      rawMessages.length === 0 &&
+      !lastPlan &&
+      !lastChartConfig &&
+      !lastCalculation &&
+      !lastDocumentAnalysis &&
+      !lastVisionAnalysis &&
+      !lastDraft &&
+      !lastResearchResults
+    ) {
       return {
         isFollowUp: false,
         followUpType: 'NEW_CONVERSATION',
@@ -320,18 +335,46 @@ class ConversationContextEngine {
       };
     }
 
-    // 4. Image / Vision Follow-ups
-    const isVisionFollowUp =
-      activeCategory === 'IMAGE_ANALYSIS' ||
-      /(fix the (spacing|alignment|contrast|font) issue|alignment issue|spacing issue|better color combination|suggest colors|compare (it|this) with the previous screenshot|ui feedback)/i.test(lower);
+    // 4. Image / Vision Follow-ups (Phases 7, 8, 9)
+    const hasImageAttachments = Boolean(
+      (hasEffectiveAttachments &&
+        Array.isArray(effectiveAttachments) &&
+        effectiveAttachments.some(
+          (f) => f.type?.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name || f.filename || '')
+        )) ||
+        lastVisionAnalysis ||
+        activeCategory === 'IMAGE_ANALYSIS'
+    );
 
-    if (isVisionFollowUp && (activeCategory === 'IMAGE_ANALYSIS' || hasEffectiveAttachments)) {
+    const isImageQueryPattern =
+      /(headline|hero section|design|ui|ux|color|font|typography|spacing|alignment|button|cta|top-right|top-left|bottom|diagram|flowchart|chart|graph|screenshot|image|photo|picture|visible|what is written|who is in|what objects|first image|second image|first screenshot|second screenshot)/i.test(
+        lower
+      );
+
+    const isVisionFollowUp =
+      (activeCategory === 'IMAGE_ANALYSIS' && (hasImageAttachments || isImageQueryPattern)) ||
+      (hasImageAttachments && isImageQueryPattern) ||
+      /(fix the (spacing|alignment|contrast|font) issue|alignment issue|spacing issue|better color combination|suggest colors|compare (it|this) with the previous screenshot|ui feedback|what does the headline mean|is the design professional|how to improve the hero section)/i.test(
+        lower
+      );
+
+    if (isVisionFollowUp && hasImageAttachments) {
+      let instructionType = 'SPECIFIC_VISUAL_QUESTION';
+      if (/improvements?|how\s+(?:can|to)\s+improve/i.test(lower)) instructionType = 'UI_IMPROVEMENT_SUGGESTIONS';
+      else if (/critique|review|professional|ui\s+feedback/i.test(lower)) instructionType = 'UI_DESIGN_REVIEW';
+      else if (/extract\s+text|read\s+text|ocr/i.test(lower)) instructionType = 'IMAGE_TEXT_EXTRACTION';
+      else if (/diagram|flowchart/i.test(lower)) instructionType = 'DIAGRAM_EXPLANATION';
+      else if (/chart|graph|trends?/i.test(lower)) instructionType = 'CHART_OR_GRAPH_INTERPRETATION';
+      else if (/objects?|who\s+is/i.test(lower)) instructionType = 'OBJECT_IDENTIFICATION';
+      else if (/describe\s+everything|everything\s+visible/i.test(lower)) instructionType = 'IMAGE_CONTENT_IDENTIFICATION';
+      else if (/what\s+(?:is|does)\s+(?:this|the)\s+image\s+about/i.test(lower)) instructionType = 'GENERAL_IMAGE_DESCRIPTION';
+
       return {
         isFollowUp: true,
         followUpType: 'IMAGE_INSPECTION',
         resolvedCategory: 'IMAGE_ANALYSIS',
-        referencedArtifact: null,
-        instructionType: /(color)/i.test(lower) ? 'COLOR_SUGGESTION' : 'ALIGNMENT_FIX',
+        referencedArtifact: { visionAnalysis: lastVisionAnalysis },
+        instructionType,
       };
     }
 
@@ -472,6 +515,7 @@ class ConversationContextEngine {
     documentAnalysis = null,
     documents = null,
     crossDocAnalysis = null,
+    visionAnalysis = null,
     planningData = null,
     plan = null,
     draftData = null,
