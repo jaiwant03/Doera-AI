@@ -1,7 +1,20 @@
 class WebSocketClient {
   constructor() {
     this.ws = null;
-    this.url = import.meta.env.VITE_WS_URL || 'ws://localhost:5000';
+    const explicitWs = import.meta.env.VITE_WS_URL;
+    if (explicitWs) {
+      this.url = explicitWs;
+    } else {
+      const rawApi = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const clean = rawApi.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+      if (clean.startsWith('https://')) {
+        this.url = clean.replace('https://', 'wss://');
+      } else if (clean.startsWith('http://')) {
+        this.url = clean.replace('http://', 'ws://');
+      } else {
+        this.url = 'ws://localhost:5000';
+      }
+    }
     this.listeners = new Map();
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
