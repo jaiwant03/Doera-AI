@@ -30,6 +30,7 @@ import taskRoutes from './routes/taskRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import integrationRoutes from './routes/integrationRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import usageRoutes from './routes/usageRoutes.js';
 import memoryRoutes from './routes/memoryRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
