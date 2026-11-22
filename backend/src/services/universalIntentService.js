@@ -203,11 +203,11 @@ User Personalized Context: ${memoryContext || 'None'}`;
     const requiredAgents = new Set(parsed.requiredAgents || ['Planner']);
     requiredAgents.add('Planner');
 
-    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON) || categories.includes(CATEGORIES.IMAGE_ANALYSIS) || categories.includes(CATEGORIES.DATA_ANALYSIS))
+    const isActionTask = (categories.includes(CATEGORIES.PRODUCT_COMPARISON) || categories.includes(CATEGORIES.SERVICE_COMPARISON) || categories.includes(CATEGORIES.DATA_ANALYSIS))
       ? true
       : (parsed.isActionTask !== undefined
           ? Boolean(parsed.isActionTask)
-          : primaryCategory !== CATEGORIES.GENERAL_QUESTION);
+          : (primaryCategory !== CATEGORIES.GENERAL_QUESTION && primaryCategory !== CATEGORIES.IMAGE_ANALYSIS));
 
     if (isActionTask) {
       requiredAgents.add('Verification');
@@ -215,6 +215,17 @@ User Personalized Context: ${memoryContext || 'None'}`;
 
     if (categories.includes(CATEGORIES.IMAGE_ANALYSIS) || hasImageAttachment) {
       requiredAgents.add('Vision');
+      // Enforce image understanding only: vision requests are analysis tasks, not external booking/outreach
+      const lowerText = text.toLowerCase();
+      const hasExplicitOutreach = /send\s+email|contact\s+them\s+directly|reach\s+out\s+via/i.test(lowerText);
+      const hasExplicitBooking = /book\s+an?\s+appointment|reserve\s+slot/i.test(lowerText);
+      if (!hasExplicitOutreach && !hasExplicitBooking) {
+        requiredAgents.delete('Communication');
+        requiredAgents.delete('Execution');
+        requiredAgents.delete('Scheduling');
+        requiredAgents.delete('FollowUp');
+        parsed.requestedExternalActions = [];
+      }
     }
     if (categories.includes(CATEGORIES.LOCATION_DISCOVERY) || categories.includes(CATEGORIES.TRAVEL_PLANNING)) {
       requiredAgents.add('Location');

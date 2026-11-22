@@ -929,15 +929,29 @@ const visionNode = async (state) => {
     { step: { id: 'vision', name: 'Visual analysis and image understanding', status: 'completed', timestamp: new Date() } }
   );
 
+  const isPureVision =
+    state.category === 'IMAGE_ANALYSIS' &&
+    !state.requiredAgents?.includes('DataAnalysis') &&
+    !state.requiredAgents?.includes('Research') &&
+    !state.requiredAgents?.includes('Verification');
+
   return {
     steps,
     discoveredData: {
       ...(state.discoveredData || {}),
       vision: visionResult.images,
       visionComparison: visionResult.comparison,
+      visionFormattedAnswer: visionResult.formattedAnswer,
+      visionIntentType: visionResult.intentType,
+      visionResult: visionResult,
     },
-    currentAgent: state.requiredAgents?.includes('DataAnalysis') ? 'DataAnalysis' : 'Verification',
+    directAnswer: visionResult.formattedAnswer,
+    visionResult: visionResult,
+    currentAgent: state.requiredAgents?.includes('DataAnalysis')
+      ? 'DataAnalysis'
+      : (isPureVision ? 'Orchestrator' : (state.requiredAgents?.includes('Verification') ? 'Verification' : 'Orchestrator')),
     currentAction: 'Visual analysis complete.',
+    status: isPureVision ? 'COMPLETED' : state.status,
   };
 };
 
@@ -1243,11 +1257,12 @@ const workflow = new StateGraph(TaskStateAnnotation)
   // LocalService -> Verification
   .addEdge('local_service', 'verification')
 
-  // Vision -> DataAnalysis or Research or Verification
+  // Vision -> DataAnalysis or Research or Verification or END
   .addConditionalEdges('vision', (state) => {
     const req = state.requiredAgents || [];
     if (req.includes('DataAnalysis')) return 'data_analysis';
     if (req.includes('Research')) return 'research';
+    if (state.category === 'IMAGE_ANALYSIS' && !req.includes('Verification')) return END;
     return 'verification';
   })
 

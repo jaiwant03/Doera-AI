@@ -388,6 +388,7 @@ export const streamMessage = async (req, res) => {
           lastChartConfig: contextPayload.lastChartConfig,
           lastCalculation: contextPayload.lastCalculation,
           lastDocumentAnalysis: contextPayload.lastDocumentAnalysis,
+          lastVisionAnalysis: contextPayload.lastVisionAnalysis,
           lastPlan: contextPayload.lastPlan,
           lastDraft: contextPayload.lastDraft,
           lastResearchResults: contextPayload.lastResearchResults,
@@ -443,8 +444,10 @@ export const streamMessage = async (req, res) => {
         if (
           task.category === 'DATA_ANALYSIS' ||
           task.category === 'DOCUMENT_ANALYSIS' ||
+          task.category === 'IMAGE_ANALYSIS' ||
           task.discoveredData?.dataAnalysis ||
           task.discoveredData?.documents ||
+          task.discoveredData?.vision ||
           task.chartConfig
         ) {
           task.bookingDetails = null;
@@ -486,6 +489,12 @@ export const streamMessage = async (req, res) => {
         documentAnalysis: (resultState?.discoveredData?.documents || task.discoveredData?.documents) ? {
           documents: resultState?.discoveredData?.documents || task.discoveredData?.documents,
           crossDocAnalysis: resultState?.discoveredData?.crossDocAnalysis || task.discoveredData?.crossDocAnalysis || null,
+        } : null,
+        visionAnalysis: (resultState?.discoveredData?.vision || task.discoveredData?.vision || resultState?.visionResult) ? {
+          images: resultState?.discoveredData?.vision || task.discoveredData?.vision || [],
+          comparison: resultState?.discoveredData?.visionComparison || task.discoveredData?.visionComparison || null,
+          formattedAnswer: resultState?.discoveredData?.visionFormattedAnswer || task.discoveredData?.visionFormattedAnswer || resultState?.directAnswer || null,
+          intentType: resultState?.discoveredData?.visionIntentType || task.discoveredData?.visionIntentType || null,
         } : null,
         plan: resultState?.plan || task.discoveredData?.planning || null,
         draft: resultState?.emailDraft || resultState?.draft || null,
@@ -931,6 +940,7 @@ export const sendMessage = async (req, res, next) => {
           lastChartConfig: contextPayload.lastChartConfig,
           lastCalculation: contextPayload.lastCalculation,
           lastDocumentAnalysis: contextPayload.lastDocumentAnalysis,
+          lastVisionAnalysis: contextPayload.lastVisionAnalysis,
           lastPlan: contextPayload.lastPlan,
           lastDraft: contextPayload.lastDraft,
           lastResearchResults: contextPayload.lastResearchResults,
@@ -986,8 +996,10 @@ export const sendMessage = async (req, res, next) => {
         if (
           task.category === 'DATA_ANALYSIS' ||
           task.category === 'DOCUMENT_ANALYSIS' ||
+          task.category === 'IMAGE_ANALYSIS' ||
           task.discoveredData?.dataAnalysis ||
           task.discoveredData?.documents ||
+          task.discoveredData?.vision ||
           task.chartConfig
         ) {
           task.bookingDetails = null;
@@ -1029,6 +1041,12 @@ export const sendMessage = async (req, res, next) => {
         documentAnalysis: (resultState?.discoveredData?.documents || task.discoveredData?.documents) ? {
           documents: resultState?.discoveredData?.documents || task.discoveredData?.documents,
           crossDocAnalysis: resultState?.discoveredData?.crossDocAnalysis || task.discoveredData?.crossDocAnalysis || null,
+        } : null,
+        visionAnalysis: (resultState?.discoveredData?.vision || task.discoveredData?.vision || resultState?.visionResult) ? {
+          images: resultState?.discoveredData?.vision || task.discoveredData?.vision || [],
+          comparison: resultState?.discoveredData?.visionComparison || task.discoveredData?.visionComparison || null,
+          formattedAnswer: resultState?.discoveredData?.visionFormattedAnswer || task.discoveredData?.visionFormattedAnswer || resultState?.directAnswer || null,
+          intentType: resultState?.discoveredData?.visionIntentType || task.discoveredData?.visionIntentType || null,
         } : null,
         plan: resultState?.plan || task.discoveredData?.planning || null,
         draft: resultState?.emailDraft || resultState?.draft || null,
