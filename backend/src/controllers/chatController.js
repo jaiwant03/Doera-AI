@@ -16,6 +16,7 @@ import locationService from '../services/locationService.js';
 import extractAndRegisterDeliverables from '../services/deliverableExtractor.js';
 import conversationContextEngine from '../services/conversationContextEngine.js';
 import fileStorageService from '../services/fileStorageService.js';
+import heavyTaskLimiter from '../utils/concurrencyLimiter.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -411,7 +412,11 @@ export const streamMessage = async (req, res) => {
             }).catch(() => {});
           },
         };
-        resultState = await agentGraph.invoke(initialState);
+        resultState = await heavyTaskLimiter.runWithLimit(
+          () => agentGraph.invoke(initialState),
+          `stream-${taskId}`,
+          75000
+        );
       } catch (graphErr) {
         console.warn('[DOERA Stream] Agent graph invoke error:', graphErr.message);
       }
@@ -963,7 +968,11 @@ export const sendMessage = async (req, res, next) => {
             }).catch(() => {});
           },
         };
-        resultState = await agentGraph.invoke(initialState);
+        resultState = await heavyTaskLimiter.runWithLimit(
+          () => agentGraph.invoke(initialState),
+          `stream-${taskId}`,
+          75000
+        );
       } catch (graphErr) {
         console.warn('[DOERA Chat] Agent graph invoke error:', graphErr.message);
       }

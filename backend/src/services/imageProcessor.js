@@ -1,6 +1,12 @@
 import sharp from 'sharp';
 import { logger } from '../utils/logger.js';
 
+// Optimize libvips native memory for low-memory micro-containers (Render 512MB RAM)
+try {
+  sharp.cache(false);
+  sharp.concurrency(1);
+} catch (_) {}
+
 const MAX_IMAGE_SIZE = 25 * 1024 * 1024; // 25MB Security Limit
 const SUPPORTED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']);
 const SUPPORTED_MIMES = new Set([

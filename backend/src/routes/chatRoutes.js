@@ -12,6 +12,7 @@ import {
   feedbackMessage,
 } from '../controllers/chatController.js';
 import { authenticate } from '../middleware/auth.js';
+import { chatLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -20,9 +21,9 @@ router.use(authenticate);
 // Models
 router.get('/models', getModels);
 
-// Streaming & Standard Messaging
-router.post('/stream', streamMessage);
-router.post('/message', sendMessage);
+// Streaming & Standard Messaging (protected by user-based chatLimiter)
+router.post('/stream', chatLimiter, streamMessage);
+router.post('/message', chatLimiter, sendMessage);
 
 // Conversations
 router.get('/conversations', getConversations);

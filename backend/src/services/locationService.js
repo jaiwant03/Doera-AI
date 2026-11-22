@@ -1,5 +1,6 @@
 import axios from 'axios';
 import placesAdapter from '../integrations/placesAdapter.js';
+import cacheService from './cacheService.js';
 import { logger } from '../utils/logger.js';
 
 class LocationService {
@@ -17,6 +18,12 @@ class LocationService {
     if (!query || typeof query !== 'string') return null;
 
     const clean = query.trim().replace(/^in\s+|^near\s+|^around\s+/i, '');
+    const cacheKey = cacheService.buildLookupKey('geocode', clean);
+
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     // 1. Try OpenStreetMap Nominatim
     try {
@@ -39,7 +46,7 @@ class LocationService {
           address.state_district ||
           clean;
 
-        return {
+        const result = {
           lat: parseFloat(place.lat),
           lng: parseFloat(place.lon),
           name: place.name || clean,
@@ -48,6 +55,10 @@ class LocationService {
           state: address.state || null,
           country: address.country || null,
         };
+
+        // Cache valid geocode for 24 hours
+        await cacheService.set(cacheKey, result, 86400);
+        return result;
       }
     } catch (err) {
       logger.warn(`[Location Service] Nominatim geocoding notice for "${query}":`, err.message);
