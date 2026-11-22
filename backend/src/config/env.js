@@ -43,6 +43,9 @@ export const config = {
   // Email encryption
   emailEncryptionKey: process.env.EMAIL_ENCRYPTION_KEY || 'doera_email_enc_key_32bytes_sec!',
 
+  // Redis Distributed Cache & Rate Limiting
+  redisUrl: process.env.REDIS_URL || '',
+
   // Subscription Quota Limits
   freeRequestLimit: parseInt(process.env.FREE_REQUEST_LIMIT, 10) || 20,
   proRequestLimit: parseInt(process.env.PRO_REQUEST_LIMIT, 10) || 500,

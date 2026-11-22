@@ -549,6 +549,11 @@ export const ChatProvider = ({ children }) => {
         errorText = 'The analysis took longer than expected to complete. DOERA may still be compiling your dataset insights in the background. Please refresh in a moment or retry with a specific focus.';
       } else if (!err.response && (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || err.message?.includes('ECONNREFUSED'))) {
         errorText = 'Unable to connect to DOERA Backend Engine. The server may be restarting or experiencing high load. Please try again in a few moments.';
+      } else if (err.response?.status === 429) {
+        const retrySec = err.response.data?.retryAfterSeconds || err.response.headers?.['retry-after'] || 15;
+        errorText = `Too many requests submitted. To protect server resources, please wait ${retrySec} seconds before sending another task.`;
+      } else if (err.response?.status === 504 || err.response?.status === 502) {
+        errorText = 'The backend server took longer than usual to respond or is restarting. Please try again in a moment.';
       } else if (err.response?.status === 413) {
         errorText = 'The uploaded dataset exceeds the maximum allowable upload size. Please upload a spreadsheet under 50MB.';
       } else if (err.response?.data?.error && typeof err.response.data.error === 'string') {
