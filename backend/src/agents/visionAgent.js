@@ -504,7 +504,7 @@ ${promptInstruction}
 - Classified Visual Type: ${processed.detectedType}
 - OCR Layer Detected Text:
 """
-${processed.ocr.text || '(No high-contrast text detected in image layer)'}
+${(processed.ocr.text || '').slice(0, 400) || '(No high-contrast text detected in image layer)'}
 """
 - OCR Confidence: ${processed.ocr.confidence}% (${processed.ocr.wordsCount} words)
 
@@ -516,7 +516,6 @@ Output pure JSON with this exact structure:
   "formattedAnswer": "Complete beautifully formatted markdown response answering the user's specific inquiry directly",
   "summary": "1-2 sentence core conclusion",
   "detectedType": "${processed.detectedType}",
-  "detectedText": "${(processed.ocr.text || '').replace(/"/g, '\\"')}",
   "keyElements": ["Element 1", "Element 2"]
 }`;
 

@@ -173,12 +173,15 @@ async function runTests() {
     assert.ok(!res.formattedAnswer.includes('Authorize & Execute'));
   });
 
+  const validBuffer = fs.readFileSync(testImagePath1);
+
   await asyncTest('Scenario 5: Flowchart diagram -> "Explain this diagram."', async () => {
     const taskContext = {
       userRequest: 'Explain this diagram and workflow.',
     };
     const diagramImage = {
-      filename: 'workflow_pipeline.png',
+      filename: 'workflow_pipeline.jpg',
+      buffer: validBuffer,
       ocrText: 'Input Ingestion -> Validation -> Agent Orchestration -> Verification -> Final Output',
     };
     const res = await visionAgent.analyzeImage(taskContext, [diagramImage]);
@@ -192,7 +195,8 @@ async function runTests() {
       userRequest: 'Explain the trends and data in this chart.',
     };
     const chartImage = {
-      filename: 'quarterly_revenue.png',
+      filename: 'quarterly_revenue.jpg',
+      buffer: validBuffer,
       ocrText: 'Quarterly Revenue Q1 $2.1M Q2 $3.4M Q3 $4.8M Q4 $6.2M Annual Growth',
     };
     const res = await visionAgent.analyzeImage(taskContext, [chartImage]);
