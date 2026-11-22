@@ -4,6 +4,7 @@ import llmService from '../services/llmService.js';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import axios from 'axios';
+import fs from 'fs';
 
 class VisionAgent {
   constructor() {
@@ -46,7 +47,7 @@ class VisionAgent {
 
     // 4. UI_DESIGN_REVIEW: Reviewing or auditing UI/UX
     if (
-      /(?:review\s+(?:the\s+)?(?:ui|ux|design|interface)|critique\s+(?:the\s+)?(?:ui|ux|design|interface)|ui\s+audit|design\s+audit|design\s+critique|evaluate\s+(?:this\s+)?(?:ui|design)|is\s+(?:the\s+)?design\s+professional)/i.test(
+      /(?:(?:ui\s+)?(?:design\s+)?review|review\s+(?:of\s+)?(?:the\s+)?(?:ui|ux|design|interface)|critique\s+(?:the\s+)?(?:ui|ux|design|interface)|ui\s+audit|design\s+audit|design\s+critique|evaluate\s+(?:this\s+)?(?:ui|design)|is\s+(?:the\s+)?design\s+professional)/i.test(
         lower
       )
     ) {
@@ -62,22 +63,22 @@ class VisionAgent {
       return 'DIAGRAM_EXPLANATION';
     }
 
-    // 6. CHART_OR_GRAPH_INTERPRETATION: Charts, graphs, plots, trends
+    // 6. OBJECT_IDENTIFICATION: Objects, people, items in photos (tested before chart to avoid 'photograph' matching 'graph')
     if (
-      /(?:chart|graph|plot|bar\s+chart|line\s+chart|pie\s+chart|scatter|axes|trend|trends\s+in\s+this|interpret\s+this\s+chart|explain\s+(?:this|the)\s+chart|explain\s+the\s+trends)/i.test(
-        lower
-      )
-    ) {
-      return 'CHART_OR_GRAPH_INTERPRETATION';
-    }
-
-    // 7. OBJECT_IDENTIFICATION: Objects, people, items in photos
-    if (
-      /(?:what\s+objects\s+are\s+visible|identify\s+(?:the\s+)?objects|what\s+(?:items|things)\s+are\s+in|who\s+is\s+in\s+this|detect\s+objects|what\s+objects)/i.test(
+      /(?:what\s+objects|identify\s+(?:the\s+)?objects|what\s+(?:items|things)\s+are\s+in|who\s+is\s+in\s+this|detect\s+objects|objects\s+(?:and\s+elements\s+)?(?:are\s+)?visible)/i.test(
         lower
       )
     ) {
       return 'OBJECT_IDENTIFICATION';
+    }
+
+    // 7. CHART_OR_GRAPH_INTERPRETATION: Charts, graphs, plots, trends
+    if (
+      /(?:\b(?:chart|graph|plot|bar\s+chart|line\s+chart|pie\s+chart|scatter|axes|trend|trends)\b|interpret\s+this\s+chart|explain\s+(?:this|the)\s+chart|explain\s+the\s+trends)/i.test(
+        lower
+      )
+    ) {
+      return 'CHART_OR_GRAPH_INTERPRETATION';
     }
 
     // 8. SCREENSHOT_EXPLANATION: Explaining a website/app interface
