@@ -141,7 +141,7 @@ export const startServer = async () => {
       reject(err);
     });
 
-    server.listen(config.port, () => {
+    server.listen(config.port, '0.0.0.0', () => {
       logger.info(`====================================================`);
       logger.info(`  DOERA AI 3.0 — Autonomous Assistant Platform     `);
       logger.info(`  Server running on port: ${config.port}            `);
