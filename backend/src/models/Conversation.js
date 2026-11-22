@@ -80,6 +80,10 @@ const ConversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
+    lastVisionAnalysis: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     taskState: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
