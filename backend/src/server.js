@@ -1,10 +1,15 @@
-// DOERA AI — Server
+// DOERA AI — Production Server
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 import { config, validateEnv } from './config/env.js';
-import { connectDB, disconnectDB } from './config/database.js';
+import { connectDB, disconnectDB, isDBConnected, getDBStatus } from './config/database.js';
+import { getRedisClient, isRedisAvailable, disconnectRedis } from './config/redis.js';
+import { generalApiLimiter } from './middleware/rateLimiter.js';
+import heavyTaskLimiter from './utils/concurrencyLimiter.js';
 import { seedDefaultUsers } from './config/seed.js';
 import realtimeServer from './websocket/wsServer.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -31,7 +36,6 @@ import fileRoutes from './routes/fileRoutes.js';
 import researchRoutes from './routes/researchRoutes.js';
 import voiceRoutes from './routes/voiceRoutes.js';
 import workflowRoutes from './routes/workflowRoutes.js';
-import usageRoutes from './routes/usageRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import approvalRoutes from './routes/approvalRoutes.js';
 import missionRoutes from './routes/missionRoutes.js';
@@ -43,9 +47,21 @@ import proactiveEngine from './services/proactiveEngine.js';
 const app = express();
 const server = http.createServer(app);
 
+// Trust reverse proxy (essential for Render / Vercel accurate IP rate-limiting & SSL)
+app.set('trust proxy', 1);
+
 // Startup Environment Validation
 const envWarnings = validateEnv();
 envWarnings.forEach((w) => logger.warn(`[CONFIG] ${w}`));
+
+// Security Headers via Helmet (with permissive cross-origin resource policy for the SPA frontend)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false, // Managed at edge / Vercel
+  })
+);
 
 // CORS Configuration
 const allowedOrigins = [
@@ -63,7 +79,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
       } else if (config.nodeEnv !== 'production') {
-        callback(null, true); // Allow during development
+        callback(null, true);
       } else {
         const isClient = config.clientUrl && (origin === config.clientUrl || origin === config.clientUrl.replace(/\/+$/, ''));
         if (isClient) {
@@ -77,10 +93,18 @@ app.use(
   })
 );
 
+// Request Correlation ID Middleware & Timing Diagnostics
+app.use((req, res, next) => {
+  const reqId = req.headers['x-request-id'] || `req-${uuidv4().substring(0, 12)}`;
+  req.id = reqId;
+  res.setHeader('X-Request-Id', reqId);
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Health Check Endpoint
+// 1. Liveness Health Check Endpoint (Render Health Check)
 const handleHealth = (req, res) => {
   res.json({
     status: 'healthy',
@@ -89,11 +113,62 @@ const handleHealth = (req, res) => {
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
     environment: config.nodeEnv,
-    database: mongoose.connection.name,
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'connecting',
   });
 };
 app.get('/health', handleHealth);
 app.get('/api/health', handleHealth);
+
+// 2. Readiness Probe Endpoint
+const handleReady = (req, res) => {
+  const dbConnected = isDBConnected();
+  if (dbConnected) {
+    res.status(200).json({
+      ready: true,
+      service: 'DOERA AI Backend',
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+      redis: isRedisAvailable() ? 'connected' : 'in-memory-fallback',
+    });
+  } else {
+    res.status(503).json({
+      ready: false,
+      service: 'DOERA AI Backend',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      message: 'Database connection is initializing or reconnecting.',
+    });
+  }
+};
+app.get('/ready', handleReady);
+app.get('/api/ready', handleReady);
+
+// 3. Safe Dependency & Diagnostics Endpoint (Zero Credentials Exposed)
+const handleDependencies = (req, res) => {
+  const mem = process.memoryUsage();
+  res.json({
+    service: 'DOERA AI Backend',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+    database: getDBStatus(),
+    redis: {
+      available: isRedisAvailable(),
+      mode: isRedisAvailable() ? 'distributed-redis' : 'resilient-in-memory-fallback',
+    },
+    concurrency: heavyTaskLimiter.getStatus(),
+    memoryTelemetry: {
+      heapUsedMb: Number((mem.heapUsed / 1024 / 1024).toFixed(2)),
+      heapTotalMb: Number((mem.heapTotal / 1024 / 1024).toFixed(2)),
+      rssMb: Number((mem.rss / 1024 / 1024).toFixed(2)),
+      externalMb: Number((mem.external / 1024 / 1024).toFixed(2)),
+    },
+  });
+};
+app.get('/health/dependencies', handleDependencies);
+app.get('/api/health/dependencies', handleDependencies);
+
+// Apply General Rate Limiter to all /api routes
+app.use('/api', generalApiLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -125,6 +200,7 @@ realtimeServer.init(server);
 // Start Server Function
 export const startServer = async () => {
   await connectDB();
+  getRedisClient(); // Initialize Redis client if REDIS_URL is configured
   await seedDefaultUsers();
 
   if (config.nodeEnv !== 'test') {
@@ -159,25 +235,33 @@ const handleShutdown = async (signal) => {
   proactiveEngine.stop();
   server.close(async () => {
     logger.info('[DOERA] HTTP and WebSocket server stopped.');
-    await disconnectDB();
+    await disconnectRedis().catch(() => {});
+    await disconnectDB().catch(() => {});
     process.exit(0);
   });
+
+  // Force exit after 10s if connections fail to close in time
+  setTimeout(() => {
+    logger.warn('[DOERA] Forced exit after timeout during graceful shutdown.');
+    process.exit(1);
+  }, 10000).unref();
 };
 
 process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 process.on('SIGINT', () => handleShutdown('SIGINT'));
 
-// Handle nodemon restarts cleanly so port 5000 is released immediately
+// Handle nodemon restarts cleanly
 process.once('SIGUSR2', async () => {
   logger.info('[DOERA] Received SIGUSR2 (nodemon restart). Releasing port and shutting down cleanly...');
   proactiveEngine.stop();
   server.close(async () => {
+    await disconnectRedis().catch(() => {});
     await disconnectDB().catch(() => {});
     process.kill(process.pid, 'SIGUSR2');
   });
 });
 
-// Process-level unhandled exception and rejection handlers — prevents unexpected crash/restart loops
+// Process-level unhandled exception and rejection handlers
 process.on('uncaughtException', (err) => {
   logger.error('[DOERA PROCESS ERROR] Uncaught exception caught:', err?.stack || err?.message || err);
 });
