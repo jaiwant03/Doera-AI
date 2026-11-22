@@ -527,10 +527,18 @@ Output pure JSON with this exact structure:
         temperature: 0.1,
       });
 
-      if (parsed && (parsed.formattedAnswer || parsed.summary || parsed.detailedExplanation)) {
+      const isLlmFallback =
+        !parsed ||
+        parsed.error ||
+        parsed.fallback ||
+        parsed.summary?.startsWith('Autonomous plan') ||
+        typeof parsed.formattedAnswer !== 'string' ||
+        parsed.formattedAnswer.trim().length === 0;
+
+      if (!isLlmFallback) {
         return {
           ...parsed,
-          formattedAnswer: parsed.formattedAnswer || parsed.detailedExplanation || parsed.summary,
+          formattedAnswer: parsed.formattedAnswer.trim(),
         };
       }
     } catch (err) {
@@ -739,12 +747,17 @@ Inquiry: "${userRequest}"`;
         temperature: 0.1,
       });
 
-      if (parsed && (parsed.formattedAnswer || parsed.summary || parsed.matrix)) {
+      const isLlmFallback =
+        !parsed ||
+        parsed.error ||
+        parsed.fallback ||
+        parsed.summary?.startsWith('Autonomous plan') ||
+        (typeof parsed.formattedAnswer !== 'string' && !parsed.keyDifferences);
+
+      if (!isLlmFallback && parsed.formattedAnswer) {
         return {
           ...parsed,
-          formattedAnswer:
-            parsed.formattedAnswer ||
-            `### Visual Comparison: ${img1.filename} vs ${img2.filename}\n\n${parsed.summary || ''}`,
+          formattedAnswer: parsed.formattedAnswer.trim(),
         };
       }
     } catch (_) {}

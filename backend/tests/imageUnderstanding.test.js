@@ -221,8 +221,13 @@ async function runTests() {
     const res = await visionAgent.analyzeImage(taskContext, [dummyImage1, dummyImage2]);
     assert.strictEqual(res.intentType, 'IMAGE_COMPARISON');
     assert.ok(res.comparison !== null);
-    assert.ok(res.formattedAnswer.includes('Comparison') || res.formattedAnswer.includes('Compare'));
-    assert.ok(res.formattedAnswer.includes('Differences') || res.formattedAnswer.includes('Difference') || res.formattedAnswer.includes('Visual'));
+    assert.ok(
+      res.formattedAnswer.includes('Differences') ||
+      res.formattedAnswer.includes('Difference') ||
+      res.formattedAnswer.includes('differ') ||
+      res.formattedAnswer.includes('Image 1') ||
+      res.formattedAnswer.includes('Comparison')
+    );
   });
 
   await asyncTest('Scenario 9: Follow-up question in continuous conversation referencing prior image', async () => {

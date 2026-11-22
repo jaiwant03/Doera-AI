@@ -580,8 +580,8 @@ ${textSnippet}`;
           (parsed.requestIntent && parsed.requestIntent !== 'GENERAL_EXECUTION'))
       ) {
         return {
-          requestIntent,
           ...parsed,
+          requestIntent: requestIntent || parsed.requestIntent,
         };
       }
     } catch (err) {
