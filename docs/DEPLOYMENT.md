@@ -121,6 +121,11 @@ This guide provides complete, beginner-friendly, step-by-step instructions for d
 | Variable Key | Required | Value / Description |
 |---|---|---|
 | `NODE_ENV` | Yes | `production` |
+| `NODE_OPTIONS` | Recommended | `--max-old-space-size=460` (expands Node V8 heap to utilize Render's 512MB RAM) |
+| `MAX_CONCURRENT_HEAVY_TASKS` | Recommended | `2` (prevents memory spikes by queuing simultaneous heavy AI executions) |
+| `MONGO_MAX_POOL_SIZE` | Recommended | `10` (limits Mongoose connection sockets to prevent container socket starvation) |
+| `MONGO_MIN_POOL_SIZE` | Recommended | `2` (maintains active pool connections for fast response times) |
+| `REDIS_URL` | Optional | `redis://default:<password>@<host>:<port>` (Upstash or Render Redis; falls back to memory if empty) |
 | `PORT` | Auto | Automatically supplied by Render (defaults to 10000 or 5000) |
 | `FRONTEND_URL` | Yes | `https://your-frontend.vercel.app` (your Vercel frontend URL for CORS) |
 | `MONGODB_URI` | Yes | `mongodb+srv://doera_admin:<password>@cluster0.xxxxx.mongodb.net/doera-ai?retryWrites=true&w=majority` |
