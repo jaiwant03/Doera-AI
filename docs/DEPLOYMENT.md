@@ -122,8 +122,7 @@ This guide provides complete, beginner-friendly, step-by-step instructions for d
 |---|---|---|
 | `NODE_ENV` | Yes | `production` |
 | `PORT` | Auto | Automatically supplied by Render (defaults to 10000 or 5000) |
-| `FRONTEND_URL` | Yes | `https://your-frontend.vercel.app` (your Vercel app domain) |
-| `CLIENT_URL` | Yes | `https://your-frontend.vercel.app` (alias for FRONTEND_URL) |
+| `FRONTEND_URL` | Yes | `https://your-frontend.vercel.app` (your Vercel frontend URL for CORS) |
 | `MONGODB_URI` | Yes | `mongodb+srv://doera_admin:<password>@cluster0.xxxxx.mongodb.net/doera-ai?retryWrites=true&w=majority` |
 | `JWT_SECRET` | Yes | 32+ character random string (e.g., `openssl rand -hex 32`) |
 | `ENCRYPTION_KEY` | Yes | 32-byte encryption key for integration credentials |
