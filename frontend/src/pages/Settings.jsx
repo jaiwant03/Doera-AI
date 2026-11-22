@@ -170,7 +170,8 @@ const Settings = () => {
     }
     if (serviceName === 'Calendar') {
       const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      const backendUrl = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
+      const cleanUrl = rawUrl.replace(/\/+$/, '');
+      const backendUrl = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
       window.location.href = `${backendUrl}/auth/google?state=integration&redirect=true`;
       return;
     }
