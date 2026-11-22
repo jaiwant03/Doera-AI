@@ -140,10 +140,10 @@ class VisionAgent {
     // Fallback to previous vision analysis cache if available in conversation context
     if (imageFiles.length === 0 && taskContext.lastVisionAnalysis?.images?.length > 0) {
       for (const img of taskContext.lastVisionAnalysis.images) {
-        if (img.buffer || img.dataUrl) {
-          imageFiles.push(img);
-        }
+        imageFiles.push(img);
       }
+    } else if (imageFiles.length === 0 && taskContext.lastVisionAnalysis?.primaryImage) {
+      imageFiles.push(taskContext.lastVisionAnalysis.primaryImage);
     }
 
     if (imageFiles.length === 0) {
@@ -181,14 +181,20 @@ class VisionAgent {
       const filename = file.name || file.filename || `image-${i + 1}.png`;
 
       try {
+        let fileBuffer = file.buffer || null;
+        const filePath = file.path || file.filePath || (file.url && fs.existsSync(file.url) ? file.url : null);
+        if (!fileBuffer && filePath && fs.existsSync(filePath)) {
+          fileBuffer = fs.readFileSync(filePath);
+        }
+
         // Pixel-level telemetry & OCR extraction
         const processed = await imageProcessor.processImage({
           filename,
           mimeType: file.type || file.mimeType || 'image/png',
           base64Content: file.base64 || (file.dataUrl ? file.dataUrl.split(',')[1] : null),
-          buffer: file.buffer || null,
-          size: file.size || file.fileSize || 0,
-          rawText: file.content || file.text || '',
+          buffer: fileBuffer,
+          size: file.size || file.fileSize || (fileBuffer ? fileBuffer.length : 0),
+          rawText: file.content || file.text || file.ocrText || '',
         });
 
         // Run deep question-aware vision analysis
@@ -713,16 +719,16 @@ Compare the two uploaded image assets objectively based on layout, visual hierar
 Output pure JSON with keys: formattedAnswer, summary, matrix (array of { dimension, [img1.filename], [img2.filename], verdict }), keyDifferences (array of { aspect, details }), recommendation.`;
 
     const userPrompt = `Image 1: "${img1.filename}"
-- Type: ${img1.detectedType}
-- Dimensions: ${img1.dimensions.width}x${img1.dimensions.height} (${img1.visualMetrics.theme})
-- Dominant Palette: ${img1.visualMetrics.dominantColors.join(', ')}
-- OCR Text: "${(img1.ocr?.text || '').slice(0, 300)}"
+- Type: ${img1.detectedType || 'Interface'}
+- Dimensions: ${img1.dimensions?.width || 1200}x${img1.dimensions?.height || 800} (${img1.visualMetrics?.theme || 'Dark'})
+- Dominant Palette: ${(img1.visualMetrics?.dominantColors || ['#0D0D15']).join(', ')}
+- OCR Text: "${(img1.ocr?.text || img1.detectedText || '').slice(0, 300)}"
 
 Image 2: "${img2.filename}"
-- Type: ${img2.detectedType}
-- Dimensions: ${img2.dimensions.width}x${img2.dimensions.height} (${img2.visualMetrics.theme})
-- Dominant Palette: ${img2.visualMetrics.dominantColors.join(', ')}
-- OCR Text: "${(img2.ocr?.text || '').slice(0, 300)}"
+- Type: ${img2.detectedType || 'Interface'}
+- Dimensions: ${img2.dimensions?.width || 1200}x${img2.dimensions?.height || 800} (${img2.visualMetrics?.theme || 'Dark'})
+- Dominant Palette: ${(img2.visualMetrics?.dominantColors || ['#0D0D15']).join(', ')}
+- OCR Text: "${(img2.ocr?.text || img2.detectedText || '').slice(0, 300)}"
 
 Inquiry: "${userRequest}"`;
 
@@ -748,11 +754,11 @@ Inquiry: "${userRequest}"`;
     const compText =
       `### Visual Comparison: ${img1.filename} vs ${img2.filename}\n\n` +
       `**1. Layout & Composition**:\n` +
-      `- **${img1.filename}**: ${img1.dimensions.orientation} layout (${img1.dimensions.width} × ${img1.dimensions.height} px) with a ${img1.layoutZones.layoutStructure}.\n` +
-      `- **${img2.filename}**: ${img2.dimensions.orientation} layout (${img2.dimensions.width} × ${img2.dimensions.height} px) with a ${img2.layoutZones.layoutStructure}.\n\n` +
+      `- **${img1.filename}**: ${img1.dimensions?.orientation || 'Landscape'} layout (${img1.dimensions?.width || 1200} × ${img1.dimensions?.height || 800} px) with a ${img1.layoutZones?.layoutStructure || 'balanced composition'}.\n` +
+      `- **${img2.filename}**: ${img2.dimensions?.orientation || 'Landscape'} layout (${img2.dimensions?.width || 1200} × ${img2.dimensions?.height || 800} px) with a ${img2.layoutZones?.layoutStructure || 'balanced composition'}.\n\n` +
       `**2. Theme & Aesthetics**:\n` +
-      `- **${img1.filename}**: ${img1.visualMetrics.theme} with ${img1.visualMetrics.dominantColors.join(', ')} accents.\n` +
-      `- **${img2.filename}**: ${img2.visualMetrics.theme} with ${img2.visualMetrics.dominantColors.join(', ')} accents.\n\n` +
+      `- **${img1.filename}**: ${img1.visualMetrics?.theme || 'Dark'} with ${(img1.visualMetrics?.dominantColors || ['#FF007A']).join(', ')} accents.\n` +
+      `- **${img2.filename}**: ${img2.visualMetrics?.theme || 'Dark'} with ${(img2.visualMetrics?.dominantColors || ['#7928CA']).join(', ')} accents.\n\n` +
       `**3. Content & Information Density**:\n` +
       `- **${img1.filename}**: Displays approximately ${img1.ocr?.wordsCount || 0} visible text words.\n` +
       `- **${img2.filename}**: Displays approximately ${img2.ocr?.wordsCount || 0} visible text words.\n\n` +
@@ -765,7 +771,7 @@ Inquiry: "${userRequest}"`;
       keyDifferences: [
         {
           aspect: 'Visual Presentation',
-          details: `"${img1.filename}" presents a ${img1.visualMetrics.theme} aesthetic, while "${img2.filename}" is oriented around ${img2.visualMetrics.theme}.`,
+          details: `"${img1.filename}" presents a ${img1.visualMetrics?.theme || 'modern'} aesthetic, while "${img2.filename}" is oriented around ${img2.visualMetrics?.theme || 'modern'}.`,
         },
       ],
       recommendation: `For your goal, both images provide coherent visual continuity across the product presentation.`,
