@@ -390,7 +390,7 @@ const Settings = () => {
                     <span className="doera-badge-status active">Ready (Zero-Auth Webhooks)</span>
                   </div>
                   <p className="doera-integration-desc">
-                    8 standalone workflows listening via HTTP Webhooks at <code>http://localhost:5678/webhook</code>.
+                    8 standalone workflows listening via configured external HTTP Webhooks.
                   </p>
                 </div>
               </div>

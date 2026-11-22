@@ -172,8 +172,8 @@ class ExecutionAuthorizationService {
       let executionEngine = 'GMAIL_OAUTH2_DIRECT';
 
       // Secure n8n Multi-User Execution Pipeline:
-      // If N8N_WEBHOOK_URL is configured, supply the user's fresh access token & sender identity
-      if (process.env.N8N_WEBHOOK_URL) {
+      // If N8N_WEBHOOK_URL is configured and enabled, supply the user's fresh access token & sender identity
+      if (process.env.N8N_WEBHOOK_URL && process.env.N8N_ENABLED !== 'false') {
         try {
           logger.info(`[ExecutionAuth] Dispatching to n8n workflow for sender "${senderEmail}" -> recipient "${recipient}"`);
           const n8nRes = await axios.post(
