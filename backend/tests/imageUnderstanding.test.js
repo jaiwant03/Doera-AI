@@ -285,9 +285,9 @@ async function runTests() {
   console.log('\n--- SECTION D: Intent Service Checks ---');
 
   await asyncTest('universalIntentService classifies image requests with Vision agent and without Action/Verification gate', async () => {
-    const intent = await universalIntentService.classifyIntent(
+    const intent = await universalIntentService.understandRequest(
       'What is this uploaded image about?',
-      [{ filename: 'landing.png', mimeType: 'image/png' }]
+      [{ name: 'landing.png', type: 'image/png' }]
     );
 
     assert.ok(intent.categories.includes('IMAGE_ANALYSIS'));
