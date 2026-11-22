@@ -247,7 +247,7 @@ const SpreadsheetChart = ({ chartConfig }) => {
             <BarChart
               layout="vertical"
               data={data}
-              margin={{ top: 10, right: 30, left: 30, bottom: 10 }}
+              margin={{ top: 10, right: 15, left: 0, bottom: 10 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#251630" horizontal={false} />
               <XAxis
@@ -261,7 +261,8 @@ const SpreadsheetChart = ({ chartConfig }) => {
                 dataKey="name"
                 stroke="#8A7A96"
                 tick={{ fill: '#EDE4EE', fontSize: 11, fontWeight: 500 }}
-                width={90}
+                width={76}
+                tickFormatter={(v) => (typeof v === 'string' && v.length > 12 ? `${v.slice(0, 11)}…` : v)}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ color: '#EDE4EE', fontSize: 11.5 }} />
