@@ -329,3 +329,22 @@
 .doera-btn-google-auth:active {
   transform: translateY(0);
 }
+
+@media (max-width: 480px) {
+  .doera-auth-page {
+    padding: 16px 10px;
+  }
+
+  .doera-auth-card {
+    padding: 24px 16px;
+    border-radius: 18px;
+  }
+
+  .doera-auth-title {
+    font-size: 20px;
+  }
+
+  .doera-auth-subtitle {
+    font-size: 12.5px;
+  }
+}

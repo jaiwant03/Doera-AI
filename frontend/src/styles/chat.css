@@ -591,10 +591,18 @@ ol.doera-prose-list {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.doera-execution-toggle-label {
+  white-space: nowrap;
 }
 
 .doera-execution-shield {
   color: var(--neon-pink, #FF55BD);
+  flex-shrink: 0;
 }
 
 .doera-execution-ref-chip {
@@ -604,6 +612,10 @@ ol.doera-prose-list {
   color: var(--text-muted, #807486);
   padding: 2px 6px;
   border-radius: 4px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .doera-execution-content {
@@ -708,4 +720,98 @@ ol.doera-prose-list {
   font-size: 11px;
   color: var(--text-muted, #807486);
   margin-top: 8px;
+}
+
+/* ==============================================================================
+   RESPONSIVE DESIGN SYSTEM — CHAT AREA MOBILE ADAPTATIONS
+   ============================================================================== */
+@media (max-width: 768px) {
+  .doera-chat-scroll-area {
+    padding: 12px 0 0 0;
+  }
+
+  .doera-chat-content-width {
+    padding: 0 10px clamp(120px, 15vh, 150px);
+    gap: 20px;
+  }
+
+  .doera-msg-user-wrapper {
+    max-width: 94%;
+    gap: 8px;
+  }
+
+  .doera-msg-user-bubble {
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    border-radius: 16px 16px 4px 16px;
+  }
+
+  .doera-msg-ai-wrapper {
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  .doera-msg-ai-bubble {
+    font-size: 14px;
+    line-height: 1.55;
+    padding: 0 4px;
+  }
+
+  /* Responsive Tables inside Messages */
+  .doera-markdown-body table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 12px 0;
+  }
+
+  .doera-markdown-body pre {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 12px;
+  }
+
+  .doera-execution-container {
+    margin-top: 10px;
+    border-radius: 10px;
+  }
+
+  .doera-execution-toggle-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .doera-execution-toggle-label {
+    font-size: 12px;
+  }
+
+  .doera-execution-ref-chip {
+    font-size: 10px;
+    max-width: 130px;
+  }
+}
+
+@media (max-width: 480px) {
+  .doera-chat-content-width {
+    padding: 0 6px clamp(110px, 14vh, 140px);
+    gap: 16px;
+  }
+
+  .doera-msg-user-wrapper {
+    max-width: 98%;
+  }
+
+  .doera-msg-user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .doera-msg-ai-avatar {
+    width: 28px;
+    height: 28px;
+  }
 }

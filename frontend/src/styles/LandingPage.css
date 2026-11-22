@@ -1133,3 +1133,221 @@ section[id] {
   line-height: 1.6;
   color: #BBAFC0;
 }
+
+/* ==============================================================================
+   RESPONSIVE DESIGN SYSTEM — MOBILE & TABLET ADAPTATIONS FOR LANDING PAGE
+   Breakpoints: <= 900px (Tablets & Mobile), <= 640px (Phones), <= 380px (Compact)
+   ============================================================================== */
+
+/* Mobile Hamburger Toggle Button */
+.cerebrium-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(241, 45, 152, 0.3);
+  color: #FFFFFF;
+  padding: 7px;
+  cursor: pointer;
+  border-radius: 9px;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cerebrium-mobile-toggle:hover {
+  color: #FF55BD;
+  background: rgba(241, 45, 152, 0.15);
+  border-color: #F12D98;
+}
+
+/* Mobile Navigation Dropdown Drawer */
+.cerebrium-mobile-drawer {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(9, 4, 13, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(241, 45, 152, 0.35);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.9);
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 999;
+}
+
+.cerebrium-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cerebrium-mobile-nav a {
+  color: #EDE4EE;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+}
+
+.cerebrium-mobile-nav a:hover,
+.cerebrium-mobile-nav a.active {
+  color: #FF55BD;
+  background: rgba(241, 45, 152, 0.14);
+}
+
+.cerebrium-mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(241, 45, 152, 0.2);
+}
+
+.btn-cerebrium-login-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.btn-cerebrium-signup-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  background: linear-gradient(135deg, #F12D98 0%, #BD2275 100%);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 0 16px rgba(241, 45, 152, 0.5);
+}
+
+@media (max-width: 900px) {
+  /* Hide Desktop Floating Pill Dock to prevent horizontal overflow */
+  .cerebrium-pill-dock,
+  .cerebrium-header-actions {
+    display: none !important;
+  }
+
+  .cerebrium-mobile-toggle {
+    display: flex;
+  }
+
+  .cerebrium-header-inner {
+    padding: 0 16px;
+    height: 64px;
+  }
+
+  .landing-container {
+    padding-top: 64px;
+  }
+
+  .cerebrium-hero-split {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 44px 18px 50px;
+    gap: 36px;
+    min-height: auto;
+  }
+
+  .cerebrium-hero-heading {
+    font-size: clamp(30px, 8vw, 48px);
+    line-height: 1.15;
+  }
+
+  .cerebrium-hero-right {
+    align-items: center;
+    text-align: center;
+  }
+
+  .cerebrium-hero-actions {
+    justify-content: center;
+  }
+
+  .cerebrium-section-header {
+    margin-bottom: 36px;
+    padding: 0 12px;
+  }
+
+  .cerebrium-section-title {
+    font-size: clamp(24px, 6vw, 36px);
+  }
+}
+
+@media (max-width: 640px) {
+  .cerebrium-hero-split {
+    padding: 32px 14px 40px;
+  }
+
+  .cerebrium-hero-heading {
+    font-size: clamp(26px, 8.5vw, 38px);
+  }
+
+  .cerebrium-hero-desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .cerebrium-hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .capabilities-grid,
+  .architecture-diagram,
+  .pricing-grid,
+  .docs-features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+    padding: 0 10px;
+  }
+
+  .docs-code-card {
+    border-radius: 12px;
+    margin: 0 6px;
+  }
+
+  .docs-code-body pre {
+    font-size: 11px;
+    padding: 12px 10px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    gap: 24px;
+    text-align: center;
+    padding: 30px 16px;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+}

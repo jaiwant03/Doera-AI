@@ -24,7 +24,9 @@ import {
   Code2,
   Radio,
   FileCode,
-  Lock
+  Lock,
+  Menu,
+  X
 } from 'lucide-react';
 import '../styles/LandingPage.css';
 
@@ -37,6 +39,7 @@ const LandingPage = () => {
   const [activeDocTab, setActiveDocTab] = useState('curl');
   const [copied, setCopied] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Mutable animation state ref for 60fps canvas loop
   const animState = useRef({
@@ -510,7 +513,83 @@ ws.onmessage = (event) => {
               SIGN UP
             </Link>
           </div>
+
+          {/* Mobile Menu Toggle Button */}
+          <button 
+            type="button"
+            className="cerebrium-mobile-toggle"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div className="cerebrium-mobile-drawer animate-fadeIn">
+            <nav className="cerebrium-mobile-nav">
+              <a 
+                href="#capabilities" 
+                className={activeSection === 'capabilities' ? 'active' : ''}
+                onClick={(e) => {
+                  scrollToSection(e, 'capabilities');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Capabilities
+              </a>
+              <a 
+                href="#architecture" 
+                className={activeSection === 'architecture' ? 'active' : ''}
+                onClick={(e) => {
+                  scrollToSection(e, 'architecture');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Architecture
+              </a>
+              <a 
+                href="#agents" 
+                className={activeSection === 'agents' ? 'active' : ''}
+                onClick={(e) => {
+                  scrollToSection(e, 'agents');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Agents
+              </a>
+              <a 
+                href="#pricing" 
+                className={activeSection === 'pricing' ? 'active' : ''}
+                onClick={(e) => {
+                  scrollToSection(e, 'pricing');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Pricing
+              </a>
+              <a 
+                href="#docs" 
+                className={activeSection === 'docs' ? 'active' : ''}
+                onClick={(e) => {
+                  scrollToSection(e, 'docs');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Docs
+              </a>
+            </nav>
+            <div className="cerebrium-mobile-actions">
+              <Link to="/login" className="btn-cerebrium-login-mobile" onClick={() => setIsMobileMenuOpen(false)}>
+                LOG IN
+              </Link>
+              <Link to="/signup" className="btn-cerebrium-signup-mobile" onClick={() => setIsMobileMenuOpen(false)}>
+                SIGN UP FREE
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* 2. Hero Section matching Cerebrium Reference Split Layout */}
