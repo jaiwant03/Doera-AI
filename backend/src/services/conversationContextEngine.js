@@ -552,6 +552,16 @@ class ConversationContextEngine {
           crossDocAnalysis: crossDocAnalysis || taskDoc.discoveredData?.crossDocAnalysis || null,
         };
       }
+      if (visionAnalysis) {
+        conversation.lastVisionAnalysis = visionAnalysis;
+      } else if (taskDoc?.discoveredData?.visionResult || taskDoc?.discoveredData?.vision) {
+        conversation.lastVisionAnalysis = taskDoc.discoveredData.visionResult || {
+          images: taskDoc.discoveredData.vision,
+          comparison: taskDoc.discoveredData.visionComparison || null,
+          formattedAnswer: taskDoc.discoveredData.visionFormattedAnswer || taskDoc.directAnswer,
+          intentType: taskDoc.discoveredData.visionIntentType || 'GENERAL_IMAGE_DESCRIPTION',
+        };
+      }
       if (effectivePlan) conversation.lastPlan = effectivePlan;
       if (effectiveDraft) conversation.lastDraft = effectiveDraft;
       // Rich Local Service Research Persistence
