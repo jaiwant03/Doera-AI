@@ -143,14 +143,29 @@ class SpreadsheetService {
       // Duplicate detection
       const rowSignatures = new Set();
       let sheetDuplicates = 0;
-      cleanRows.forEach((r) => {
-        const sig = JSON.stringify(r);
-        if (rowSignatures.has(sig)) {
-          sheetDuplicates++;
-        } else {
-          rowSignatures.add(sig);
+      if (cleanRows.length > 10000) {
+        // Sampled duplicate detection for ultra-large datasets to prevent V8 heap exhaustion
+        const sampleSize = Math.min(cleanRows.length, 5000);
+        for (let i = 0; i < sampleSize; i++) {
+          const r = cleanRows[i];
+          const sig = Object.values(r).join('|');
+          if (rowSignatures.has(sig)) {
+            sheetDuplicates++;
+          } else {
+            rowSignatures.add(sig);
+          }
         }
-      });
+        sheetDuplicates = Math.round((sheetDuplicates / sampleSize) * cleanRows.length);
+      } else {
+        cleanRows.forEach((r) => {
+          const sig = JSON.stringify(r);
+          if (rowSignatures.has(sig)) {
+            sheetDuplicates++;
+          } else {
+            rowSignatures.add(sig);
+          }
+        });
+      }
       totalDuplicateRows += sheetDuplicates;
 
       // Column Schema Inference (with fast sample optimization for large datasets)
@@ -858,11 +873,10 @@ class SpreadsheetService {
         const val = isCountBased ? 1 : (this.parseNumeric(row[metricCol]) || 0);
 
         if (!groupMap[key]) {
-          groupMap[key] = { label: key, sum: 0, count: 0, values: [] };
+          groupMap[key] = { label: key, sum: 0, count: 0 };
         }
         groupMap[key].sum += val;
         groupMap[key].count += 1;
-        groupMap[key].values.push(val);
         totalSum += val;
         totalCount += 1;
       });
