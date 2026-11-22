@@ -10,13 +10,13 @@ import {
   handleGoogleCallback,
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
-import { rateLimiter } from '../middleware/rateLimiter.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-router.post('/register', rateLimiter({ windowMs: 60000, maxRequests: 20 }), register);
-router.post('/login', rateLimiter({ windowMs: 60000, maxRequests: 30 }), login);
-router.post('/reset-password', rateLimiter({ windowMs: 60000, maxRequests: 10 }), resetPassword);
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
+router.post('/reset-password', authLimiter, resetPassword);
 router.get('/google', getGoogleAuthUrl);
 router.post('/google', googleLoginWithCredential);
 router.get('/google/callback', handleGoogleCallback);
