@@ -216,3 +216,58 @@
 .doera-chart-data-table tr:hover td {
   background: rgba(255, 85, 189, 0.05);
 }
+
+/* Responsive adjustments for mobile and tablets */
+@media (max-width: 640px) {
+  .doera-chart-card {
+    padding: 12px 10px;
+    margin: 12px 0;
+    border-radius: 12px;
+  }
+
+  .doera-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .doera-chart-title-area {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .doera-chart-title {
+    font-size: 13.5px;
+    word-break: break-word;
+  }
+
+  .doera-chart-controls {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .doera-chart-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .doera-chart-type-pill,
+  .doera-chart-action-btn {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .doera-chart-stats-bar {
+    gap: 8px 12px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .doera-chart-canvas-wrap {
+    height: 290px;
+  }
+}
