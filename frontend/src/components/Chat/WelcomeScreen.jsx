@@ -129,7 +129,7 @@ const CORE_FEATURES = [
   }
 ];
 
-const WelcomeScreen = ({ onSelectPrompt }) => {
+const WelcomeScreen = ({ onSelectPrompt, onOpenMultiAgent }) => {
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -180,11 +180,16 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
   }, []);
 
   const handleTryFeature = useCallback((promptText) => {
+    if (selectedFeature?.id === 'multi-agent-planning' && onOpenMultiAgent) {
+      onOpenMultiAgent();
+      setSelectedFeature(null);
+      return;
+    }
     if (onSelectPrompt) {
       onSelectPrompt(promptText);
     }
     setSelectedFeature(null);
-  }, [onSelectPrompt]);
+  }, [onSelectPrompt, selectedFeature, onOpenMultiAgent]);
 
   return (
     <div className="doera-welcome-experience">
@@ -210,9 +215,15 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
               key={feature.id}
               type="button"
               className="doera-feature-card"
-              onClick={() => setSelectedFeature(feature)}
+              onClick={() => {
+                if (feature.id === 'multi-agent-planning' && onOpenMultiAgent) {
+                  onOpenMultiAgent();
+                } else {
+                  setSelectedFeature(feature);
+                }
+              }}
               style={{ '--card-accent': feature.accentColor }}
-              aria-label={`Open tutorial for ${feature.title}`}
+              aria-label={`Open ${feature.title}`}
             >
               <div className="doera-card-header">
                 <div 

@@ -52,6 +52,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/research"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
               
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />

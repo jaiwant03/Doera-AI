@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PanelLeft, Plus } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { PanelLeft, Plus, Sparkles } from 'lucide-react';
 import Sidebar from '../components/Sidebar/Sidebar';
 import Header from '../components/UI/Header';
 import AmbientBackground from '../components/AmbientBackground';
@@ -8,9 +9,12 @@ import WelcomeScreen from '../components/Chat/WelcomeScreen';
 import MessageList from '../components/Message/MessageList';
 import ChatInput from '../components/Chat/ChatInput';
 import UpgradeModal from '../components/Subscription/UpgradeModal';
+import MultiAgentWorkspace from '../components/Research/MultiAgentWorkspace';
 import { useChat } from '../context/ChatContext';
 
 const ChatPage = () => {
+  const location = useLocation();
+
   // Sidebar defaults to open on desktop ("otherwise it should be visible")
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
@@ -21,9 +25,19 @@ const ChatPage = () => {
   });
 
   const [prefilledInput, setPrefilledInput] = useState('');
+  const [showMultiAgentWorkspace, setShowMultiAgentWorkspace] = useState(() => {
+    return typeof window !== 'undefined' && (window.location.search.includes('tab=multi-agent') || window.location.pathname === '/research');
+  });
+
+  useEffect(() => {
+    if (location.search.includes('tab=multi-agent')) {
+      setShowMultiAgentWorkspace(true);
+    }
+  }, [location.search]);
   const {
     messages,
     activeTask,
+    currentConversation,
     isSending,
     isStreaming,
     isLoading,
@@ -124,19 +138,36 @@ const ChatPage = () => {
             >
               <Plus size={18} />
             </button>
+            <button
+              onClick={() => setShowMultiAgentWorkspace((prev) => !prev)}
+              className="doera-sidebar-floating-btn"
+              title="Toggle Multi-Agent Intelligence Workspace"
+              aria-label="Multi-Agent Workspace"
+              style={{ color: showMultiAgentWorkspace ? '#FF55BD' : undefined }}
+            >
+              <Sparkles size={18} />
+            </button>
           </div>
         )}
 
         {/* Mobile Header */}
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
 
-        {/* Content Area: Welcome Experience or Message Stream */}
+        {/* Content Area: Multi-Agent Intelligence Workspace, Welcome Experience, or Message Stream */}
         <div className="doera-workspace-content">
-          {!hasMessages && !activeTask ? (
+          {showMultiAgentWorkspace ? (
+            <div className="doera-chat-scroll-wrapper" style={{ padding: 0 }}>
+              <MultiAgentWorkspace
+                onClose={() => setShowMultiAgentWorkspace(false)}
+                conversationId={currentConversation?._id}
+              />
+            </div>
+          ) : !hasMessages && !activeTask ? (
             <div className="doera-welcome-viewport-wrapper">
               <WelcomeScreen 
                 onSelectPrompt={handleSelectPrompt} 
                 onSendMessage={handleSendMessage}
+                onOpenMultiAgent={() => setShowMultiAgentWorkspace(true)}
               />
             </div>
           ) : (

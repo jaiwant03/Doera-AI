@@ -14,7 +14,8 @@ import {
   Layers,
   PanelLeft,
   ShieldCheck,
-  Rocket
+  Rocket,
+  Sparkles
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -379,6 +380,15 @@ const Sidebar = ({ isOpen, onToggle, onClose }) => {
           </div>
 
           {/* Navigation Links */}
+          <Link
+            to="/chat?tab=multi-agent"
+            className={`doera-footer-nav-link ${location.search.includes('tab=multi-agent') ? 'active' : ''}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+          >
+            <Sparkles size={16} color="#FF55BD" />
+            <span>Multi-Agent Research</span>
+          </Link>
+
           <Link
             to="/missions"
             className={`doera-footer-nav-link ${location.pathname === '/missions' ? 'active' : ''}`}
