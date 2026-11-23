@@ -1,0 +1,603 @@
+/* DOERA AI — Multi-Agent Research & Knowledge Workspace Styles */
+
+.doera-research-workspace {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 6rem;
+  background: transparent;
+  color: #F1F0F5;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Header bar */
+.doera-research-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.doera-research-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.doera-research-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 85, 189, 0.2) 0%, rgba(156, 82, 232, 0.25) 100%);
+  border: 1px solid rgba(255, 85, 189, 0.4);
+  color: #FF55BD;
+  box-shadow: 0 0 20px rgba(255, 85, 189, 0.25);
+  flex-shrink: 0;
+}
+
+.doera-research-title-text h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  background: linear-gradient(135deg, #FFFFFF 30%, #E2D9F3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.doera-research-title-text p {
+  font-size: 0.82rem;
+  color: #9E9AA7;
+  margin: 0.2rem 0 0;
+}
+
+.doera-research-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.doera-research-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34D399;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doera-research-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #34D399;
+  box-shadow: 0 0 10px #34D399;
+  animation: pulseGreen 2s infinite ease-in-out;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.doera-research-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #C5BFD2;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doera-research-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFF;
+  border-color: rgba(255, 85, 189, 0.3);
+}
+
+/* Tabs Navigation */
+.doera-research-tabs-wrapper {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.doera-research-tabs {
+  display: flex;
+  gap: 0.5rem;
+  min-width: max-content;
+}
+
+.doera-research-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #A39DB0;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.doera-research-tab:hover {
+  color: #FFF;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 85, 189, 0.3);
+}
+
+.doera-research-tab.active {
+  background: linear-gradient(135deg, rgba(255, 85, 189, 0.18) 0%, rgba(156, 82, 232, 0.22) 100%);
+  border-color: rgba(255, 85, 189, 0.5);
+  color: #FFF;
+  box-shadow: 0 0 16px rgba(255, 85, 189, 0.2);
+}
+
+/* Prompt Box */
+.doera-research-input-card {
+  background: rgba(14, 9, 21, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.doera-research-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.doera-research-textarea {
+  width: 100%;
+  min-height: 85px;
+  max-height: 180px;
+  padding: 0.85rem 1rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #FFF;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.doera-research-textarea:focus {
+  outline: none;
+  border-color: #FF55BD;
+  box-shadow: 0 0 12px rgba(255, 85, 189, 0.25);
+}
+
+.doera-research-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.doera-research-suggestions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.doera-research-suggestion-pill {
+  padding: 0.3rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  color: #B5AFC2;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doera-research-suggestion-pill:hover {
+  background: rgba(255, 85, 189, 0.15);
+  border-color: rgba(255, 85, 189, 0.4);
+  color: #FFF;
+}
+
+.doera-research-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  background: linear-gradient(135deg, #FF55BD 0%, #9C52E8 100%);
+  border: none;
+  border-radius: 10px;
+  color: #FFF;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(255, 85, 189, 0.3);
+}
+
+.doera-research-submit-btn:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 85, 189, 0.45);
+}
+
+.doera-research-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Agent Activity Stream */
+.doera-agent-activity-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(156, 82, 232, 0.07);
+  border: 1px solid rgba(156, 82, 232, 0.2);
+  border-radius: 12px;
+}
+
+.doera-agent-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #C084FC;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.doera-agent-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.doera-agent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #E2D9F3;
+}
+
+.doera-agent-chip.running {
+  border-color: #FF55BD;
+  color: #FF55BD;
+  background: rgba(255, 85, 189, 0.12);
+}
+
+.doera-agent-chip.completed {
+  border-color: #10B981;
+  color: #34D399;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* Content cards and grids */
+.doera-research-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.doera-paper-card,
+.doera-news-card,
+.doera-verify-card,
+.doera-wiki-card {
+  background: rgba(14, 9, 21, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.85rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(12px);
+}
+
+.doera-paper-card:hover,
+.doera-news-card:hover,
+.doera-verify-card:hover,
+.doera-wiki-card:hover {
+  border-color: rgba(255, 85, 189, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.doera-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #8E8A99;
+  gap: 0.5rem;
+}
+
+.doera-source-badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(255, 85, 189, 0.15);
+  color: #FF55BD;
+  border: 1px solid rgba(255, 85, 189, 0.3);
+}
+
+.doera-source-badge.arxiv {
+  background: rgba(192, 132, 252, 0.15);
+  color: #C084FC;
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+.doera-source-badge.crossref {
+  background: rgba(6, 182, 212, 0.15);
+  color: #06B6D4;
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.doera-source-badge.openalex {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.doera-card-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #FFF;
+  margin: 0;
+  word-break: break-word;
+}
+
+.doera-card-authors {
+  font-size: 0.8rem;
+  color: #A39DB0;
+  margin: 0;
+}
+
+.doera-card-abstract {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #C5BFD2;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.doera-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.doera-card-links {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.doera-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #FFF;
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.doera-link-pill:hover {
+  background: rgba(255, 85, 189, 0.2);
+  border-color: #FF55BD;
+  color: #FFF;
+}
+
+/* Verification Badges */
+.doera-verdict-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.doera-verdict-pill.supported {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34D399;
+}
+
+.doera-verdict-pill.partially {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #FBBF24;
+}
+
+.doera-verdict-pill.contradicted {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #F87171;
+}
+
+.doera-verdict-pill.insufficient {
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #CBD5E1;
+}
+
+/* Citations & Bibliography */
+.doera-citations-card,
+.doera-report-card {
+  background: rgba(14, 9, 21, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(16px);
+}
+
+.doera-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.doera-section-header h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #FFF;
+  margin: 0;
+}
+
+.doera-citation-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  margin-bottom: 0.65rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #D6D0E0;
+}
+
+.doera-copy-icon-btn {
+  background: none;
+  border: none;
+  color: #8E8A99;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.doera-copy-icon-btn:hover {
+  color: #FF55BD;
+  background: rgba(255, 85, 189, 0.15);
+}
+
+/* Report Formatter */
+.doera-report-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  line-height: 1.6;
+  color: #D6D0E0;
+  font-size: 0.92rem;
+}
+
+.doera-report-core-finding {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid #FF55BD;
+  border-radius: 0 8px 8px 0;
+}
+
+.doera-report-core-finding h4 {
+  margin: 0 0 0.4rem;
+  color: #FFF;
+  font-size: 0.98rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .doera-research-workspace {
+    padding: 1rem 0.75rem 5rem;
+  }
+
+  .doera-research-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doera-research-title-text h2 {
+    font-size: 1.1rem;
+  }
+
+  .doera-research-input-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .doera-research-submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .doera-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .doera-card-links {
+    justify-content: flex-start;
+  }
+}
